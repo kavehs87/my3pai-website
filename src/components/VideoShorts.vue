@@ -2,7 +2,7 @@
   <div class="video-shorts">
     <div class="container">
       <div class="section-header">
-        <h2>Creator Plan</h2>
+        <h2>Creator Plans</h2>
         <p>Discover amazing travel itineraries from our community creators</p>
       </div>
 

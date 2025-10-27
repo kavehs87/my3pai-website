@@ -188,27 +188,6 @@
       "createdAt": "2023-12-25",
       "difficulty": "hard",
       "budget": "$800-1200"
-    },
-    {
-      "id": 10,
-      "title": "Rome Historical Sites",
-      "creator": {
-        "name": "RomanHistory",
-        "avatar": "https://i.pravatar.cc/40?img=10",
-        "followers": "134K"
-      },
-      "platform": "youtube",
-      "videoId": "rome_historical_sites",
-      "thumbnail": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&h=600&fit=crop",
-      "duration": "0:50",
-      "views": "1.4M",
-      "likes": "76K",
-      "comments": "1.5K",
-      "description": "Rome's historical sites in one day! Colosseum, Forum, Pantheon.",
-      "tags": ["rome", "history", "colosseum", "forum", "pantheon"],
-      "createdAt": "2023-12-22",
-      "difficulty": "medium",
-      "budget": "$400-600"
     }
   ]
 }

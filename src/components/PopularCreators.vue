@@ -183,7 +183,7 @@ export default {
 }
 
 .creator-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-8px) scale(1.02);
   box-shadow: 0 12px 40px var(--shadow-medium);
 }
 
@@ -196,13 +196,8 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
   border-top-left-radius: var(--radius-xl);
   border-top-right-radius: var(--radius-xl);
-}
-
-.creator-card:hover .creator-cover img {
-  transform: scale(1.05);
 }
 
 .creator-overlay {
