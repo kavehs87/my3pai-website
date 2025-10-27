@@ -4,7 +4,7 @@
     <Header />
     
     <!-- Hero Section -->
-    <HeroSection />
+    <AIHeroSection />
     
     <!-- Video Plans Section -->
     <VideoPlans />
@@ -25,6 +25,7 @@
 
 <script>
 import Header from './Header.vue'
+import AIHeroSection from './AIHeroSection.vue'
 import HeroSection from './HeroSection.vue'
 import VideoPlans from './VideoPlans.vue'
 import VideoShorts from './VideoShorts.vue'
@@ -39,6 +40,7 @@ export default {
   name: 'Home',
   components: {
     Header,
+    AIHeroSection,
     HeroSection,
     VideoPlans,
     VideoShorts,
