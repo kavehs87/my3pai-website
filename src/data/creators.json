@@ -27,13 +27,13 @@
         {
           "id": 1,
           "title": "Tokyo 3-Day Adventure",
-          "thumbnail": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=200&h=150&fit=crop",
+          "thumbnail": "/photos/photo_2025-10-28_00-05-39.jpg",
           "views": "2.3M"
         },
         {
           "id": 11,
           "title": "Kyoto Temples Guide",
-          "thumbnail": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=200&h=150&fit=crop",
+          "thumbnail": "/photos/photo_2025-10-28_00-05-44.jpg",
           "views": "1.8M"
         },
         {
@@ -49,7 +49,7 @@
       "name": "ParisExplorer",
       "username": "@parisexplorer",
       "avatar": "https://i.pravatar.cc/140?img=23",
-      "coverImage": "https://images.unsplash.com/photo-1468071174046-657d9d351a40?w=800&h=300&fit=crop",
+      "coverImage": "/photos/photo_2025-10-28_00-05-39.jpg",
       "followers": "89K",
       "following": "890",
       "totalPlans": 32,
@@ -63,7 +63,7 @@
       "featuredPlan": {
         "id": 2,
         "title": "Paris Hidden Gems",
-        "thumbnail": "https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400&h=300&fit=crop",
+        "thumbnail": "/photos/photo_2025-10-28_00-06-00.jpg",
         "views": "1.8M",
         "likes": "156K"
       },
@@ -93,7 +93,7 @@
       "name": "BaliBeachLife",
       "username": "@balibeachlife",
       "avatar": "https://i.pravatar.cc/140?img=24",
-      "coverImage": "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=800&h=300&fit=crop",
+      "coverImage": "/photos/photo_2025-10-28_00-05-44.jpg",
       "followers": "234K",
       "following": "2.1K",
       "totalPlans": 58,
@@ -107,7 +107,7 @@
       "featuredPlan": {
         "id": 3,
         "title": "Bali Beach Hopping",
-        "thumbnail": "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=400&h=300&fit=crop",
+        "thumbnail": "/photos/photo_2025-10-28_00-02-29.jpg",
         "views": "4.1M",
         "likes": "312K"
       },
@@ -137,7 +137,7 @@
       "name": "NYCFoodie",
       "username": "@nycfoodie",
       "avatar": "https://i.pravatar.cc/140?img=30",
-      "coverImage": "https://images.unsplash.com/photo-1551782450-17144efb9c50?w=800&h=300&fit=crop",
+      "coverImage": "/photos/photo_2025-10-28_00-05-48.jpg",
       "followers": "167K",
       "following": "1.5K",
       "totalPlans": 41,
@@ -151,7 +151,7 @@
       "featuredPlan": {
         "id": 4,
         "title": "New York Food Tour",
-        "thumbnail": "https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400&h=300&fit=crop",
+        "thumbnail": "/photos/photo_2025-10-28_00-02-31.jpg",
         "views": "1.9M",
         "likes": "98K"
       },
@@ -181,7 +181,7 @@
       "name": "GreekIslands",
       "username": "@greekislands",
       "avatar": "https://i.pravatar.cc/140?img=31",
-      "coverImage": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&h=300&fit=crop",
+      "coverImage": "/photos/photo_2025-10-28_00-05-52.jpg",
       "followers": "198K",
       "following": "1.8K",
       "totalPlans": 35,
@@ -195,7 +195,7 @@
       "featuredPlan": {
         "id": 5,
         "title": "Santorini Sunset Spots",
-        "thumbnail": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&h=300&fit=crop",
+        "thumbnail": "/photos/photo_2025-10-28_00-02-32.jpg",
         "views": "3.2M",
         "likes": "245K"
       },
@@ -225,7 +225,7 @@
       "name": "DubaiLuxury",
       "username": "@dubailuxury",
       "avatar": "https://i.pravatar.cc/140?img=39",
-      "coverImage": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=300&fit=crop",
+      "coverImage": "/photos/photo_2025-10-28_00-05-56.jpg",
       "followers": "145K",
       "following": "1.1K",
       "totalPlans": 28,
@@ -239,7 +239,7 @@
       "featuredPlan": {
         "id": 6,
         "title": "Dubai Shopping Guide",
-        "thumbnail": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=300&fit=crop",
+        "thumbnail": "/photos/photo_2025-10-28_00-02-34.jpg",
         "views": "2.7M",
         "likes": "189K"
       },
