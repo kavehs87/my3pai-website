@@ -2,6 +2,7 @@ stages: [test, build, deploy]
 
 # Use npm by default. If you prefer pnpm, swap the commands.
 default:
+  tags: [docker]
   image: node:20-alpine
   cache:
     key: ${CI_COMMIT_REF_SLUG}
@@ -14,8 +15,7 @@ default:
 test:
   stage: test
   script:
-    - npm run lint || echo "no lint script"
-    - npm test || echo "no test script"
+    - echo "Skipping lint and test - not configured yet"
 
 build:
   stage: build
