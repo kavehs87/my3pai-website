@@ -3,8 +3,8 @@
     <div class="container">
       <div class="header-content">
         <!-- Logo -->
-        <div class="logo" style="max-width: 160px; width: 100%;">
-          <img src="/logo.svg" alt="my3pai.com Logo" class="logo-image"
+        <div class="logo" style="max-width: 80px; width: 100%;">
+          <img src="/logo-small.png" alt="my3pai.com Logo" class="logo-image"
             style="width: 100%; height: auto; object-fit: contain; display: block;" />
         </div>
 
@@ -82,8 +82,8 @@ export default {
 
 <style scoped>
 .header {
-  background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--bg-primary);
+  box-shadow: 0 2px 4px var(--shadow-light);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -93,14 +93,14 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
-  gap: 40px;
+  padding: var(--spacing-sm) 0;
+  gap: var(--spacing-2xl);
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-sm);
 }
 
 .logo-image {
@@ -110,62 +110,62 @@ export default {
 }
 
 .logo-text {
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
   font-weight: 600;
-  color: #000000;
-  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  font-family: var(--font-family);
 }
 
 .nav {
   display: flex;
-  gap: 32px;
+  gap: var(--spacing-xl);
   flex: 1;
   justify-content: center;
 }
 
 .nav-link {
   text-decoration: none;
-  color: #000000;
+  color: var(--text-primary);
   font-weight: 500;
-  font-size: 16px;
-  transition: color 0.3s ease;
-  padding: 8px 0;
+  font-size: var(--font-size-base);
+  transition: color var(--transition-normal);
+  padding: var(--spacing-sm) 0;
 }
 
 .nav-link:hover {
-  color: #333333;
+  color: var(--text-secondary);
 }
 
 .language-currency {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-sm);
 }
 
 .language-selector {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #000000;
+  gap: var(--spacing-xs);
+  color: var(--text-primary);
   font-weight: 500;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
+  padding: var(--spacing-sm) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-normal);
 }
 
 .language-selector:hover {
-  background-color: #f8f9fa;
+  background-color: var(--bg-secondary);
 }
 
 .language-selector i {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
 }
 
 .separator {
   width: 1px;
   height: 20px;
-  background-color: #e0e0e0;
+  background-color: var(--border-light);
 }
 
 .user-profile {
@@ -176,10 +176,10 @@ export default {
 .profile-picture {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-normal);
 }
 
 .profile-picture:hover {
@@ -196,32 +196,32 @@ export default {
   display: none;
   background: none;
   border: none;
-  font-size: 20px;
-  color: #000000;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
   cursor: pointer;
-  padding: 8px;
+  padding: var(--spacing-sm);
 }
 
 .mobile-menu {
   display: none;
-  background: white;
-  border-top: 1px solid #e0e0e0;
-  padding: 20px 0;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-light);
+  padding: var(--spacing-lg) 0;
 }
 
 .mobile-nav {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .mobile-nav-link {
   text-decoration: none;
-  color: #000000;
+  color: var(--text-primary);
   font-weight: 500;
-  padding: 8px 0;
-  font-size: 16px;
+  padding: var(--spacing-sm) 0;
+  font-size: var(--font-size-base);
 }
 
 .mobile-user-actions {
@@ -233,15 +233,15 @@ export default {
 .mobile-language {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #000000;
+  gap: var(--spacing-xs);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .mobile-profile {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
@@ -253,17 +253,17 @@ export default {
 
 @media (max-width: 1024px) {
   .nav {
-    gap: 24px;
+    gap: var(--spacing-lg);
   }
 
   .header-content {
-    gap: 24px;
+    gap: var(--spacing-lg);
   }
 }
 
 @media (max-width: 768px) {
   .header-content {
-    gap: 16px;
+    gap: var(--spacing-md);
   }
 
   .nav {

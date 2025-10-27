@@ -481,7 +481,7 @@ export default {
 }
 
 .prompt-btn {
-  background: #10b981;
+  background: var(--primary-color);
   border: none;
   border-radius: 50px;
   padding: 14px 32px;
@@ -493,12 +493,12 @@ export default {
   margin-left: 12px;
   font-weight: 600;
   font-size: 16px;
-  color: #000000;
+  color: var(--text-light);
   min-width: 120px;
 }
 
 .prompt-btn:hover:not(:disabled) {
-  background: #059669;
+  background: var(--primary-hover);
   transform: scale(1.02);
 }
 
@@ -697,7 +697,7 @@ export default {
 
 .feature i {
   font-size: 20px;
-  color: #10b981;
+  color: var(--secondary-color);
 }
 
 @media (max-width: 768px) {

@@ -1,0 +1,214 @@
+{
+  "plans": [
+    {
+      "id": 1,
+      "title": "Tokyo 3-Day Adventure",
+      "creator": {
+        "name": "TravelWithEmma",
+        "avatar": "https://i.pravatar.cc/40?img=1",
+        "followers": "125K"
+      },
+      "platform": "youtube",
+      "videoId": "dQw4w9WgXcQ",
+      "thumbnail": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=600&fit=crop",
+      "duration": "0:45",
+      "views": "2.3M",
+      "likes": "89K",
+      "comments": "1.2K",
+      "description": "Quick guide to Tokyo's must-see spots in 3 days! Perfect for first-time visitors.",
+      "tags": ["tokyo", "japan", "travel", "3days", "adventure"],
+      "createdAt": "2024-01-15",
+      "difficulty": "easy",
+      "budget": "$800-1200"
+    },
+    {
+      "id": 2,
+      "title": "Paris Hidden Gems",
+      "creator": {
+        "name": "ParisExplorer",
+        "avatar": "https://i.pravatar.cc/40?img=2",
+        "followers": "89K"
+      },
+      "platform": "instagram",
+      "videoId": "paris_hidden_gems",
+      "thumbnail": "https://images.unsplash.com/photo-1468071174046-657d9d351a40?w=400&h=600&fit=crop",
+      "duration": "0:30",
+      "views": "1.8M",
+      "likes": "156K",
+      "comments": "3.4K",
+      "description": "Secret spots in Paris that tourists never find! Local favorites only.",
+      "tags": ["paris", "hidden", "local", "secret", "france"],
+      "createdAt": "2024-01-12",
+      "difficulty": "medium",
+      "budget": "$600-900"
+    },
+    {
+      "id": 3,
+      "title": "Bali Beach Hopping",
+      "creator": {
+        "name": "BaliBeachLife",
+        "avatar": "https://i.pravatar.cc/40?img=3",
+        "followers": "234K"
+      },
+      "platform": "tiktok",
+      "videoId": "bali_beach_hopping",
+      "thumbnail": "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=400&h=600&fit=crop",
+      "duration": "0:60",
+      "views": "4.1M",
+      "likes": "312K",
+      "comments": "8.9K",
+      "description": "Best beaches in Bali ranked! From hidden coves to popular spots.",
+      "tags": ["bali", "beaches", "indonesia", "beach", "tropical"],
+      "createdAt": "2024-01-10",
+      "difficulty": "easy",
+      "budget": "$400-700"
+    },
+    {
+      "id": 4,
+      "title": "New York Food Tour",
+      "creator": {
+        "name": "NYCFoodie",
+        "avatar": "https://i.pravatar.cc/40?img=4",
+        "followers": "167K"
+      },
+      "platform": "youtube",
+      "videoId": "nyc_food_tour",
+      "thumbnail": "https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400&h=600&fit=crop",
+      "duration": "0:50",
+      "views": "1.9M",
+      "likes": "98K",
+      "comments": "2.1K",
+      "description": "Ultimate NYC food tour! From street food to fine dining.",
+      "tags": ["nyc", "food", "tour", "restaurants", "streetfood"],
+      "createdAt": "2024-01-08",
+      "difficulty": "medium",
+      "budget": "$300-500"
+    },
+    {
+      "id": 5,
+      "title": "Santorini Sunset Spots",
+      "creator": {
+        "name": "GreekIslands",
+        "avatar": "https://i.pravatar.cc/40?img=5",
+        "followers": "198K"
+      },
+      "platform": "instagram",
+      "videoId": "santorini_sunset",
+      "thumbnail": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&h=600&fit=crop",
+      "duration": "0:25",
+      "views": "3.2M",
+      "likes": "245K",
+      "comments": "5.6K",
+      "description": "Best sunset viewing spots in Santorini! Perfect for couples.",
+      "tags": ["santorini", "sunset", "greece", "romantic", "islands"],
+      "createdAt": "2024-01-05",
+      "difficulty": "easy",
+      "budget": "$700-1100"
+    },
+    {
+      "id": 6,
+      "title": "Dubai Shopping Guide",
+      "creator": {
+        "name": "DubaiLuxury",
+        "avatar": "https://i.pravatar.cc/40?img=6",
+        "followers": "145K"
+      },
+      "platform": "tiktok",
+      "videoId": "dubai_shopping",
+      "thumbnail": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=600&fit=crop",
+      "duration": "0:40",
+      "views": "2.7M",
+      "likes": "189K",
+      "comments": "4.2K",
+      "description": "Where to shop in Dubai! From malls to souks, luxury to budget.",
+      "tags": ["dubai", "shopping", "malls", "souks", "luxury"],
+      "createdAt": "2024-01-03",
+      "difficulty": "medium",
+      "budget": "$500-1500"
+    },
+    {
+      "id": 7,
+      "title": "London Pub Crawl",
+      "creator": {
+        "name": "LondonLocal",
+        "avatar": "https://i.pravatar.cc/40?img=7",
+        "followers": "112K"
+      },
+      "platform": "youtube",
+      "videoId": "london_pub_crawl",
+      "thumbnail": "https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=400&h=600&fit=crop",
+      "duration": "0:55",
+      "views": "1.6M",
+      "likes": "87K",
+      "comments": "1.8K",
+      "description": "Best pubs in London! Traditional British pub experience.",
+      "tags": ["london", "pubs", "british", "beer", "traditional"],
+      "createdAt": "2024-01-01",
+      "difficulty": "easy",
+      "budget": "$200-400"
+    },
+    {
+      "id": 8,
+      "title": "Thailand Street Food",
+      "creator": {
+        "name": "ThaiFoodLover",
+        "avatar": "https://i.pravatar.cc/40?img=8",
+        "followers": "203K"
+      },
+      "platform": "instagram",
+      "videoId": "thailand_street_food",
+      "thumbnail": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=600&fit=crop",
+      "duration": "0:35",
+      "views": "2.9M",
+      "likes": "267K",
+      "comments": "6.1K",
+      "description": "Must-try street food in Thailand! From Bangkok to Chiang Mai.",
+      "tags": ["thailand", "streetfood", "bangkok", "chiangmai", "food"],
+      "createdAt": "2023-12-28",
+      "difficulty": "easy",
+      "budget": "$150-300"
+    },
+    {
+      "id": 9,
+      "title": "Iceland Northern Lights",
+      "creator": {
+        "name": "IcelandAdventures",
+        "avatar": "https://i.pravatar.cc/40?img=9",
+        "followers": "156K"
+      },
+      "platform": "tiktok",
+      "videoId": "iceland_northern_lights",
+      "thumbnail": "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&h=600&fit=crop",
+      "duration": "0:45",
+      "views": "3.8M",
+      "likes": "298K",
+      "comments": "7.3K",
+      "description": "How to see Northern Lights in Iceland! Best spots and timing.",
+      "tags": ["iceland", "northernlights", "aurora", "winter", "nature"],
+      "createdAt": "2023-12-25",
+      "difficulty": "hard",
+      "budget": "$800-1200"
+    },
+    {
+      "id": 10,
+      "title": "Rome Historical Sites",
+      "creator": {
+        "name": "RomanHistory",
+        "avatar": "https://i.pravatar.cc/40?img=10",
+        "followers": "134K"
+      },
+      "platform": "youtube",
+      "videoId": "rome_historical_sites",
+      "thumbnail": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&h=600&fit=crop",
+      "duration": "0:50",
+      "views": "1.4M",
+      "likes": "76K",
+      "comments": "1.5K",
+      "description": "Rome's historical sites in one day! Colosseum, Forum, Pantheon.",
+      "tags": ["rome", "history", "colosseum", "forum", "pantheon"],
+      "createdAt": "2023-12-22",
+      "difficulty": "medium",
+      "budget": "$400-600"
+    }
+  ]
+}
