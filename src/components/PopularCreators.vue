@@ -155,8 +155,8 @@ export default {
       event.target.src = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=300&fit=crop'
     },
     handleAvatarError(event) {
-      // Fallback to a default avatar
-      event.target.src = 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face'
+      // Fallback to a default avatar - using a more reliable URL
+      event.target.src = 'https://via.placeholder.com/80x80/667eea/ffffff?text=Avatar'
     }
   }
 }
