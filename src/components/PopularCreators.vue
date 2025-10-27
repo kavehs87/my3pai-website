@@ -190,7 +190,6 @@ export default {
 .creator-cover {
   position: relative;
   height: 200px;
-  overflow: hidden;
 }
 
 .creator-cover img {
@@ -198,6 +197,8 @@ export default {
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
 }
 
 .creator-card:hover .creator-cover img {
@@ -221,7 +222,6 @@ export default {
   height: 80px;
   border-radius: 50%;
   border: 4px solid white;
-  overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -229,6 +229,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .verified-badge {
