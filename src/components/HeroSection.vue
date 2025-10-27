@@ -6,9 +6,9 @@
           <span class="hero-title-text">Ask Anything</span>
         </h1>
         
-        <div class="prompt-container" style="max-width: 900px !important; width: 900px !important;">
-          <div class="prompt-bar" style="width: 900px !important; max-width: 900px !important; display: flex !important;">
-            <i class="fas fa-robot" style="flex-shrink: 0 !important;"></i>
+        <div class="prompt-container">
+          <div class="prompt-bar">
+            <i class="fas fa-robot"></i>
             <input 
               type="text" 
               placeholder="Ask our AI: 'Plan a 5-day trip to Japan' or 'Find itineraries for families with kids'"
@@ -16,9 +16,8 @@
               @input="handleInput"
               @focus="showSuggestions = true"
               @blur="hideSuggestions"
-              style="flex: 1 !important; min-width: 0 !important; width: 100% !important;"
             >
-            <button class="prompt-btn" @click="handleSubmit" :disabled="!prompt.trim()" style="flex-shrink: 0 !important;">
+            <button class="prompt-btn" @click="handleSubmit" :disabled="!prompt.trim()">
               Search
             </button>
           </div>
@@ -396,12 +395,6 @@ export default {
 }
 </script>
 
-<style>
-.hero .container {
-  max-width: 1400px !important;
-}
-</style>
-
 <style scoped>
 .hero {
   background: #ffffff;
@@ -440,6 +433,7 @@ export default {
   max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
+  width: 100%;
 }
 
 .prompt-bar {
@@ -452,6 +446,7 @@ export default {
   border: 1px solid #e2e8f0;
   transition: all 0.3s ease;
   width: 100%;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -705,6 +700,10 @@ export default {
     padding: 60px 0;
   }
   
+  .hero-content {
+    padding: 0 var(--spacing-md);
+  }
+  
   .hero-title {
     font-size: 32px;
   }
@@ -713,9 +712,17 @@ export default {
     font-size: 16px;
   }
   
+  .prompt-container {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
   .prompt-bar {
     padding: 12px 16px;
-    margin: 0 16px;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
   }
   
   .prompt-bar input {
@@ -723,10 +730,12 @@ export default {
   }
   
   .suggestions {
-    left: 16px;
-    right: 16px;
+    left: 0;
+    right: 0;
     transform: none;
     min-width: auto;
+    width: 100%;
+    max-width: 100%;
   }
   
   .suggestion-items {
