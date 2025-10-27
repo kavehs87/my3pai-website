@@ -325,7 +325,7 @@ export default {
   border-bottom: 1px solid var(--border-light);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1001;
 }
 
 .prompt-container {
