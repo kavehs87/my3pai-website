@@ -30,7 +30,7 @@
         <!-- User Profile -->
         <div class="user-profile">
           <div class="profile-picture">
-            <img src="https://i.pravatar.cc/40?img=1" alt="Profile" />
+            <img src="https://i.pravatar.cc/40?img=41" alt="Profile" />
           </div>
         </div>
 
@@ -56,7 +56,7 @@
             <span>USD</span>
           </div>
           <div class="mobile-profile">
-            <img src="https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=40&h=40&fit=crop" alt="Profile" />
+            <img src="https://i.pravatar.cc/40?img=41" alt="Profile" />
           </div>
         </div>
       </div>
@@ -283,7 +283,7 @@ export default {
   }
 
   .mobile-menu {
-    display: block;
+    display: none;
   }
 
   .mobile-menu.active {
