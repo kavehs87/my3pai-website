@@ -177,7 +177,6 @@ export default {
 .creator-card {
   background: var(--bg-primary);
   border-radius: var(--radius-xl);
-  overflow: hidden;
   box-shadow: 0 4px 20px var(--shadow-light);
   transition: all var(--transition-normal);
   cursor: pointer;
@@ -207,12 +206,13 @@ export default {
 
 .creator-overlay {
   position: absolute;
-  bottom: -30px;
+  bottom: -40px;
   left: 20px;
   right: 20px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  z-index: 10;
 }
 
 .creator-avatar {
