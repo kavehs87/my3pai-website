@@ -1,145 +1,65 @@
 <template>
-  <section class="ai-hero">
+  <section class="ai-prompt-bar">
     <div class="container">
-      <div class="ai-hero-content">
-        <!-- Main Title -->
-        <h1 class="ai-hero-title">
-          Share your dream trip.<br>
-          <span class="ai-hero-subtitle">I'll map the way.</span>
-        </h1>
-
-        <!-- AI Prompt Interface -->
-        <div class="ai-prompt-container">
-          <div class="ai-prompt-box">
-            <!-- Voice Input Button -->
-            <button 
-              class="voice-btn" 
-              :class="{ 'recording': isRecording }"
-              @click="toggleVoiceRecording"
-              :disabled="isProcessing"
-            >
-              <i class="fas fa-microphone" v-if="!isRecording"></i>
-              <i class="fas fa-stop" v-else></i>
-            </button>
-
-            <!-- Text Input -->
-            <div class="input-container">
-              <textarea
-                v-model="prompt"
-                @input="handleInput"
-                @keydown="handleKeydown"
-                @paste="handlePaste"
-                placeholder="Describe your dream trip... Where do you want to go? What do you want to experience?"
-                class="ai-prompt-input"
-                :disabled="isProcessing"
-                ref="promptInput"
-              ></textarea>
-              
-              <!-- Image Upload Area -->
-              <div 
-                class="image-upload-area"
-                :class="{ 'drag-over': isDragOver, 'has-image': uploadedImage }"
-                @click="triggerFileInput"
-                @dragover.prevent="handleDragOver"
-                @dragleave.prevent="handleDragLeave"
-                @drop.prevent="handleDrop"
-              >
-                <input
-                  ref="fileInput"
-                  type="file"
-                  accept="image/*"
-                  @change="handleFileSelect"
-                  style="display: none"
-                />
-                
-                <div v-if="!uploadedImage" class="upload-placeholder">
-                  <i class="fas fa-image"></i>
-                  <span>Add photos</span>
-                </div>
-                
-                <div v-else class="uploaded-image">
-                  <img :src="uploadedImage" alt="Uploaded image" />
-                  <button class="remove-image" @click.stop="removeImage">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Send Button -->
-            <button 
-              class="send-btn"
-              @click="handleSubmit"
-              :disabled="!prompt.trim() || isProcessing"
-              :class="{ 'processing': isProcessing }"
-            >
-              <i class="fas fa-paper-plane" v-if="!isProcessing"></i>
-              <i class="fas fa-spinner fa-spin" v-else></i>
-            </button>
-          </div>
-
-          <!-- Suggestions -->
-          <div class="ai-suggestions" v-if="showSuggestions && suggestions.length > 0">
-            <div class="suggestion-item" 
-                 v-for="(suggestion, index) in suggestions" 
-                 :key="index"
-                 @click="selectSuggestion(suggestion)"
-            >
-              <i class="fas fa-lightbulb"></i>
-              <span>{{ suggestion }}</span>
-            </div>
-          </div>
-
-          <!-- Live Results Preview -->
-          <div class="ai-results-preview" v-if="showResults && liveResults.length > 0">
-            <div class="results-header">
-              <h3>AI is planning your trip...</h3>
-              <div class="processing-indicator">
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-              </div>
-            </div>
-            
-            <div class="results-grid">
-              <div 
-                class="result-card" 
-                v-for="(result, index) in liveResults" 
-                :key="index"
-                @click="selectResult(result)"
-              >
-                <div class="result-type">{{ result.type }}</div>
-                <h4>{{ result.title }}</h4>
-                <p>{{ result.description }}</p>
-                <div class="result-meta">
-                  <span class="result-location">
-                    <i class="fas fa-map-marker-alt"></i>
-                    {{ result.location }}
-                  </span>
-                  <span class="result-duration">
-                    <i class="fas fa-clock"></i>
-                    {{ result.duration }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div class="prompt-container">
+        <!-- Main Prompt Input -->
+        <div class="prompt-input-wrapper">
+          <input
+            v-model="prompt"
+            @input="handleInput"
+            @keydown="handleKeydown"
+            @focus="showSuggestions = true"
+            @blur="hideSuggestions"
+            placeholder="Ask anything"
+            class="prompt-input"
+            ref="promptInput"
+          />
         </div>
 
-        <!-- Features -->
-        <div class="ai-features">
-          <div class="feature">
+        <!-- Left Side Icons -->
+        <div class="left-icons">
+          <button class="icon-btn" @click="addAttachment" title="Add attachment">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button class="icon-btn" @click="toggleWebSearch" title="Web search">
+            <i class="fas fa-globe"></i>
+          </button>
+          <button class="icon-btn" @click="toggleVision" title="Vision">
+            <i class="fas fa-search"></i>
+          </button>
+          <button class="icon-btn" @click="toggleMouse" title="Mouse mode">
+            <i class="fas fa-mouse-pointer"></i>
+          </button>
+          <button class="icon-btn" @click="toggleGPT" title="GPT mode">
             <i class="fas fa-brain"></i>
-            <span>AI-Powered</span>
-          </div>
-          <div class="feature">
-            <i class="fas fa-users"></i>
-            <span>Creator Itineraries</span>
-          </div>
-          <div class="feature">
-            <i class="fas fa-fork"></i>
-            <span>Fork & Customize</span>
-          </div>
+          </button>
+          <span class="model-indicator">5</span>
+        </div>
+
+        <!-- Right Side Icons -->
+        <div class="right-icons">
+          <button class="icon-btn" @click="toggleRecord" title="Record">
+            <i class="fas fa-circle"></i>
+          </button>
+          <button class="icon-btn" @click="toggleMicrophone" title="Microphone">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button class="send-btn" @click="handleSubmit" :disabled="!prompt.trim()">
+            <i class="fas fa-waveform-lines"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Suggestions Dropdown -->
+      <div class="suggestions-dropdown" v-if="showSuggestions && suggestions.length > 0">
+        <div 
+          class="suggestion-item" 
+          v-for="(suggestion, index) in suggestions" 
+          :key="index"
+          @click="selectSuggestion(suggestion)"
+        >
+          <i class="fas fa-lightbulb"></i>
+          <span>{{ suggestion }}</span>
         </div>
       </div>
     </div>
@@ -152,14 +72,14 @@ export default {
   data() {
     return {
       prompt: '',
-      uploadedImage: null,
-      isRecording: false,
-      isProcessing: false,
-      isDragOver: false,
       showSuggestions: false,
-      showResults: false,
       suggestions: [],
-      liveResults: [],
+      isWebSearchEnabled: false,
+      isVisionEnabled: false,
+      isMouseMode: false,
+      isGPTMode: false,
+      isRecording: false,
+      isMicrophoneActive: false,
       dummyData: {
         destinations: [
           { name: 'Tokyo', country: 'Japan', highlights: ['Temples', 'Food', 'Culture'] },
@@ -168,21 +88,6 @@ export default {
           { name: 'New York', country: 'USA', highlights: ['Skyscrapers', 'Broadway', 'Museums'] },
           { name: 'Santorini', country: 'Greece', highlights: ['Sunsets', 'Beaches', 'Architecture'] },
           { name: 'Dubai', country: 'UAE', highlights: ['Modern City', 'Desert', 'Shopping'] }
-        ],
-        hotels: [
-          { name: 'Luxury Resort', location: 'Maldives', rating: 5, price: '$500/night' },
-          { name: 'Boutique Hotel', location: 'Paris', rating: 4, price: '$200/night' },
-          { name: 'Beach Villa', location: 'Bali', rating: 5, price: '$300/night' }
-        ],
-        restaurants: [
-          { name: 'Fine Dining', cuisine: 'French', location: 'Paris', rating: 5 },
-          { name: 'Street Food', cuisine: 'Thai', location: 'Bangkok', rating: 4 },
-          { name: 'Sushi Bar', cuisine: 'Japanese', location: 'Tokyo', rating: 5 }
-        ],
-        attractions: [
-          { name: 'Eiffel Tower', category: 'Landmark', location: 'Paris', duration: '2 hours' },
-          { name: 'Temple Visit', category: 'Culture', location: 'Kyoto', duration: '3 hours' },
-          { name: 'Beach Day', category: 'Relaxation', location: 'Maldives', duration: 'Full day' }
         ]
       }
     }
@@ -190,23 +95,12 @@ export default {
   methods: {
     handleInput() {
       this.generateSuggestions()
-      this.generateLiveResults()
     },
     
     handleKeydown(event) {
-      if (event.key === 'Enter' && !event.shiftKey) {
+      if (event.key === 'Enter') {
         event.preventDefault()
         this.handleSubmit()
-      }
-    },
-    
-    handlePaste(event) {
-      const items = event.clipboardData.items
-      for (let item of items) {
-        if (item.type.indexOf('image') !== -1) {
-          const file = item.getAsFile()
-          this.handleImageUpload(file)
-        }
       }
     },
     
@@ -242,353 +136,174 @@ export default {
       this.showSuggestions = true
     },
     
-    generateLiveResults() {
-      if (!this.prompt.trim()) {
-        this.showResults = false
-        return
-      }
-      
-      const query = this.prompt.toLowerCase()
-      this.liveResults = []
-      
-      // Generate results based on query
-      if (query.includes('japan') || query.includes('tokyo')) {
-        this.liveResults.push(
-          {
-            type: 'Destination',
-            title: 'Tokyo, Japan',
-            description: 'Experience the perfect blend of traditional culture and modern innovation',
-            location: 'Japan',
-            duration: '7 days'
-          },
-          {
-            type: 'Attraction',
-            title: 'Senso-ji Temple',
-            description: 'Tokyo\'s oldest temple with traditional architecture and cultural significance',
-            location: 'Asakusa, Tokyo',
-            duration: '2 hours'
-          }
-        )
-      } else if (query.includes('beach') || query.includes('tropical')) {
-        this.liveResults.push(
-          {
-            type: 'Destination',
-            title: 'Maldives',
-            description: 'Paradise islands with crystal clear waters and luxury resorts',
-            location: 'Indian Ocean',
-            duration: '5 days'
-          },
-          {
-            type: 'Activity',
-            title: 'Snorkeling Adventure',
-            description: 'Explore vibrant coral reefs and marine life',
-            location: 'Maldives',
-            duration: '3 hours'
-          }
-        )
-      } else {
-        // General results
-        this.liveResults.push(
-          {
-            type: 'Destination',
-            title: 'Paris, France',
-            description: 'The City of Light with world-class art, cuisine, and architecture',
-            location: 'France',
-            duration: '5 days'
-          },
-          {
-            type: 'Experience',
-            title: 'Food Tour',
-            description: 'Discover local cuisine and hidden culinary gems',
-            location: 'Paris',
-            duration: '4 hours'
-          }
-        )
-      }
-      
-      this.showResults = true
-    },
-    
     selectSuggestion(suggestion) {
       this.prompt = suggestion
       this.showSuggestions = false
       this.handleSubmit()
     },
     
-    selectResult(result) {
-      console.log('Selected result:', result)
-      // TODO: Navigate to result detail page
+    hideSuggestions() {
+      setTimeout(() => {
+        this.showSuggestions = false
+      }, 200)
     },
     
     handleSubmit() {
       if (!this.prompt.trim()) return
       
       console.log('AI Prompt submitted:', this.prompt)
-      console.log('Uploaded image:', this.uploadedImage)
+      console.log('Web Search:', this.isWebSearchEnabled)
+      console.log('Vision:', this.isVisionEnabled)
+      console.log('Mouse Mode:', this.isMouseMode)
+      console.log('GPT Mode:', this.isGPTMode)
       
-      this.isProcessing = true
+      // TODO: Integrate with AI backend
       this.showSuggestions = false
-      
-      // Simulate AI processing
-      setTimeout(() => {
-        this.isProcessing = false
-        // TODO: Integrate with AI backend
-      }, 2000)
     },
     
-    toggleVoiceRecording() {
-      if (this.isRecording) {
-        this.stopVoiceRecording()
-      } else {
-        this.startVoiceRecording()
-      }
+    // Icon button handlers
+    addAttachment() {
+      console.log('Add attachment clicked')
+      // TODO: Implement file upload
     },
     
-    startVoiceRecording() {
-      this.isRecording = true
-      // TODO: Implement voice recording
-      console.log('Voice recording started')
+    toggleWebSearch() {
+      this.isWebSearchEnabled = !this.isWebSearchEnabled
+      console.log('Web search toggled:', this.isWebSearchEnabled)
     },
     
-    stopVoiceRecording() {
-      this.isRecording = false
-      // TODO: Process voice input
-      console.log('Voice recording stopped')
+    toggleVision() {
+      this.isVisionEnabled = !this.isVisionEnabled
+      console.log('Vision toggled:', this.isVisionEnabled)
     },
     
-    triggerFileInput() {
-      this.$refs.fileInput.click()
+    toggleMouse() {
+      this.isMouseMode = !this.isMouseMode
+      console.log('Mouse mode toggled:', this.isMouseMode)
     },
     
-    handleFileSelect(event) {
-      const file = event.target.files[0]
-      if (file) {
-        this.handleImageUpload(file)
-      }
+    toggleGPT() {
+      this.isGPTMode = !this.isGPTMode
+      console.log('GPT mode toggled:', this.isGPTMode)
     },
     
-    handleDragOver(event) {
-      this.isDragOver = true
+    toggleRecord() {
+      this.isRecording = !this.isRecording
+      console.log('Recording toggled:', this.isRecording)
     },
     
-    handleDragLeave(event) {
-      this.isDragOver = false
-    },
-    
-    handleDrop(event) {
-      this.isDragOver = false
-      const files = event.dataTransfer.files
-      if (files.length > 0) {
-        this.handleImageUpload(files[0])
-      }
-    },
-    
-    handleImageUpload(file) {
-      if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          this.uploadedImage = e.target.result
-        }
-        reader.readAsDataURL(file)
-      }
-    },
-    
-    removeImage() {
-      this.uploadedImage = null
+    toggleMicrophone() {
+      this.isMicrophoneActive = !this.isMicrophoneActive
+      console.log('Microphone toggled:', this.isMicrophoneActive)
     }
   }
 }
 </script>
 
 <style scoped>
-.ai-hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: var(--spacing-3xl) 0;
-  color: var(--bg-primary);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
+.ai-prompt-bar {
+  background: var(--bg-primary);
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.ai-hero-content {
-  text-align: center;
+.prompt-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--spacing-lg);
-}
-
-.ai-hero-title {
-  font-size: var(--font-size-4xl);
-  font-weight: 700;
-  margin-bottom: var(--spacing-lg);
-  line-height: 1.2;
-}
-
-.ai-hero-subtitle {
-  color: #e2e8f0;
-  font-weight: 400;
-}
-
-.ai-prompt-container {
-  position: relative;
-  max-width: 800px;
-  margin: 0 auto var(--spacing-xl);
-}
-
-.ai-prompt-box {
-  background: var(--bg-primary);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-lg);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: flex-end;
-  gap: var(--spacing-md);
-  position: relative;
-}
-
-.voice-btn {
-  background: var(--secondary-color);
-  color: var(--bg-primary);
-  border: none;
-  border-radius: var(--radius-full);
-  width: 48px;
-  height: 48px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  flex-shrink: 0;
-}
-
-.voice-btn:hover {
-  background: #059669;
-  transform: scale(1.05);
-}
-
-.voice-btn.recording {
-  background: #ef4444;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-.input-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   gap: var(--spacing-md);
+  background: #363636;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-.ai-prompt-input {
+.prompt-input-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.prompt-input {
   width: 100%;
-  min-height: 120px;
+  background: transparent;
   border: none;
   outline: none;
   font-size: var(--font-size-lg);
+  color: var(--text-primary);
   font-family: var(--font-family);
-  resize: none;
+}
+
+.prompt-input::placeholder {
+  color: #9ca3af;
+}
+
+.left-icons,
+.right-icons {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.icon-btn {
   background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
 }
 
-.ai-prompt-input::placeholder {
-  color: var(--text-muted);
-}
-
-.image-upload-area {
-  border: 2px dashed var(--border-light);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  min-height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.image-upload-area:hover,
-.image-upload-area.drag-over {
-  border-color: var(--secondary-color);
-  background: rgba(16, 185, 129, 0.05);
-}
-
-.upload-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
-  color: var(--text-muted);
-}
-
-.upload-placeholder i {
-  font-size: var(--font-size-xl);
-}
-
-.uploaded-image {
-  position: relative;
-  width: 100%;
-  height: 80px;
-}
-
-.uploaded-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-}
-
-.remove-image {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: var(--radius-full);
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 12px;
+.model-indicator {
+  color: #9ca3af;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin-left: var(--spacing-xs);
 }
 
 .send-btn {
-  background: var(--secondary-color);
-  color: var(--bg-primary);
+  background: var(--bg-primary);
   border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: var(--spacing-sm);
   border-radius: var(--radius-full);
-  width: 48px;
-  height: 48px;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .send-btn:hover:not(:disabled) {
-  background: #059669;
+  background: var(--secondary-color);
+  color: var(--bg-primary);
   transform: scale(1.05);
 }
 
 .send-btn:disabled {
-  background: var(--text-muted);
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.send-btn.processing {
-  background: var(--secondary-color);
-}
-
-.ai-suggestions {
+.suggestions-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
@@ -599,6 +314,8 @@ export default {
   padding: var(--spacing-md);
   margin-top: var(--spacing-sm);
   z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .suggestion-item {
@@ -620,154 +337,55 @@ export default {
   font-size: var(--font-size-sm);
 }
 
-.ai-results-preview {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  padding: var(--spacing-lg);
-  margin-top: var(--spacing-sm);
-  z-index: 1000;
-}
-
-.results-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-lg);
-}
-
-.results-header h3 {
+.suggestion-item span {
   color: var(--text-primary);
-  font-size: var(--font-size-lg);
-  margin: 0;
+  font-size: var(--font-size-sm);
 }
 
-.processing-indicator {
-  display: flex;
-  gap: var(--spacing-xs);
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  background: var(--secondary-color);
-  border-radius: var(--radius-full);
-  animation: bounce 1.4s infinite ease-in-out;
-}
-
-.dot:nth-child(1) { animation-delay: -0.32s; }
-.dot:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
-}
-
-.results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.result-card {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-}
-
-.result-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-.result-type {
+/* Active states for toggle buttons */
+.icon-btn.active {
   background: var(--secondary-color);
   color: var(--bg-primary);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  display: inline-block;
-  margin-bottom: var(--spacing-sm);
 }
 
-.result-card h4 {
-  color: var(--text-primary);
-  font-size: var(--font-size-base);
-  margin: 0 0 var(--spacing-sm) 0;
+.icon-btn.active:hover {
+  background: #059669;
 }
 
-.result-card p {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  margin: 0 0 var(--spacing-sm) 0;
-  line-height: 1.4;
+/* Recording animation */
+.icon-btn.recording {
+  animation: pulse 1.5s infinite;
 }
 
-.result-meta {
-  display: flex;
-  gap: var(--spacing-md);
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
-}
-
-.result-meta i {
-  margin-right: var(--spacing-xs);
-}
-
-.ai-features {
-  display: flex;
-  justify-content: center;
-  gap: var(--spacing-xl);
-  margin-top: var(--spacing-xl);
-}
-
-.feature {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.feature i {
-  font-size: var(--font-size-xl);
-  color: var(--secondary-color);
-}
-
-.feature span {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 @media (max-width: 768px) {
-  .ai-hero-title {
-    font-size: var(--font-size-3xl);
+  .prompt-container {
+    padding: var(--spacing-sm) var(--spacing-md);
+    gap: var(--spacing-sm);
   }
   
-  .ai-prompt-box {
-    flex-direction: column;
-    align-items: stretch;
+  .left-icons,
+  .right-icons {
+    gap: var(--spacing-xs);
   }
   
-  .voice-btn,
+  .icon-btn {
+    width: 28px;
+    height: 28px;
+    padding: var(--spacing-xs);
+  }
+  
   .send-btn {
-    align-self: center;
+    width: 36px;
+    height: 36px;
   }
   
-  .ai-features {
-    flex-direction: column;
-    gap: var(--spacing-md);
-  }
-  
-  .results-grid {
-    grid-template-columns: 1fr;
+  .model-indicator {
+    display: none;
   }
 }
 </style>
