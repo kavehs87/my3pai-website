@@ -21,26 +21,10 @@
           <button class="icon-btn" @click="addAttachment" title="Add attachment">
             <i class="fas fa-plus"></i>
           </button>
-          <button class="icon-btn" @click="toggleWebSearch" title="Web search">
-            <i class="fas fa-globe"></i>
-          </button>
-          <button class="icon-btn" @click="toggleVision" title="Vision">
-            <i class="fas fa-search"></i>
-          </button>
-          <button class="icon-btn" @click="toggleMouse" title="Mouse mode">
-            <i class="fas fa-mouse-pointer"></i>
-          </button>
-          <button class="icon-btn" @click="toggleGPT" title="GPT mode">
-            <i class="fas fa-brain"></i>
-          </button>
-          <span class="model-indicator">5</span>
         </div>
 
         <!-- Right Side Icons -->
         <div class="right-icons">
-          <button class="icon-btn" @click="toggleRecord" title="Record">
-            <i class="fas fa-circle"></i>
-          </button>
           <button class="icon-btn" @click="toggleMicrophone" title="Microphone">
             <i class="fas fa-microphone"></i>
           </button>
@@ -74,11 +58,6 @@ export default {
       prompt: '',
       showSuggestions: false,
       suggestions: [],
-      isWebSearchEnabled: false,
-      isVisionEnabled: false,
-      isMouseMode: false,
-      isGPTMode: false,
-      isRecording: false,
       isMicrophoneActive: false,
       dummyData: {
         destinations: [
@@ -152,10 +131,6 @@ export default {
       if (!this.prompt.trim()) return
       
       console.log('AI Prompt submitted:', this.prompt)
-      console.log('Web Search:', this.isWebSearchEnabled)
-      console.log('Vision:', this.isVisionEnabled)
-      console.log('Mouse Mode:', this.isMouseMode)
-      console.log('GPT Mode:', this.isGPTMode)
       
       // TODO: Integrate with AI backend
       this.showSuggestions = false
@@ -165,31 +140,6 @@ export default {
     addAttachment() {
       console.log('Add attachment clicked')
       // TODO: Implement file upload
-    },
-    
-    toggleWebSearch() {
-      this.isWebSearchEnabled = !this.isWebSearchEnabled
-      console.log('Web search toggled:', this.isWebSearchEnabled)
-    },
-    
-    toggleVision() {
-      this.isVisionEnabled = !this.isVisionEnabled
-      console.log('Vision toggled:', this.isVisionEnabled)
-    },
-    
-    toggleMouse() {
-      this.isMouseMode = !this.isMouseMode
-      console.log('Mouse mode toggled:', this.isMouseMode)
-    },
-    
-    toggleGPT() {
-      this.isGPTMode = !this.isGPTMode
-      console.log('GPT mode toggled:', this.isGPTMode)
-    },
-    
-    toggleRecord() {
-      this.isRecording = !this.isRecording
-      console.log('Recording toggled:', this.isRecording)
     },
     
     toggleMicrophone() {
@@ -267,13 +217,6 @@ export default {
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
-}
-
-.model-indicator {
-  color: #9ca3af;
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  margin-left: var(--spacing-xs);
 }
 
 .send-btn {
@@ -382,10 +325,6 @@ export default {
   .send-btn {
     width: 36px;
     height: 36px;
-  }
-  
-  .model-indicator {
-    display: none;
   }
 }
 </style>
