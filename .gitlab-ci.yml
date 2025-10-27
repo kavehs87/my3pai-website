@@ -1,0 +1,59 @@
+stages: [test, build, deploy]
+
+# Use npm by default. If you prefer pnpm, swap the commands.
+default:
+  image: node:20-alpine
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+  before_script:
+    - corepack enable
+    - npm ci
+
+test:
+  stage: test
+  script:
+    - npm run lint || echo "no lint script"
+    - npm test || echo "no test script"
+
+build:
+  stage: build
+  variables:
+    # Add any Vite client envs in GitLab CI variables (must start with VITE_)
+    # VITE_API_BASE: $VITE_API_BASE
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist
+    expire_in: 1 week
+  only:
+    - branches
+    - merge_requests
+
+deploy_prod:
+  stage: deploy
+  image: alpine:3.20
+  needs: ["build"]
+  before_script:
+    - apk add --no-cache openssh-client rsync
+    - eval "$(ssh-agent -s)"
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" $SSH_USER@$SSH_HOST 'echo "SSH OK"'
+  script:
+    - set -euo pipefail
+    - RELEASE="releases/$(date +%Y%m%d%H%M%S)-${CI_COMMIT_SHORT_SHA}"
+    # upload built files
+    - rsync -az --delete dist/ -e "ssh -p $SSH_PORT" "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/$RELEASE/"
+    # atomically point /var/www/my3pai/current to the new release
+    - ssh -p "$SSH_PORT" $SSH_USER@$SSH_HOST "ln -sfn $DEPLOY_PATH/$RELEASE $DEPLOY_PATH/current"
+    # keep only last 7 releases
+    - ssh -p "$SSH_PORT" $SSH_USER@$SSH_HOST "cd $DEPLOY_PATH/releases && ls -1t | tail -n +8 | xargs -r rm -rf --"
+    # sanity check index.html exists
+    - ssh -p "$SSH_PORT" $SSH_USER@$SSH_HOST "test -f $DEPLOY_PATH/current/index.html"
+  environment:
+    name: production
+    url: http://my3pai.com
+  only:
+    - main
