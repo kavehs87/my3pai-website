@@ -14,10 +14,10 @@
           @click="selectCreator(creator)"
         >
           <div class="creator-cover">
-            <img :src="creator.coverImage" :alt="creator.name" />
+            <img :src="creator.coverImage" :alt="creator.name" @error="handleImageError" />
             <div class="creator-overlay">
               <div class="creator-avatar">
-                <img :src="creator.avatar" :alt="creator.name" />
+                <img :src="creator.avatar" :alt="creator.name" @error="handleAvatarError" />
                 <div class="verified-badge" v-if="creator.verified">
                   <i class="fas fa-check"></i>
                 </div>
@@ -76,7 +76,7 @@
             <div class="featured-plan">
               <h4>Featured Plan</h4>
               <div class="plan-preview" @click.stop="selectPlan(creator.featuredPlan)">
-                <img :src="creator.featuredPlan.thumbnail" :alt="creator.featuredPlan.title" />
+                <img :src="creator.featuredPlan.thumbnail" :alt="creator.featuredPlan.title" @error="handleImageError" />
                 <div class="plan-info">
                   <h5>{{ creator.featuredPlan.title }}</h5>
                   <div class="plan-stats">
@@ -102,7 +102,7 @@
                   class="mini-plan"
                   @click.stop="selectPlan(plan)"
                 >
-                  <img :src="plan.thumbnail" :alt="plan.title" />
+                  <img :src="plan.thumbnail" :alt="plan.title" @error="handleImageError" />
                   <div class="mini-plan-overlay">
                     <span class="mini-plan-views">{{ formatNumber(plan.views) }}</span>
                   </div>
@@ -149,6 +149,14 @@ export default {
     selectPlan(plan) {
       console.log('Selected plan:', plan)
       // TODO: Navigate to plan detail page
+    },
+    handleImageError(event) {
+      // Fallback to a default cover image
+      event.target.src = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=300&fit=crop'
+    },
+    handleAvatarError(event) {
+      // Fallback to a default avatar
+      event.target.src = 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face'
     }
   }
 }
