@@ -10,7 +10,7 @@
             @keydown="handleKeydown"
             @focus="showSuggestions = true"
             @blur="hideSuggestions"
-            placeholder="Ask anything"
+            placeholder="Share your dream trip. I'll map the way."
             class="prompt-input"
             ref="promptInput"
           />
