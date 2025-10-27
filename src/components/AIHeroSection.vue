@@ -25,7 +25,7 @@
             @keydown="handleKeydown"
             @focus="showSuggestions = true"
             @blur="hideSuggestions"
-            placeholder="Share your dream trip. I'll map the way."
+            :placeholder="responsivePlaceholder"
             class="prompt-input"
             ref="promptInput"
           />
@@ -106,6 +106,7 @@ export default {
       audioBlob: null,
       recordingDuration: 0,
       recordingStartTime: null,
+      isMobile: false,
       dummyData: {
         destinations: [
           { name: 'Tokyo', country: 'Japan', highlights: ['Temples', 'Food', 'Culture'] },
@@ -118,7 +119,25 @@ export default {
       }
     }
   },
+  computed: {
+    responsivePlaceholder() {
+      return this.isMobile 
+        ? "Share your dream trip..." 
+        : "Share your dream trip. I'll map the way."
+    }
+  },
+  mounted() {
+    this.checkScreenSize()
+    window.addEventListener('resize', this.checkScreenSize)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.checkScreenSize)
+  },
   methods: {
+    checkScreenSize() {
+      this.isMobile = window.innerWidth <= 768
+    },
+    
     handleInput() {
       this.generateSuggestions()
     },
