@@ -4,7 +4,6 @@ stages: [test, build, deploy]
 default:
   tags: [docker]
   image: node:20-alpine
-  pull_policy: if-not-present
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
@@ -15,11 +14,13 @@ default:
 
 test:
   stage: test
+  pull_policy: if-not-present
   script:
     - echo "Skipping lint and test - not configured yet"
 
 build:
   stage: build
+  pull_policy: if-not-present
   variables:
     # Add any Vite client envs in GitLab CI variables (must start with VITE_)
     # VITE_API_BASE: $VITE_API_BASE
