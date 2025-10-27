@@ -42,7 +42,7 @@
           :key="index"
           @click="selectSuggestion(suggestion)"
         >
-          <i class="fas fa-lightbulb"></i>
+          <i class="far fa-lightbulb"></i>
           <span>{{ suggestion }}</span>
         </div>
       </div>
