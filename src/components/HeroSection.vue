@@ -520,8 +520,8 @@ export default {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   padding: 20px;
   margin-top: 8px;
-  width: 900px;
-  max-width: 900px;
+  width: 100%;
+  max-width: 1000px;
   z-index: 1000;
 }
 
