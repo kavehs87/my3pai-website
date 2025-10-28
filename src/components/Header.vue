@@ -3,10 +3,10 @@
     <div class="container">
       <div class="header-content">
         <!-- Logo -->
-        <div class="logo" style="max-width: 80px; width: 100%;">
+        <router-link to="/" class="logo" style="max-width: 80px; width: 100%;">
           <img src="/logo-small.png" alt="my3pai.com Logo" class="logo-image"
             style="width: 100%; height: auto; object-fit: contain; display: block;" />
-        </div>
+        </router-link>
 
         <!-- Navigation -->
         <nav class="nav">
@@ -101,6 +101,13 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: opacity var(--transition-normal);
+}
+
+.logo:hover {
+  opacity: 0.8;
 }
 
 .logo-image {
