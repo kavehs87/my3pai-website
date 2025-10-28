@@ -215,11 +215,11 @@ export default {
   methods: {
     socialIcon(platform) {
       const p = (platform || '').toLowerCase()
-      if (p.includes('youtube')) return 'fab fa-youtube'
-      if (p.includes('instagram')) return 'fab fa-instagram'
-      if (p.includes('tiktok')) return 'fab fa-tiktok'
-      if (p.includes('twitter') || p.includes('x')) return 'fab fa-x-twitter'
-      return 'fas fa-link'
+      if (p.includes('youtube')) return 'fa-brands fa-youtube'
+      if (p.includes('instagram')) return 'fa-brands fa-instagram'
+      if (p.includes('tiktok')) return 'fa-brands fa-tiktok'
+      if (p.includes('twitter') || p.includes('x')) return 'fa-brands fa-x-twitter'
+      return 'fa-solid fa-link'
     },
 
     countryFlag(code) {
@@ -530,8 +530,8 @@ export default {
 
 .social-links { margin-bottom: var(--spacing-xl); }
 .social-items { display: flex; flex-wrap: wrap; column-gap: 16px; row-gap: 12px; }
-.social-link { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-secondary); border-radius: var(--radius-full); color: var(--text-primary); text-decoration: none; transition: opacity var(--transition-normal); }
-.social-link i { width: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.social-link { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--bg-secondary); border-radius: var(--radius-full); color: var(--text-primary); text-decoration: none; transition: opacity var(--transition-normal); }
+.social-link i { width: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; color: var(--text-secondary); }
 .social-link:hover { opacity: 0.85; }
 
 .partnership-items { display: flex; flex-direction: column; gap: 10px; }
