@@ -143,6 +143,10 @@ export default {
   created() {
     this.loadCreator()
   },
+  mounted() {
+    // Scroll to top when profile page loads
+    window.scrollTo(0, 0)
+  },
   methods: {
     loadCreator() {
       const creatorId = parseInt(this.$route.params.id)
@@ -246,7 +250,7 @@ export default {
 }
 
 .cover-image {
-  height: 300px;
+  height: 400px;
   position: relative;
   overflow: hidden;
 }
