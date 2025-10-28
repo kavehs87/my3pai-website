@@ -30,8 +30,27 @@
 
         <!-- User Profile / Login -->
         <div class="user-profile">
-          <div v-if="isLoggedIn" class="profile-picture">
-            <img :src="user.avatar || 'https://i.pravatar.cc/40?img=41'" :alt="user.name" />
+          <div v-if="isLoggedIn" class="profile-dropdown">
+            <div class="profile-picture" @click="toggleProfileDropdown">
+              <img :src="user.avatar || user.picture || user.photo_url || 'https://i.pravatar.cc/40?img=41'" :alt="user.name || user.display_name" />
+            </div>
+            <div v-if="showProfileDropdown" class="dropdown-menu">
+              <div class="dropdown-header">
+                <div class="user-info">
+                  <div class="user-name">{{ user.name || user.display_name || user.first_name + ' ' + user.last_name }}</div>
+                  <div class="user-email">{{ user.email }}</div>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <a href="#" class="dropdown-item">Profile</a>
+              <a href="#" class="dropdown-item">Settings</a>
+              <a href="#" class="dropdown-item">My Trips</a>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item logout-btn" @click="logout" :disabled="isLoggingOut">
+                <span v-if="isLoggingOut" class="loading-spinner"></span>
+                {{ isLoggingOut ? 'Logging out...' : 'Logout' }}
+              </button>
+            </div>
           </div>
           <button v-else class="login-btn" @click="showLoginModal">
             <i class="fas fa-user"></i>
@@ -62,7 +81,7 @@
             <span>USD</span>
           </div>
           <div class="mobile-profile">
-            <img src="https://i.pravatar.cc/40?img=41" alt="Profile" />
+            <img :src="user.avatar || user.picture || user.photo_url || 'https://i.pravatar.cc/40?img=41'" :alt="user.name || user.display_name || 'Profile'" />
           </div>
         </div>
       </div>
@@ -89,6 +108,8 @@
 <script>
 import LoginModal from './LoginModal.vue'
 import SignupModal from './SignupModal.vue'
+import apiService from '../services/api.js'
+import eventBus from '../utils/eventBus.js'
 
 export default {
   name: 'Header',
@@ -101,13 +122,32 @@ export default {
       mobileMenuOpen: false,
       showLogin: false,
       showSignup: false,
+      showProfileDropdown: false,
       isLoggedIn: false,
+      isLoggingOut: false,
       user: {
         name: '',
         email: '',
         avatar: ''
       }
     }
+  },
+  async mounted() {
+    // Check if user is already logged in on page load
+    await this.checkAuthStatus()
+    
+    // Listen for auth success events from OAuth callback
+    eventBus.on('auth-success', this.handleAuthSuccess)
+    
+    // Add click outside handler for dropdown
+    document.addEventListener('click', this.handleClickOutside)
+  },
+  beforeUnmount() {
+    // Clean up event listener
+    eventBus.off('auth-success', this.handleAuthSuccess)
+    
+    // Remove click outside handler
+    document.removeEventListener('click', this.handleClickOutside)
   },
   methods: {
     toggleMobileMenu() {
@@ -141,6 +181,55 @@ export default {
     handleSwitchToLogin() {
       this.showSignup = false
       this.showLogin = true
+    },
+    async checkAuthStatus() {
+      try {
+        const result = await apiService.getCurrentUser()
+        if (result.success) {
+          this.isLoggedIn = true
+          this.user = result.data
+        } else {
+          this.isLoggedIn = false
+          this.user = { name: '', email: '', avatar: '' }
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        this.isLoggedIn = false
+        this.user = { name: '', email: '', avatar: '' }
+      }
+    },
+    async logout() {
+      this.isLoggingOut = true
+      try {
+        await apiService.logout()
+        this.isLoggedIn = false
+        this.user = { name: '', email: '', avatar: '' }
+        this.showProfileDropdown = false
+        // Optionally redirect to home page
+        this.$router.push('/')
+      } catch (error) {
+        console.error('Logout failed:', error)
+        // Still logout locally even if API call fails
+        this.isLoggedIn = false
+        this.user = { name: '', email: '', avatar: '' }
+        this.showProfileDropdown = false
+      } finally {
+        this.isLoggingOut = false
+      }
+    },
+    toggleProfileDropdown() {
+      this.showProfileDropdown = !this.showProfileDropdown
+    },
+    handleAuthSuccess(userData) {
+      this.isLoggedIn = true
+      this.user = userData
+      this.showProfileDropdown = false
+    },
+    handleClickOutside(event) {
+      // Close dropdown if clicking outside of it
+      if (this.showProfileDropdown && !this.$el.querySelector('.profile-dropdown').contains(event.target)) {
+        this.showProfileDropdown = false
+      }
     }
   }
 }
@@ -287,6 +376,96 @@ export default {
 
 .login-btn i {
   font-size: var(--font-size-sm);
+}
+
+/* Profile Dropdown Styles */
+.profile-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 10000;
+  margin-top: var(--spacing-sm);
+}
+
+.dropdown-header {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.user-info {
+  text-align: center;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.user-email {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: var(--spacing-xs) 0;
+}
+
+.dropdown-item {
+  display: block;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: var(--transition-normal);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+
+.dropdown-item:hover {
+  background: var(--bg-secondary);
+}
+
+.logout-btn {
+  color: var(--error-color, #ef4444) !important;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.logout-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .mobile-menu-toggle {

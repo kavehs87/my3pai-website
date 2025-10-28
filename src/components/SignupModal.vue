@@ -158,7 +158,10 @@ export default {
           firstName: this.form.firstName,
           lastName: this.form.lastName,
           email: this.form.email,
-          name: `${this.form.firstName} ${this.form.lastName}`
+          name: `${this.form.firstName} ${this.form.lastName}`,
+          display_name: `${this.form.firstName} ${this.form.lastName}`,
+          picture: 'https://i.pravatar.cc/40?img=41',
+          avatar: 'https://i.pravatar.cc/40?img=41'
         })
         
         this.closeModal()
@@ -171,8 +174,9 @@ export default {
     },
     
     signupWithGoogle() {
-      console.log('Google signup')
-      // TODO: Implement Google OAuth
+      // Redirect to Laravel Google OAuth endpoint
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+      window.location.href = `${apiBaseUrl}/auth/google`
     },
     
     switchToLogin() {

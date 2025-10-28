@@ -343,8 +343,8 @@ export default {
   padding: var(--spacing-lg) 0;
   border-bottom: 1px solid var(--border-light);
   position: sticky;
-  top: 0;
-  z-index: 1001;
+  top: 65px;
+  z-index: 999;
 }
 
 .prompt-container {

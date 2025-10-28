@@ -94,30 +94,39 @@ export default {
     async handleLogin() {
       this.isLoading = true
       try {
-        // TODO: Replace with actual API call
+        // For now, we'll simulate login since you only have Google OAuth
+        // In a real app, you'd have a POST /api/login endpoint
         console.log('Login attempt:', this.form)
         
-        // Simulate API call
+        // Simulate API call (replace with actual login endpoint when available)
         await new Promise(resolve => setTimeout(resolve, 1500))
         
-        // Emit success event
-        this.$emit('login-success', {
+        // For demo purposes, create a mock user
+        const mockUser = {
           email: this.form.email,
-          name: 'John Doe' // This would come from API
-        })
+          name: 'John Doe',
+          display_name: 'John Doe',
+          picture: 'https://i.pravatar.cc/40?img=41',
+          avatar: 'https://i.pravatar.cc/40?img=41'
+        }
+        
+        // Emit success event
+        this.$emit('login-success', mockUser)
         
         this.closeModal()
       } catch (error) {
         console.error('Login failed:', error)
-        // TODO: Show error message
+        // TODO: Show error message to user
+        alert('Login failed. Please try again.')
       } finally {
         this.isLoading = false
       }
     },
     
     loginWithGoogle() {
-      console.log('Google login')
-      // TODO: Implement Google OAuth
+      // Redirect to Laravel Google OAuth endpoint
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+      window.location.href = `${apiBaseUrl}/auth/google`
     },
     
     switchToSignup() {
