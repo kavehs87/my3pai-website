@@ -25,7 +25,7 @@
           </div>
         </div>
 
-        <!-- Timeline/editor below, centered with max-width -->
+        <!-- Timeline/editor below, full width under grid -->
         <div class="editor editor-max">
           <Timeline :hours="day.hours" />
           <div class="layers">
@@ -88,7 +88,7 @@ export default {
 .studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); }
 .main { display: flex; flex-direction: column; gap: var(--spacing-lg); }
 .editor { margin-top: var(--spacing-xl); }
-.editor-max { max-width: 1200px; margin: var(--spacing-xl) auto 0; padding: 0 var(--spacing-lg); }
+.editor-max { width: 100%; max-width: none; margin: var(--spacing-xl) 0 0; padding: 0 var(--spacing-lg); }
 .layers { display: flex; flex-direction: column; gap: 10px; }
 
 @media (max-width: 1024px) {
