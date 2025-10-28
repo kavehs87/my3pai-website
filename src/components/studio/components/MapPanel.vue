@@ -93,21 +93,47 @@ export default {
         console.log('[MapPanel] canUseAdvanced:', canUseAdvanced, 'Creating marker at', pos)
         if (canUseAdvanced) {
           const content = document.createElement('div')
-          content.style.display = 'flex'
-          content.style.alignItems = 'center'
-          content.style.justifyContent = 'center'
-          content.style.width = '28px'
-          content.style.height = '28px'
-          content.style.borderRadius = '6px'
-          content.style.background = '#10b981'
-          content.style.color = '#fff'
-          content.style.fontSize = '12px'
-          content.style.fontWeight = '700'
+          content.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #10b981;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: 3px solid white;
+          `
           content.textContent = String(idx + 1)
+          console.log('[MapPanel] Content element created:', content)
           try {
-            const adv = new this.AdvancedMarkerElement({ map: this.map, position: pos, title: p.name, content })
-            console.log('[MapPanel] AdvancedMarker created:', adv)
+            const adv = new this.AdvancedMarkerElement({ 
+              map: this.map, 
+              position: pos, 
+              title: p.name, 
+              content,
+              zIndex: 1000
+            })
+            console.log('[MapPanel] AdvancedMarker created:', adv, 'position:', adv.position)
             this.markers.push(adv)
+            
+            // ALSO add a circle as backup to guarantee visibility
+            const circle = new window.google.maps.Circle({
+              strokeColor: '#0e7a5a',
+              strokeOpacity: 0.9,
+              strokeWeight: 2,
+              fillColor: '#10b981',
+              fillOpacity: 0.7,
+              map: this.map,
+              center: pos,
+              radius: 50,
+              zIndex: 999
+            })
+            this.circles.push(circle)
+            console.log('[MapPanel] Backup circle added for AdvancedMarker')
           } catch (err) {
             console.error('[MapPanel] AdvancedMarker creation failed:', err)
           }
