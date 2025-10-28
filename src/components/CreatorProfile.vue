@@ -1,5 +1,8 @@
 <template>
   <div class="creator-profile">
+    <!-- Main Website Header -->
+    <Header />
+    
     <!-- Header Section -->
     <div class="profile-header">
       <div class="cover-image">
@@ -123,10 +126,14 @@
 </template>
 
 <script>
+import Header from './Header.vue'
 import creatorsData from '../data/creators.json'
 
 export default {
   name: 'CreatorProfile',
+  components: {
+    Header
+  },
   data() {
     return {
       creator: null,
@@ -198,6 +205,7 @@ export default {
 
 .profile-header {
   position: relative;
+  margin-top: 0;
 }
 
 .cover-image {
