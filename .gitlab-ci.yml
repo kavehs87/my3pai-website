@@ -25,7 +25,7 @@ test:
 build:
   stage: build
   script:
-    - echo "VITE_API_BASE_URL=https://api.my3pai.com" >> .env.production
+    - echo "VITE_API_BASE_URL=https://api.my3pai.com/api" >> .env.production
     - npm run build
   artifacts:
     paths: [dist]
