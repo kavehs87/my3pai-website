@@ -102,12 +102,11 @@
                   <a v-for="link in creator.socialLinks"
                      :key="link.url"
                      :href="link.url"
-                     class="social-link"
+                     :class="['social-link', platformClass(link.platform)]"
                      target="_blank"
                      rel="noopener noreferrer nofollow"
                   >
                     <i :class="socialIcon(link.platform)"></i>
-                    <span>{{ link.platform }}</span>
                   </a>
                 </div>
               </div>
@@ -220,6 +219,15 @@ export default {
       if (p.includes('tiktok')) return 'fa-brands fa-tiktok'
       if (p.includes('twitter') || p.includes('x')) return 'fa-brands fa-x-twitter'
       return 'fa-solid fa-link'
+    },
+
+    platformClass(platform) {
+      const p = (platform || '').toLowerCase()
+      if (p.includes('youtube')) return 'platform-youtube'
+      if (p.includes('instagram')) return 'platform-instagram'
+      if (p.includes('tiktok')) return 'platform-tiktok'
+      if (p.includes('twitter') || p.includes('x')) return 'platform-twitter'
+      return 'platform-generic'
     },
 
     countryFlag(code) {
@@ -527,10 +535,17 @@ export default {
 
 .languages { margin-bottom: var(--spacing-xl); }
 .social-links { margin-bottom: var(--spacing-2xl); }
-.social-items { display: flex; flex-wrap: wrap; column-gap: 16px; row-gap: 12px; }
-.social-link { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--bg-secondary); border-radius: var(--radius-full); color: var(--text-primary); text-decoration: none; transition: opacity var(--transition-normal); }
-.social-link i { width: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; color: var(--text-secondary); }
-.social-link:hover { opacity: 0.85; }
+.social-items { display: flex; flex-wrap: wrap; column-gap: 12px; row-gap: 10px; }
+.social-link { display: inline-flex; align-items: center; padding: 8px 10px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: transparent; text-decoration: none; transition: all var(--transition-normal); filter: grayscale(100%); }
+.social-link i { font-size: 16px; }
+.social-link:hover { filter: grayscale(0%); background: var(--bg-secondary); }
+
+/* Platform hover colors */
+.platform-youtube:hover i { color: #ff0000; }
+.platform-instagram:hover i { color: #e1306c; }
+.platform-tiktok:hover i { color: #25f4ee; }
+.platform-twitter:hover i { color: #1d9bf0; }
+.platform-generic:hover i { color: var(--secondary-color); }
 
 .partnership-items { display: flex; flex-direction: column; gap: 10px; }
 .partner-link { display: inline-flex; align-items: center; gap: 8px; color: var(--secondary-color); text-decoration: none; }
