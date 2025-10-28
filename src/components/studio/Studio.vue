@@ -1,18 +1,9 @@
 <template>
   <div class="studio">
-    <AIHeroSection />
+    <Header />
     <div class="studio-header">
       <div class="container">
-        <div class="header-row">
-          <div>
-            <h1 class="title">Travel Plan Creator Studio</h1>
-            <p class="subtitle">{{ day.city }} — {{ day.date }} ({{ day.hours.start }}–{{ day.hours.end }})</p>
-          </div>
-          <div class="actions">
-            <button class="btn" @click="generateAI">AI Generate</button>
-            <button class="btn secondary" @click="sharePlan">Share</button>
-          </div>
-        </div>
+        <InlinePromptBar @submit="handlePrompt" @pick-image="handlePickImage" @mic="handleMic" />
       </div>
     </div>
 
@@ -40,17 +31,18 @@
 </template>
 
 <script>
-import AIHeroSection from '../AIHeroSection.vue'
+import Header from '../Header.vue'
 import data from '../../data/studioSample.json'
 import MapPanel from './components/MapPanel.vue'
 import Sidebar from './components/Sidebar.vue'
+import InlinePromptBar from './components/InlinePromptBar.vue'
 import Timeline from './components/Timeline.vue'
 import LayerRow from './components/LayerRow.vue'
 import AIHints from './components/AIHints.vue'
 
 export default {
   name: 'Studio',
-  components: { AIHeroSection, MapPanel, Timeline, LayerRow, AIHints, Sidebar },
+  components: { Header, MapPanel, Timeline, LayerRow, AIHints, Sidebar, InlinePromptBar },
   data() {
     return {
       day: data.day,
@@ -67,13 +59,19 @@ export default {
     },
     sharePlan() {
       console.log('Share plan (mock)')
-    }
+    },
+    handlePrompt(q) {
+      if (!q) return
+      console.log('Studio prompt submit:', q)
+    },
+    handlePickImage() { console.log('Studio pick image') },
+    handleMic() { console.log('Studio mic') }
   }
 }
 </script>
 
 <style scoped>
-.studio { background: var(--bg-secondary); padding-top: 78px; /* space for fixed AI bar */ }
+.studio { background: var(--bg-secondary); }
 .studio-header { padding: var(--spacing-xl) 0; border-bottom: 1px solid var(--border-light); background: var(--bg-primary); }
 .header-row { display: flex; justify-content: space-between; align-items: center; }
 .title { margin: 0; font-size: var(--font-size-2xl); color: var(--text-primary); }
