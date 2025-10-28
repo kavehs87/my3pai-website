@@ -45,8 +45,8 @@ export default {
         return
       }
       const script = document.createElement('script')
-      // Use async loader + marker library and weekly channel to ensure importLibrary support
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&loading=async&libraries=marker`
+      // Use weekly channel + marker library; avoid loading=async for broader compatibility
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker`
       script.async = true
       script.defer = true
       script.onload = () => this.createMap()
@@ -54,20 +54,12 @@ export default {
       document.head.appendChild(script)
     },
 
-    async createMap() {
+    createMap() {
       try {
-        const hasImport = typeof window.google?.maps?.importLibrary === 'function'
-        let MapCtor = null
-        if (hasImport) {
-          const { Map } = await window.google.maps.importLibrary('maps')
-          const { AdvancedMarkerElement } = await window.google.maps.importLibrary('marker')
-          this.AdvancedMarkerElement = AdvancedMarkerElement
-          MapCtor = Map
-        }
         const center = this.points.length ? { lat: this.points[0].coords[0], lng: this.points[0].coords[1] } : { lat: 48.8566, lng: 2.3522 }
-        this.map = hasImport
-          ? new MapCtor(this.$refs.mapEl, { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false })
-          : new window.google.maps.Map(this.$refs.mapEl, { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false })
+        this.map = new window.google.maps.Map(this.$refs.mapEl, { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false })
+        // detect advanced markers
+        this.AdvancedMarkerElement = window.google?.maps?.marker?.AdvancedMarkerElement || null
         this.renderRoute()
       } catch (e) {
         console.error('Google Maps init failed', e)
