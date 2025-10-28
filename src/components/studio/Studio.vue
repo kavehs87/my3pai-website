@@ -18,14 +18,50 @@
 
     <div class="studio-body">
       <div class="container">
-        <MapPanel :layers="day.layers" />
+        <div class="studio-grid">
+          <aside class="sidebar">
+            <div class="sidebar-section">
+              <div class="sidebar-item">
+                <i class="fas fa-bed"></i>
+                <span>Accommodation</span>
+              </div>
+              <div class="sidebar-item">
+                <i class="fas fa-border-all"></i>
+                <span>Activities</span>
+              </div>
+              <div class="sidebar-item">
+                <i class="fas fa-utensils"></i>
+                <span>Food & Drink</span>
+              </div>
+              <div class="sidebar-item">
+                <i class="fas fa-plane"></i>
+                <span>Transportation</span>
+              </div>
+              <div class="sidebar-item">
+                <i class="fas fa-car-side"></i>
+                <span>Car</span>
+              </div>
+              <div class="sidebar-item">
+                <i class="fas fa-plane-departure"></i>
+                <span>Flight</span>
+              </div>
+              <div class="sidebar-item">
+                <i class="fas fa-grip"></i>
+                <span>Other</span>
+              </div>
+            </div>
+          </aside>
 
-        <div class="editor">
-          <Timeline :hours="day.hours" />
-          <div class="layers">
-            <LayerRow v-for="layer in day.layers" :key="layer.id" :layer="layer" :hours="day.hours" @select="selectEvent" />
+          <div class="main">
+            <MapPanel :layers="day.layers" />
+            <div class="editor">
+              <Timeline :hours="day.hours" />
+              <div class="layers">
+                <LayerRow v-for="layer in day.layers" :key="layer.id" :layer="layer" :hours="day.hours" @select="selectEvent" />
+              </div>
+              <AIHints :hints="aiHints" />
+            </div>
           </div>
-          <AIHints :hints="aiHints" />
         </div>
       </div>
     </div>
@@ -78,8 +114,22 @@ export default {
 /* Make studio full-width like a desktop app */
 .container { max-width: 100%; width: 100%; padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
 .studio-body { padding: var(--spacing-lg) 0; }
+.studio-grid { display: grid; grid-template-columns: 280px 1fr; gap: var(--spacing-lg); }
+.sidebar { background: #1f2937; color: #e5e7eb; border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; box-shadow: var(--shadow-light); }
+.sidebar-section { display: flex; flex-direction: column; gap: 14px; }
+.sidebar-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: background .2s ease, border-color .2s ease, transform .2s ease; }
+.sidebar-item i { width: 22px; text-align: center; color: #9ca3af; }
+.sidebar-item span { color: #e5e7eb; font-weight: 600; letter-spacing: .2px; }
+.sidebar-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); transform: translateY(-1px); }
+.main { display: flex; flex-direction: column; gap: var(--spacing-lg); }
 .editor { margin-top: var(--spacing-xl); }
 .layers { display: flex; flex-direction: column; gap: 10px; }
+
+@media (max-width: 1024px) {
+  .studio-grid { grid-template-columns: 1fr; }
+  .sidebar { order: 2; }
+  .main { order: 1; }
+}
 </style>
 
 
