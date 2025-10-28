@@ -98,7 +98,20 @@ export default {
           const adv = new this.AdvancedMarkerElement({ map: this.map, position: pos, title: p.title, content })
           this.markers.push(adv)
         } else {
-          const marker = new window.google.maps.Marker({ position: pos, map: this.map, label: String(idx + 1), title: p.title })
+          const marker = new window.google.maps.Marker({
+            position: pos,
+            map: this.map,
+            title: p.title,
+            label: { text: String(idx + 1), color: '#ffffff', fontWeight: '700' },
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: '#10b981',
+              fillOpacity: 1,
+              strokeColor: '#0e7a5a',
+              strokeWeight: 2
+            }
+          })
           this.markers.push(marker)
         }
       })
