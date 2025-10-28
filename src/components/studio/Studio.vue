@@ -103,6 +103,12 @@ export default {
 @media (max-width: 1024px) {
   .studio-grid { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 768px) {
+  .studio-grid { grid-template-columns: 1fr; gap: var(--spacing-sm); }
+  .studio-grid .sidebar { order: 2; margin-top: var(--spacing-sm); }
+  .studio-grid .main { order: 1; }
+}
 </style>
 
 
