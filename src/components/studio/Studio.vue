@@ -66,6 +66,7 @@ export default {
 </script>
 
 <style scoped>
+.studio { background: var(--bg-secondary); }
 .studio-header { padding: var(--spacing-xl) 0; border-bottom: 1px solid var(--border-light); background: var(--bg-primary); }
 .header-row { display: flex; justify-content: space-between; align-items: center; }
 .title { margin: 0; font-size: var(--font-size-2xl); color: var(--text-primary); }
@@ -74,7 +75,9 @@ export default {
 .btn { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); background: var(--bg-secondary); cursor: pointer; }
 .btn.secondary { background: transparent; }
 
-.studio-body { padding: var(--spacing-xl) 0; }
+/* Make studio full-width like a desktop app */
+.container { max-width: 100%; width: 100%; padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
+.studio-body { padding: var(--spacing-lg) 0; }
 .editor { margin-top: var(--spacing-xl); }
 .layers { display: flex; flex-direction: column; gap: 10px; }
 </style>
