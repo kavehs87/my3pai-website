@@ -476,7 +476,7 @@ export default {
   background: var(--bg-secondary);
   color: var(--text-primary);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: 500;
 }
@@ -519,7 +519,7 @@ export default {
 .flag-item { font-size: 20px; }
 
 .language-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.language-tag { background: var(--bg-secondary); color: var(--text-primary); padding: 4px 10px; border-radius: var(--radius-full); font-size: var(--font-size-sm); }
+.language-tag { background: var(--bg-secondary); color: var(--text-primary); padding: 4px 10px; border-radius: var(--radius-sm); font-size: var(--font-size-sm); }
 .language-tag .proficiency { margin-left: 6px; color: var(--text-secondary); font-weight: 500; }
 
 .languages { margin-bottom: var(--spacing-xl); }
