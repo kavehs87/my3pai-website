@@ -509,7 +509,7 @@ export default {
 
 .tier-badge {
   padding: 4px 10px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: 700;
 }
@@ -562,7 +562,7 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background: var(--bg-secondary);
   color: var(--text-primary);
   text-decoration: none;
