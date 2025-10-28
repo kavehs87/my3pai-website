@@ -44,8 +44,8 @@ export default { name: 'StudioSidebar' }
 .sidebar-item i { width: 20px; text-align: center; color: var(--text-secondary); }
 .sidebar-item:hover { background: var(--bg-primary); }
 
-/* Mobile: compact horizontal layout */
-@media (max-width: 768px) {
+/* Tablet & Mobile: compact layout */
+@media (max-width: 1024px) {
   .sidebar { padding: 8px; }
   .sidebar-section { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .sidebar-item { flex-direction: column; padding: 8px 4px; text-align: center; gap: 4px; }
