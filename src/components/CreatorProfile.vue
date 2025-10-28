@@ -128,6 +128,9 @@
                   </a>
                 </div>
               </div>
+              
+              <!-- close profile-details -->
+              </div>
             
               <div class="profile-actions">
                 <button class="follow-btn" @click="toggleFollow">
@@ -141,6 +144,8 @@
               </div>
             </div>
 
+            <!-- Close main-info before starting sidebar -->
+            
             <!-- Right column: recent plans -->
             <aside class="recent-plans-sidebar">
               <h3>Recent Plans</h3>
