@@ -205,8 +205,8 @@ export default {
 </script>
 
 <style scoped>
-.map-panel { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: var(--spacing-md); }
-.gmap { height: 300px; border-radius: var(--radius-sm); overflow: hidden; }
+.map-panel { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: var(--spacing-md); display: flex; flex-direction: column; height: 100%; }
+.gmap { flex: 1; min-height: 280px; border-radius: var(--radius-sm); overflow: hidden; }
 .map-fallback { display:flex; align-items:center; gap:8px; color: var(--text-secondary); padding-top: 8px; }
 </style>
 
