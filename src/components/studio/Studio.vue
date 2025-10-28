@@ -88,8 +88,8 @@ export default {
 .studio-body { padding: var(--spacing-lg) 0; flex: 1; display: flex; }
 .studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); }
 .main { display: flex; flex-direction: column; gap: var(--spacing-lg); }
-.editor { }
-.editor-max { width: 100%; max-width: none; margin-top: auto; padding: var(--spacing-lg) var(--spacing-lg) 0; }
+.editor { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); }
+.editor-max { width: 100%; max-width: none; margin-top: auto; padding: var(--spacing-lg); }
 .layers { display: flex; flex-direction: column; gap: 10px; }
 
 /* Ensure container stretches and allows editor to push to bottom */
