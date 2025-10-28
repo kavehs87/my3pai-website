@@ -13,7 +13,7 @@ export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null }
+    return { map: null, markers: [], circles: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null }
   },
   computed: {
     points() {
@@ -74,6 +74,8 @@ export default {
       // clear old
       this.markers.forEach(m => m.setMap(null))
       this.markers = []
+      this.circles?.forEach(c => c.setMap && c.setMap(null))
+      this.circles = []
       if (this.polyline) { this.polyline.setMap(null); this.polyline = null }
 
       const path = []
@@ -107,6 +109,18 @@ export default {
             zIndex: 1000
           })
           this.markers.push(marker)
+          // Add a small circle to ensure visibility regardless of style
+          const circle = new window.google.maps.Circle({
+            strokeColor: '#0e7a5a',
+            strokeOpacity: 0.9,
+            strokeWeight: 2,
+            fillColor: '#10b981',
+            fillOpacity: 0.8,
+            map: this.map,
+            center: pos,
+            radius: 35
+          })
+          this.circles.push(circle)
         }
       })
       if (path.length) {
