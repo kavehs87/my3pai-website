@@ -63,7 +63,10 @@ export default {
         // detect advanced markers (requires vector map w/ mapId)
         this.AdvancedMarkerElement = this.mapId ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) : null
         console.log('[MapPanel] Map created. mapId:', this.mapId, 'AdvancedMarkerElement:', !!this.AdvancedMarkerElement)
-        this.renderRoute()
+        // Wait for map to be ready before adding markers
+        window.google.maps.event.addListenerOnce(this.map, 'idle', () => {
+          this.renderRoute()
+        })
       } catch (e) {
         console.error('Google Maps init failed', e)
         this.loadError = true
@@ -101,17 +104,24 @@ export default {
           content.style.fontSize = '12px'
           content.style.fontWeight = '700'
           content.textContent = String(idx + 1)
-          const adv = new this.AdvancedMarkerElement({ map: this.map, position: pos, title: p.title, content })
-          this.markers.push(adv)
+          try {
+            const adv = new this.AdvancedMarkerElement({ map: this.map, position: pos, title: p.name, content })
+            console.log('[MapPanel] AdvancedMarker created:', adv)
+            this.markers.push(adv)
+          } catch (err) {
+            console.error('[MapPanel] AdvancedMarker creation failed:', err)
+          }
         } else {
+          console.log('[MapPanel] Creating classic Marker at', pos)
           const marker = new window.google.maps.Marker({
             position: pos,
             map: this.map,
-            title: p.title,
+            title: p.name,
             label: { text: String(idx + 1), color: '#ffffff', fontWeight: '700' },
             // Use default pin to guarantee visibility across styles
             zIndex: 1000
           })
+          console.log('[MapPanel] Classic Marker created:', marker)
           this.markers.push(marker)
           // Add a small circle to ensure visibility regardless of style
           const circle = new window.google.maps.Circle({
@@ -124,6 +134,7 @@ export default {
             center: pos,
             radius: 35
           })
+          console.log('[MapPanel] Circle overlay created:', circle)
           this.circles.push(circle)
         }
       })
