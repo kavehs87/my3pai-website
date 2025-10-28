@@ -2,7 +2,7 @@
   <div class="layer-row">
     <div class="label">{{ layer.name }}</div>
     <div class="track">
-      <EventBlock v-for="ev in layer.events" :key="ev.id" :event="ev" :hours="hours" @click.native="$emit('select', ev)" />
+      <EventBlock v-for="ev in layer.events" :key="ev.id" :event="ev" :hours="hours" @update-time="onUpdateTime" @click.native="$emit('select', ev)" />
     </div>
   </div>
 </template>
@@ -12,7 +12,16 @@ import EventBlock from './EventBlock.vue'
 export default {
   name: 'LayerRow',
   components: { EventBlock },
-  props: { layer: Object, hours: Object }
+  props: { layer: Object, hours: Object },
+  methods: {
+    onUpdateTime({ id, start, end }) {
+      const idx = this.layer.events.findIndex(e => e.id === id)
+      if (idx !== -1) {
+        this.layer.events[idx].start = start
+        this.layer.events[idx].end = end
+      }
+    }
+  }
 }
 </script>
 
