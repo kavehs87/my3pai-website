@@ -45,8 +45,8 @@ export default {
         return
       }
       const script = document.createElement('script')
-      // Use async loader + marker library per Google recommendations
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&libraries=marker`
+      // Use async loader + marker library and weekly channel to ensure importLibrary support
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&loading=async&libraries=marker`
       script.async = true
       script.defer = true
       script.onload = () => this.createMap()
@@ -55,22 +55,22 @@ export default {
     },
 
     async createMap() {
-      // With loading=async, import libraries first
       try {
-        const { Map } = await window.google.maps.importLibrary('maps')
-        const { AdvancedMarkerElement } = await window.google.maps.importLibrary('marker')
-        this.AdvancedMarkerElement = AdvancedMarkerElement
+        const hasImport = typeof window.google?.maps?.importLibrary === 'function'
+        let MapCtor = null
+        if (hasImport) {
+          const { Map } = await window.google.maps.importLibrary('maps')
+          const { AdvancedMarkerElement } = await window.google.maps.importLibrary('marker')
+          this.AdvancedMarkerElement = AdvancedMarkerElement
+          MapCtor = Map
+        }
         const center = this.points.length ? { lat: this.points[0].coords[0], lng: this.points[0].coords[1] } : { lat: 48.8566, lng: 2.3522 }
-        this.map = new Map(this.$refs.mapEl, {
-        center,
-        zoom: 12,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false
-        })
+        this.map = hasImport
+          ? new MapCtor(this.$refs.mapEl, { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false })
+          : new window.google.maps.Map(this.$refs.mapEl, { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false })
         this.renderRoute()
       } catch (e) {
-        console.error('Google Maps importLibrary failed', e)
+        console.error('Google Maps init failed', e)
         this.loadError = true
       }
     },
@@ -86,27 +86,26 @@ export default {
       this.points.forEach((p, idx) => {
         const pos = { lat: p.coords[0], lng: p.coords[1] }
         path.push(pos)
-        // Advanced markers (recommended)
-        const content = document.createElement('div')
-        content.style.display = 'flex'
-        content.style.alignItems = 'center'
-        content.style.justifyContent = 'center'
-        content.style.width = '28px'
-        content.style.height = '28px'
-        content.style.borderRadius = '6px'
-        content.style.background = '#10b981'
-        content.style.color = '#fff'
-        content.style.fontSize = '12px'
-        content.style.fontWeight = '700'
-        content.textContent = String(idx + 1)
-
-        const adv = new this.AdvancedMarkerElement({
-          map: this.map,
-          position: pos,
-          title: p.title,
-          content
-        })
-        this.markers.push(adv)
+        // Advanced markers if available; otherwise fall back to classic Marker
+        if (this.AdvancedMarkerElement) {
+          const content = document.createElement('div')
+          content.style.display = 'flex'
+          content.style.alignItems = 'center'
+          content.style.justifyContent = 'center'
+          content.style.width = '28px'
+          content.style.height = '28px'
+          content.style.borderRadius = '6px'
+          content.style.background = '#10b981'
+          content.style.color = '#fff'
+          content.style.fontSize = '12px'
+          content.style.fontWeight = '700'
+          content.textContent = String(idx + 1)
+          const adv = new this.AdvancedMarkerElement({ map: this.map, position: pos, title: p.title, content })
+          this.markers.push(adv)
+        } else {
+          const marker = new window.google.maps.Marker({ position: pos, map: this.map, label: String(idx + 1), title: p.title })
+          this.markers.push(marker)
+        }
       })
       if (path.length) {
         this.polyline = new window.google.maps.Polyline({
