@@ -103,14 +103,8 @@ export default {
             map: this.map,
             title: p.title,
             label: { text: String(idx + 1), color: '#ffffff', fontWeight: '700' },
-            icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: '#10b981',
-              fillOpacity: 1,
-              strokeColor: '#0e7a5a',
-              strokeWeight: 2
-            }
+            // Use default pin to guarantee visibility across styles
+            zIndex: 1000
           })
           this.markers.push(marker)
         }
