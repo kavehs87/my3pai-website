@@ -9,6 +9,10 @@
 </template>
 
 <script>
+import { isProxy } from 'vue'
+
+// Use a module-scoped, non-reactive map reference
+let _map = null // google.maps.Map|null
 export default {
   name: 'MapPanel',
   props: { layers: Array },
@@ -59,13 +63,27 @@ export default {
         const center = this.points.length ? { lat: this.points[0].coords[0], lng: this.points[0].coords[1] } : { lat: 48.8566, lng: 2.3522 }
         const options = { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false }
         if (this.mapId) options.mapId = this.mapId
-        this.map = new window.google.maps.Map(this.$refs.mapEl, options)
+        _map = new window.google.maps.Map(this.$refs.mapEl, options)
         // detect advanced markers (requires vector map w/ mapId) + flag
         this.AdvancedMarkerElement = (this.useAdvanced && this.mapId) ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) : null
+        // Diagnostics for proxy/reactivity and capabilities
+        try {
+          // Vue proxies often report true with isProxy if stored in reactive state
+          console.log('[DBG] map created; isProxy:', isProxy && isProxy(_map), 'ctor:', _map && _map.constructor && _map.constructor.name)
+          // @ts-ignore - capabilities present on vector maps
+          const caps = _map && _map.mapCapabilities
+          console.log('[DBG] capabilities:', caps)
+          console.log('[DBG] has AdvancedMarkerElement:', !!window.google?.maps?.marker?.AdvancedMarkerElement)
+        } catch (e) {}
         console.log('[MapPanel] Map created. mapId:', this.mapId, 'useAdvanced:', this.useAdvanced, 'AdvancedMarkerElement:', !!this.AdvancedMarkerElement)
         // Wait for map to be ready before adding markers
-        window.google.maps.event.addListenerOnce(this.map, 'idle', () => {
+        window.google.maps.event.addListenerOnce(_map, 'idle', () => {
           this.renderRoute()
+        })
+        // Click to add a marker for verification
+        _map.addListener('click', (ev) => {
+          const latLng = ev && ev.latLng ? { lat: ev.latLng.lat(), lng: ev.latLng.lng() } : null
+          if (latLng) this.addMarker(latLng)
         })
       } catch (e) {
         console.error('Google Maps init failed', e)
@@ -74,7 +92,7 @@ export default {
     },
 
     renderRoute() {
-      if (!this.map || !window.google?.maps) return
+      if (!_map || !window.google?.maps) return
       // clear old
       this.markers.forEach(m => m.setMap(null))
       this.markers = []
@@ -111,7 +129,7 @@ export default {
           console.log('[MapPanel] Content element created:', content)
           try {
             const adv = new this.AdvancedMarkerElement({ 
-              map: this.map, 
+              map: _map, 
               position: pos, 
               title: p.name, 
               content,
@@ -127,7 +145,7 @@ export default {
               strokeWeight: 2,
               fillColor: '#10b981',
               fillOpacity: 0.7,
-              map: this.map,
+              map: _map,
               center: pos,
               radius: 50,
               zIndex: 999
@@ -141,7 +159,7 @@ export default {
           console.log('[MapPanel] Creating classic Marker at', pos)
           const marker = new window.google.maps.Marker({
             position: pos,
-            map: this.map,
+            map: _map,
             title: p.name,
             label: { text: String(idx + 1), color: '#ffffff', fontWeight: '700' },
             // Use default pin to guarantee visibility across styles
@@ -156,7 +174,7 @@ export default {
             strokeWeight: 2,
             fillColor: '#10b981',
             fillOpacity: 0.8,
-            map: this.map,
+            map: _map,
             center: pos,
             radius: 35
           })
@@ -172,10 +190,23 @@ export default {
           strokeOpacity: 0.9,
           strokeWeight: 3
         })
-        this.polyline.setMap(this.map)
+        this.polyline.setMap(_map)
         const bounds = new window.google.maps.LatLngBounds()
         path.forEach(pt => bounds.extend(pt))
-        this.map.fitBounds(bounds, 50)
+        _map.fitBounds(bounds, 50)
+      }
+    },
+
+    // Click-to-add marker helper
+    addMarker(position) {
+      if (!_map || !window.google?.maps) return
+      const useAdvanced = this.useAdvanced && !!window.google?.maps?.marker?.AdvancedMarkerElement
+      if (useAdvanced) {
+        const m = new window.google.maps.marker.AdvancedMarkerElement({ map: _map, position, title: 'Click to zoom' })
+        console.log('[DBG] advanced marker element:', m, 'el:', m && m.element)
+      } else {
+        const m = new window.google.maps.Marker({ map: _map, position, title: 'Legacy marker' })
+        console.log('[DBG] legacy marker:', m)
       }
     }
   }
