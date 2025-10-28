@@ -22,7 +22,7 @@
           <div class="layers">
             <LayerRow v-for="layer in day.layers" :key="layer.id" :layer="layer" :hours="day.hours" @select="selectEvent" />
           </div>
-          <AIHints :hints="aiHints" />
+          <!-- AIHints hidden per request -->
         </div>
       </div>
     </div>
@@ -38,11 +38,11 @@ import Sidebar from './components/Sidebar.vue'
 import InlinePromptBar from './components/InlinePromptBar.vue'
 import Timeline from './components/Timeline.vue'
 import LayerRow from './components/LayerRow.vue'
-import AIHints from './components/AIHints.vue'
+// import AIHints from './components/AIHints.vue'
 
 export default {
   name: 'Studio',
-  components: { Header, MapPanel, Timeline, LayerRow, AIHints, Sidebar, InlinePromptBar },
+  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, InlinePromptBar },
   data() {
     return {
       day: data.day,
