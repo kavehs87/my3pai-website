@@ -45,7 +45,8 @@ export default {
         return
       }
       const script = document.createElement('script')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`
+      // Use async loader + marker library per Google recommendations
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&libraries=marker`
       script.async = true
       script.defer = true
       script.onload = () => this.createMap()
@@ -76,13 +77,27 @@ export default {
       this.points.forEach((p, idx) => {
         const pos = { lat: p.coords[0], lng: p.coords[1] }
         path.push(pos)
-        const marker = new window.google.maps.Marker({
-          position: pos,
+        // Advanced markers (recommended)
+        const content = document.createElement('div')
+        content.style.display = 'flex'
+        content.style.alignItems = 'center'
+        content.style.justifyContent = 'center'
+        content.style.width = '28px'
+        content.style.height = '28px'
+        content.style.borderRadius = '6px'
+        content.style.background = '#10b981'
+        content.style.color = '#fff'
+        content.style.fontSize = '12px'
+        content.style.fontWeight = '700'
+        content.textContent = String(idx + 1)
+
+        const adv = new window.google.maps.marker.AdvancedMarkerElement({
           map: this.map,
-          label: String(idx + 1),
-          title: p.title
+          position: pos,
+          title: p.title,
+          content
         })
-        this.markers.push(marker)
+        this.markers.push(adv)
       })
       if (path.length) {
         this.polyline = new window.google.maps.Polyline({
