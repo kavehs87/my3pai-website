@@ -13,7 +13,7 @@ export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], circles: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null }
+    return { map: null, markers: [], circles: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true') }
   },
   computed: {
     points() {
@@ -60,9 +60,9 @@ export default {
         const options = { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false }
         if (this.mapId) options.mapId = this.mapId
         this.map = new window.google.maps.Map(this.$refs.mapEl, options)
-        // detect advanced markers (requires vector map w/ mapId)
-        this.AdvancedMarkerElement = this.mapId ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) : null
-        console.log('[MapPanel] Map created. mapId:', this.mapId, 'AdvancedMarkerElement:', !!this.AdvancedMarkerElement)
+        // detect advanced markers (requires vector map w/ mapId) + flag
+        this.AdvancedMarkerElement = (this.useAdvanced && this.mapId) ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) : null
+        console.log('[MapPanel] Map created. mapId:', this.mapId, 'useAdvanced:', this.useAdvanced, 'AdvancedMarkerElement:', !!this.AdvancedMarkerElement)
         // Wait for map to be ready before adding markers
         window.google.maps.event.addListenerOnce(this.map, 'idle', () => {
           this.renderRoute()
