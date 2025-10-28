@@ -44,6 +44,19 @@
                 </div>
               </div>
               
+              <!-- Tier + Rating -->
+              <div class="tier-rating" v-if="creator.tier || creator.rating">
+                <span v-if="creator.tier" class="tier-badge" :class="`tier-${creator.tier.toLowerCase()}`">{{ creator.tier }}</span>
+                <div v-if="creator.rating" class="rating-wrap">
+                  <span class="stars">
+                    <i v-for="i in 5" :key="i" :class="i <= roundedRating ? 'fas fa-star' : 'far fa-star'"></i>
+                  </span>
+                  <span class="rating-value" v-if="creator.rating?.value">{{ creator.rating.value.toFixed(1) }}</span>
+                  <span class="rating-count" v-if="creator.rating?.count">({{ creator.rating.count }})</span>
+                </div>
+                <span class="verify-text" :class="{ unverified: !creator.verified }">{{ creator.verified ? 'Verified' : 'Unverified' }}</span>
+              </div>
+
               <div class="profile-meta">
                 <div class="location">
                   <i class="fas fa-map-marker-alt"></i>
@@ -55,12 +68,58 @@
                 </div>
               </div>
               
+              <!-- Countries visited -->
+              <div v-if="creator.countriesVisited?.length" class="countries-visited">
+                <h3>Countries Visited ({{ creator.countriesVisited.length }})</h3>
+                <div class="flag-list">
+                  <span v-for="code in creator.countriesVisited" :key="code" class="flag-item">{{ countryFlag(code) }}</span>
+                </div>
+              </div>
+
               <div class="specialties">
                 <h3>Specialties</h3>
                 <div class="specialty-tags">
                   <span v-for="specialty in creator.specialties" :key="specialty" class="specialty-tag">
                     {{ specialty }}
                   </span>
+                </div>
+              </div>
+
+              <!-- Languages -->
+              <div v-if="creator.languages?.length" class="languages">
+                <h3>Languages</h3>
+                <div class="language-tags">
+                  <span v-for="lang in creator.languages" :key="lang.name" class="language-tag">
+                    {{ lang.name }}<span v-if="lang.proficiency" class="proficiency">{{ lang.proficiency }}</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Social Links -->
+              <div v-if="creator.socialLinks?.length" class="social-links">
+                <h3>Social</h3>
+                <div class="social-items">
+                  <a v-for="link in creator.socialLinks"
+                     :key="link.url"
+                     :href="link.url"
+                     class="social-link"
+                     target="_blank"
+                     rel="noopener noreferrer nofollow"
+                  >
+                    <i :class="socialIcon(link.platform)"></i>
+                    <span>{{ link.platform }}</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Partnerships -->
+              <div v-if="creator.partnerships?.length" class="partnerships">
+                <h3>Partnerships</h3>
+                <div class="partnership-items">
+                  <a v-for="p in creator.partnerships" :key="p.url" :href="p.url" target="_blank" rel="noopener noreferrer nofollow" class="partner-link">
+                    <i class="fas fa-handshake"></i>
+                    <span>{{ p.label }}</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -140,6 +199,12 @@ export default {
       isFollowing: false
     }
   },
+  computed: {
+    roundedRating() {
+      const value = this.creator?.rating?.value || 0
+      return Math.round(value)
+    }
+  },
   created() {
     this.loadCreator()
   },
@@ -148,6 +213,28 @@ export default {
     window.scrollTo(0, 0)
   },
   methods: {
+    socialIcon(platform) {
+      const p = (platform || '').toLowerCase()
+      if (p.includes('youtube')) return 'fab fa-youtube'
+      if (p.includes('instagram')) return 'fab fa-instagram'
+      if (p.includes('tiktok')) return 'fab fa-tiktok'
+      if (p.includes('twitter') || p.includes('x')) return 'fab fa-x-twitter'
+      return 'fas fa-link'
+    },
+
+    countryFlag(code) {
+      // Convert ISO country code to regional indicator symbols
+      if (!code) return ''
+      const cc = code.toUpperCase()
+      return cc
+        .replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)))
+    },
+
+    roundedRating() {
+      const value = this.creator?.rating?.value || 0
+      return Math.round(value)
+    },
+
     loadCreator() {
       const creatorId = parseInt(this.$route.params.id)
       this.creator = creatorsData.creators.find(c => c.id === creatorId)
@@ -399,6 +486,55 @@ export default {
   font-size: var(--font-size-sm);
   font-weight: 500;
 }
+
+.tier-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.tier-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+.tier-platinum { background: linear-gradient(90deg, #e5e7eb, #f9fafb); color: #111827; border: 1px solid #e5e7eb; }
+.tier-gold { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.tier-silver { background: #e5e7eb; color: #374151; border: 1px solid #d1d5db; }
+.tier-bronze { background: #fce7f3; color: #9f1239; border: 1px solid #fbcfe8; }
+
+.rating-wrap { display: flex; align-items: center; gap: 6px; }
+.stars i { color: #f59e0b; }
+.rating-value { color: var(--text-primary); font-weight: 600; }
+.rating-count { color: var(--text-secondary); font-size: var(--font-size-sm); }
+.verify-text { color: var(--secondary-color); font-weight: 600; }
+.verify-text.unverified { color: #ef4444; }
+
+.countries-visited h3,
+.languages h3,
+.social-links h3,
+.partnerships h3 {
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.flag-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.flag-item { font-size: 20px; }
+
+.language-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.language-tag { background: var(--bg-secondary); color: var(--text-primary); padding: 4px 10px; border-radius: var(--radius-full); font-size: var(--font-size-sm); }
+.language-tag .proficiency { margin-left: 6px; color: var(--text-secondary); font-weight: 500; }
+
+.social-items { display: flex; flex-wrap: wrap; gap: 10px; }
+.social-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: var(--bg-secondary); border-radius: var(--radius-full); color: var(--text-primary); text-decoration: none; transition: opacity var(--transition-normal); }
+.social-link:hover { opacity: 0.8; }
+
+.partnership-items { display: flex; flex-direction: column; gap: 8px; }
+.partner-link { display: inline-flex; align-items: center; gap: 8px; color: var(--secondary-color); text-decoration: none; }
+.partner-link:hover { text-decoration: underline; }
 
 .profile-actions {
   display: flex;
