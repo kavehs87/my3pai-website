@@ -62,6 +62,7 @@ export default {
         this.map = new window.google.maps.Map(this.$refs.mapEl, options)
         // detect advanced markers (requires vector map w/ mapId)
         this.AdvancedMarkerElement = this.mapId ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) : null
+        console.log('[MapPanel] Map created. mapId:', this.mapId, 'AdvancedMarkerElement:', !!this.AdvancedMarkerElement)
         this.renderRoute()
       } catch (e) {
         console.error('Google Maps init failed', e)
@@ -79,11 +80,14 @@ export default {
       if (this.polyline) { this.polyline.setMap(null); this.polyline = null }
 
       const path = []
+      console.log('[MapPanel] renderRoute points:', this.points.length, this.points)
       this.points.forEach((p, idx) => {
         const pos = { lat: p.coords[0], lng: p.coords[1] }
+        console.log('[MapPanel] Point', idx + 1, 'pos:', pos, 'title:', p.title)
         path.push(pos)
         // Advanced markers if available; otherwise fall back to classic Marker
         const canUseAdvanced = !!this.AdvancedMarkerElement
+        console.log('[MapPanel] canUseAdvanced:', canUseAdvanced, 'Creating marker at', pos)
         if (canUseAdvanced) {
           const content = document.createElement('div')
           content.style.display = 'flex'
