@@ -86,7 +86,8 @@ export default {
 /* Make studio full-width like a desktop app */
 .container { max-width: 100%; width: 100%; padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
 .studio-body { padding: var(--spacing-lg) 0; flex: 1; display: flex; min-height: 0; }
-.studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); min-height: 0; }
+.studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); min-height: 0; height: 100%; align-items: stretch; }
+.studio-grid .sidebar { align-self: start; }
 .main { display: flex; flex-direction: column; gap: var(--spacing-lg); flex: 1; }
 .editor { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); }
 .editor-max { width: 100%; max-width: none; margin-top: auto; padding: var(--spacing-lg); }

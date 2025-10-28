@@ -38,7 +38,7 @@ export default { name: 'StudioSidebar' }
 </script>
 
 <style scoped>
-.sidebar { background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px; box-shadow: var(--shadow-light); }
+.sidebar { background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px; box-shadow: var(--shadow-light); height: fit-content; }
 .sidebar-section { display: flex; flex-direction: column; gap: 12px; }
 .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--bg-secondary); border: 1px solid var(--border-light); cursor: pointer; transition: var(--transition-normal); color: var(--text-primary); text-align: left; }
 .sidebar-item i { width: 20px; text-align: center; color: var(--text-secondary); }
