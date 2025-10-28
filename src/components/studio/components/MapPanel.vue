@@ -23,6 +23,14 @@ export default {
     points() {
       const events = this.layers.flatMap(l => (l.events || []).map(e => ({ ...e, layer: l.id })))
       return events.sort((a, b) => a.start.localeCompare(b.start))
+    },
+    layerColors() {
+      return {
+        accommodation: { fill: '#6366f1' },
+        activities: { fill: '#10b981' },
+        food: { fill: '#f59e0b' },
+        transport: { fill: '#3b82f6' }
+      }
     }
   },
   mounted() {
@@ -114,7 +122,7 @@ export default {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: #10b981;
+            background: ${this.layerColors[p.layer]?.fill || '#10b981'};
             color: #fff;
             font-size: 16px;
             font-weight: 700;
@@ -165,10 +173,10 @@ export default {
           this.markers.push(marker)
           // Add a small circle to ensure visibility regardless of style
           const circle = new window.google.maps.Circle({
-            strokeColor: '#0e7a5a',
+            strokeColor: this.layerColors[p.layer]?.fill || '#10b981',
             strokeOpacity: 0.9,
             strokeWeight: 2,
-            fillColor: '#10b981',
+            fillColor: this.layerColors[p.layer]?.fill || '#10b981',
             fillOpacity: 0.8,
             map: _map,
             center: pos,

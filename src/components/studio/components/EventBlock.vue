@@ -11,7 +11,7 @@
 <script>
 export default {
   name: 'EventBlock',
-  props: { event: Object, hours: Object },
+  props: { event: Object, hours: Object, colorFill: String, colorStroke: String },
   data() {
     return { isDragging: false, isResizing: false, resizeSide: null, dragOffsetPx: 0, tempStartMin: null, tempEndMin: null }
   },
@@ -28,7 +28,10 @@ export default {
       const endMin = this.tempEndMin != null ? this.tempEndMin : (this.tempStartMin != null ? this.tempStartMin + (endMinEvent - startMinEvent) : endMinEvent)
       const left = `${(startMin / total) * 100}%`
       const width = `${((endMin - startMin) / total) * 100}%`
-      return { left, width }
+      const styles = { left, width }
+      if (this.colorFill) styles.background = this.colorFill
+      if (this.colorStroke) styles.borderColor = this.colorStroke
+      return styles
     }
   },
   methods: {
