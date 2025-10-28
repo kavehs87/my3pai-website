@@ -101,23 +101,25 @@ export default {
 }
 
 .send-btn { 
-  background: transparent; 
+  background: var(--bg-primary); 
   border: none; 
-  color: #9ca3af; 
+  color: var(--text-primary); 
   cursor: pointer; 
   padding: var(--spacing-sm); 
-  border-radius: var(--radius-sm); 
+  border-radius: var(--radius-full); 
   transition: all var(--transition-normal); 
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  width: 32px; 
-  height: 32px; 
+  width: 40px; 
+  height: 40px; 
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); 
 }
 
-.send-btn:hover { 
-  background: rgba(255, 255, 255, 0.1); 
-  color: var(--text-primary); 
+.send-btn:hover:not(:disabled) { 
+  background: var(--secondary-color); 
+  color: var(--bg-primary); 
+  transform: scale(1.05); 
 }
 </style>
 
