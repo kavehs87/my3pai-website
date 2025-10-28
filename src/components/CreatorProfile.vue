@@ -149,8 +149,45 @@ export default {
       this.creator = creatorsData.creators.find(c => c.id === creatorId)
       
       if (!this.creator) {
-        // Redirect to 404 or home if creator not found
-        this.$router.push('/')
+        // Create a fallback creator for IDs not in creators.json
+        this.creator = {
+          id: creatorId,
+          name: `Creator ${creatorId}`,
+          username: `@creator${creatorId}`,
+          avatar: `https://i.pravatar.cc/140?img=${creatorId}`,
+          coverImage: '/photos/photo_2025-10-28_00-02-25.jpg',
+          followers: '100K',
+          following: '1K',
+          totalPlans: 10,
+          totalViews: '1M',
+          totalLikes: '50K',
+          verified: false,
+          bio: 'Travel content creator sharing amazing experiences.',
+          location: 'Unknown',
+          joinedDate: '2023-01-01',
+          specialties: ['Travel', 'Adventure'],
+          featuredPlan: {
+            id: creatorId,
+            title: 'Featured Plan',
+            thumbnail: '/photos/photo_2025-10-28_00-02-27.jpg',
+            views: '100K',
+            likes: '5K'
+          },
+          recentPlans: [
+            {
+              id: creatorId * 10 + 1,
+              title: 'Recent Plan 1',
+              thumbnail: '/photos/photo_2025-10-28_00-02-29.jpg',
+              views: '50K'
+            },
+            {
+              id: creatorId * 10 + 2,
+              title: 'Recent Plan 2',
+              thumbnail: '/photos/photo_2025-10-28_00-02-31.jpg',
+              views: '30K'
+            }
+          ]
+        }
       }
     },
     
