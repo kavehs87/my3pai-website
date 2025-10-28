@@ -80,11 +80,7 @@ export default {
         window.google.maps.event.addListenerOnce(_map, 'idle', () => {
           this.renderRoute()
         })
-        // Click to add a marker for verification
-        _map.addListener('click', (ev) => {
-          const latLng = ev && ev.latLng ? { lat: ev.latLng.lat(), lng: ev.latLng.lng() } : null
-          if (latLng) this.addMarker(latLng)
-        })
+        // Click handler removed (diagnostic marker drop disabled)
       } catch (e) {
         console.error('Google Maps init failed', e)
         this.loadError = true
@@ -194,19 +190,6 @@ export default {
         const bounds = new window.google.maps.LatLngBounds()
         path.forEach(pt => bounds.extend(pt))
         _map.fitBounds(bounds, 50)
-      }
-    },
-
-    // Click-to-add marker helper
-    addMarker(position) {
-      if (!_map || !window.google?.maps) return
-      const useAdvanced = this.useAdvanced && !!window.google?.maps?.marker?.AdvancedMarkerElement
-      if (useAdvanced) {
-        const m = new window.google.maps.marker.AdvancedMarkerElement({ map: _map, position, title: 'Click to zoom' })
-        console.log('[DBG] advanced marker element:', m, 'el:', m && m.element)
-      } else {
-        const m = new window.google.maps.Marker({ map: _map, position, title: 'Legacy marker' })
-        console.log('[DBG] legacy marker:', m)
       }
     }
   }
