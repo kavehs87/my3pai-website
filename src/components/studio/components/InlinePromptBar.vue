@@ -1,22 +1,27 @@
 <template>
   <div class="inline-prompt">
-    <i class="far fa-lightbulb hint"></i>
-    <input
-      v-model="query"
-      class="prompt-input"
-      type="text"
-      :placeholder="placeholder"
-      @keydown.enter.prevent="emitSubmit"
-    />
-    <button class="icon-btn" type="button" @click="emitImage">
-      <i class="fas fa-image"></i>
-    </button>
-    <button class="icon-btn" type="button" @click="emitMic">
-      <i class="fas fa-microphone"></i>
-    </button>
-    <button class="send-btn" type="button" @click="emitSubmit">
-      <i class="fas fa-paper-plane"></i>
-    </button>
+    <div class="prompt-input-wrapper">
+      <input
+        v-model="query"
+        class="prompt-input"
+        type="text"
+        :placeholder="placeholder"
+        @keydown.enter.prevent="emitSubmit"
+      />
+    </div>
+    <div class="left-icons">
+      <button class="icon-btn" type="button" @click="emitImage" title="Add image">
+        <i class="fas fa-image"></i>
+      </button>
+      <button class="icon-btn" type="button" @click="emitMic" title="Record voice">
+        <i class="fas fa-microphone"></i>
+      </button>
+    </div>
+    <div class="right-icons">
+      <button class="send-btn" type="button" @click="emitSubmit" title="Send">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -34,14 +39,84 @@ export default {
 </script>
 
 <style scoped>
-.inline-prompt { display:flex; align-items:center; gap:8px; width:100%; background: var(--bg-primary); border:1px solid var(--border-light); border-radius: var(--radius-lg); padding: 10px 12px; box-shadow: var(--shadow-light); }
-.hint { color: var(--secondary-color); opacity: .9; }
-.prompt-input { flex:1; border:none; outline:none; background: transparent; color: var(--text-primary); font-size: var(--font-size-base); }
-.prompt-input::placeholder { color: var(--text-secondary); }
-.icon-btn { display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius: var(--radius-sm); border:1px solid var(--border-light); background: var(--bg-secondary); color: var(--text-secondary); transition: var(--transition-normal); }
-.icon-btn:hover { color: var(--text-primary); background: var(--bg-primary); }
-.send-btn { display:flex; align-items:center; justify-content:center; height:34px; padding: 0 12px; border-radius: var(--radius-sm); border:1px solid var(--border-light); background: var(--secondary-color); color: #fff; transition: var(--transition-normal); }
-.send-btn:hover { filter: brightness(0.95); }
+.inline-prompt { 
+  display: flex; 
+  align-items: center; 
+  gap: var(--spacing-md); 
+  width: 100%; 
+  background: #e9e9e9; 
+  border: 1px solid rgba(0, 0, 0, 0.1); 
+  border-radius: var(--radius-lg); 
+  padding: var(--spacing-md) var(--spacing-lg); 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); 
+}
+
+.prompt-input-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.prompt-input { 
+  width: 100%; 
+  border: none; 
+  outline: none; 
+  background: transparent; 
+  color: var(--text-primary); 
+  font-size: var(--font-size-lg); 
+  font-family: var(--font-family);
+}
+
+.prompt-input::placeholder { 
+  color: var(--text-secondary); 
+}
+
+.left-icons,
+.right-icons {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.icon-btn { 
+  background: transparent; 
+  border: none; 
+  color: #9ca3af; 
+  cursor: pointer; 
+  padding: var(--spacing-sm); 
+  border-radius: var(--radius-sm); 
+  transition: all var(--transition-normal); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  width: 32px; 
+  height: 32px; 
+}
+
+.icon-btn:hover { 
+  background: rgba(255, 255, 255, 0.1); 
+  color: var(--text-primary); 
+}
+
+.send-btn { 
+  background: var(--secondary-color); 
+  border: none; 
+  color: #fff; 
+  cursor: pointer; 
+  padding: var(--spacing-sm) var(--spacing-md); 
+  border-radius: var(--radius-sm); 
+  transition: all var(--transition-normal); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-weight: 500; 
+}
+
+.send-btn:hover { 
+  filter: brightness(0.95); 
+}
 </style>
 
 
