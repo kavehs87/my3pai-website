@@ -18,7 +18,10 @@
 
         <!-- Timeline/editor below, full width under grid -->
         <div class="editor editor-max">
-          <Timeline :hours="day.hours" />
+          <div class="timeline-row">
+            <div></div>
+            <Timeline :hours="day.hours" />
+          </div>
           <div class="layers">
             <LayerRow v-for="layer in day.layers" :key="layer.id" :layer="layer" :hours="day.hours" @select="selectEvent" />
           </div>
@@ -91,6 +94,10 @@ export default {
 
 /* Ensure container stretches and allows editor to push to bottom */
 .studio-body > .container { display: flex; flex-direction: column; flex: 1; }
+
+/* Align timeline hours with event tracks (label column + track column) */
+.timeline-row { display: grid; grid-template-columns: 180px 1fr; align-items: center; margin-bottom: 6px; }
+.timeline-row > div:first-child { color: transparent; }
 
 @media (max-width: 1024px) {
   .studio-grid { grid-template-columns: 1fr; }
