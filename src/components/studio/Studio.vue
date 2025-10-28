@@ -1,6 +1,6 @@
 <template>
   <div class="studio">
-    <Header />
+    <AIHeroSection />
     <div class="studio-header">
       <div class="container">
         <div class="header-row">
@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import Header from '../Header.vue'
+import AIHeroSection from '../AIHeroSection.vue'
 import data from '../../data/studioSample.json'
 import MapPanel from './components/MapPanel.vue'
 import Sidebar from './components/Sidebar.vue'
@@ -50,7 +50,7 @@ import AIHints from './components/AIHints.vue'
 
 export default {
   name: 'Studio',
-  components: { Header, MapPanel, Timeline, LayerRow, AIHints, Sidebar },
+  components: { AIHeroSection, MapPanel, Timeline, LayerRow, AIHints, Sidebar },
   data() {
     return {
       day: data.day,
@@ -73,7 +73,7 @@ export default {
 </script>
 
 <style scoped>
-.studio { background: var(--bg-secondary); }
+.studio { background: var(--bg-secondary); padding-top: 78px; /* space for fixed AI bar */ }
 .studio-header { padding: var(--spacing-xl) 0; border-bottom: 1px solid var(--border-light); background: var(--bg-primary); }
 .header-row { display: flex; justify-content: space-between; align-items: center; }
 .title { margin: 0; font-size: var(--font-size-2xl); color: var(--text-primary); }
