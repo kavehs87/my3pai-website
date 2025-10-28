@@ -30,7 +30,9 @@
             <div class="creator-info">
               <img :src="plan.creator.avatar" :alt="plan.creator.name" class="creator-avatar" />
               <div class="creator-details">
-                <h4 class="creator-name">{{ plan.creator.name }}</h4>
+                <router-link :to="{ name: 'creator-profile', params: { id: plan.creator.id } }" class="creator-name">
+                  {{ plan.creator.name }}
+                </router-link>
                 <span class="creator-followers">{{ plan.creator.followers }} followers</span>
               </div>
               <button class="clone-btn">Customize</button>
@@ -265,6 +267,12 @@ export default {
   font-weight: 600;
   color: var(--text-primary);
   margin: 0 0 2px 0;
+  text-decoration: none;
+  transition: color var(--transition-normal);
+}
+
+.creator-name:hover {
+  color: var(--secondary-color);
 }
 
 .creator-followers {
