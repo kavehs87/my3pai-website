@@ -528,11 +528,13 @@ export default {
 .language-tag { background: var(--bg-secondary); color: var(--text-primary); padding: 4px 10px; border-radius: var(--radius-full); font-size: var(--font-size-sm); }
 .language-tag .proficiency { margin-left: 6px; color: var(--text-secondary); font-weight: 500; }
 
-.social-items { display: flex; flex-wrap: wrap; gap: 10px; }
-.social-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: var(--bg-secondary); border-radius: var(--radius-full); color: var(--text-primary); text-decoration: none; transition: opacity var(--transition-normal); }
-.social-link:hover { opacity: 0.8; }
+.social-links { margin-bottom: var(--spacing-xl); }
+.social-items { display: flex; flex-wrap: wrap; column-gap: 16px; row-gap: 12px; }
+.social-link { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-secondary); border-radius: var(--radius-full); color: var(--text-primary); text-decoration: none; transition: opacity var(--transition-normal); }
+.social-link i { width: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.social-link:hover { opacity: 0.85; }
 
-.partnership-items { display: flex; flex-direction: column; gap: 8px; }
+.partnership-items { display: flex; flex-direction: column; gap: 10px; }
 .partner-link { display: inline-flex; align-items: center; gap: 8px; color: var(--secondary-color); text-decoration: none; }
 .partner-link:hover { text-decoration: underline; }
 
