@@ -101,21 +101,23 @@ export default {
 }
 
 .send-btn { 
-  background: var(--secondary-color); 
+  background: transparent; 
   border: none; 
-  color: #fff; 
+  color: #9ca3af; 
   cursor: pointer; 
-  padding: var(--spacing-sm) var(--spacing-md); 
+  padding: var(--spacing-sm); 
   border-radius: var(--radius-sm); 
   transition: all var(--transition-normal); 
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  font-weight: 500; 
+  width: 32px; 
+  height: 32px; 
 }
 
 .send-btn:hover { 
-  filter: brightness(0.95); 
+  background: rgba(255, 255, 255, 0.1); 
+  color: var(--text-primary); 
 }
 </style>
 
