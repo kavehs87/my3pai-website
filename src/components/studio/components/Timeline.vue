@@ -29,7 +29,7 @@ export default {
 </script>
 
 <style scoped>
-.timeline { position: relative; height: 32px; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.timeline { position: relative; height: 32px; background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); margin-bottom: 8px; box-shadow: var(--shadow-light); }
 .tick { position: absolute; top: 0; transform: translateX(-50%); color: var(--text-secondary); font-size: 12px; }
 .tick span { position: relative; top: 6px; }
 </style>
