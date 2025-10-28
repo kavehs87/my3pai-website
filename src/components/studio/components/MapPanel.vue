@@ -54,16 +54,25 @@ export default {
       document.head.appendChild(script)
     },
 
-    createMap() {
-      const center = this.points.length ? { lat: this.points[0].coords[0], lng: this.points[0].coords[1] } : { lat: 48.8566, lng: 2.3522 }
-      this.map = new window.google.maps.Map(this.$refs.mapEl, {
+    async createMap() {
+      // With loading=async, import libraries first
+      try {
+        const { Map } = await window.google.maps.importLibrary('maps')
+        const { AdvancedMarkerElement } = await window.google.maps.importLibrary('marker')
+        this.AdvancedMarkerElement = AdvancedMarkerElement
+        const center = this.points.length ? { lat: this.points[0].coords[0], lng: this.points[0].coords[1] } : { lat: 48.8566, lng: 2.3522 }
+        this.map = new Map(this.$refs.mapEl, {
         center,
         zoom: 12,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false
-      })
-      this.renderRoute()
+        })
+        this.renderRoute()
+      } catch (e) {
+        console.error('Google Maps importLibrary failed', e)
+        this.loadError = true
+      }
     },
 
     renderRoute() {
@@ -91,7 +100,7 @@ export default {
         content.style.fontWeight = '700'
         content.textContent = String(idx + 1)
 
-        const adv = new window.google.maps.marker.AdvancedMarkerElement({
+        const adv = new this.AdvancedMarkerElement({
           map: this.map,
           position: pos,
           title: p.title,
