@@ -71,7 +71,7 @@ export default {
 </script>
 
 <style scoped>
-.studio { background: var(--bg-secondary); }
+.studio { background: var(--bg-secondary); min-height: 100vh; display: flex; flex-direction: column; }
 .studio-header { padding: var(--spacing-xl) 0; border-bottom: 1px solid var(--border-light); background: var(--bg-primary); }
 .header-row { display: flex; justify-content: space-between; align-items: center; }
 .title { margin: 0; font-size: var(--font-size-2xl); color: var(--text-primary); }
@@ -82,12 +82,15 @@ export default {
 
 /* Make studio full-width like a desktop app */
 .container { max-width: 100%; width: 100%; padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
-.studio-body { padding: var(--spacing-lg) 0; }
+.studio-body { padding: var(--spacing-lg) 0; flex: 1; display: flex; }
 .studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); }
 .main { display: flex; flex-direction: column; gap: var(--spacing-lg); }
-.editor { margin-top: var(--spacing-xl); }
-.editor-max { width: 100%; max-width: none; margin: var(--spacing-xl) 0 0; padding: 0 var(--spacing-lg); }
+.editor { }
+.editor-max { width: 100%; max-width: none; margin-top: auto; padding: var(--spacing-lg) var(--spacing-lg) 0; }
 .layers { display: flex; flex-direction: column; gap: 10px; }
+
+/* Ensure container stretches and allows editor to push to bottom */
+.studio-body > .container { display: flex; flex-direction: column; flex: 1; }
 
 @media (max-width: 1024px) {
   .studio-grid { grid-template-columns: 1fr; }
