@@ -149,42 +149,48 @@
     <!-- Content Section -->
     <div class="profile-content-section">
       <div class="container">
-        <!-- Featured Plan -->
-        <div class="featured-plan-section">
-          <h2>Featured Plan</h2>
-          <div class="featured-plan-card" @click="viewPlan(creator.featuredPlan.id)">
-            <img :src="creator.featuredPlan.thumbnail" :alt="creator.featuredPlan.title" @error="handleImageError" />
-            <div class="plan-overlay">
-              <div class="plan-info">
-                <h3>{{ creator.featuredPlan.title }}</h3>
-                <div class="plan-stats">
-                  <span><i class="fas fa-eye"></i> {{ creator.featuredPlan.views }}</span>
-                  <span><i class="fas fa-heart"></i> {{ creator.featuredPlan.likes }}</span>
+        <div class="content-grid">
+          <div class="main-column">
+            <!-- Featured Plan -->
+            <div class="featured-plan-section">
+              <h2>Featured Plan</h2>
+              <div class="featured-plan-card" @click="viewPlan(creator.featuredPlan.id)">
+                <img :src="creator.featuredPlan.thumbnail" :alt="creator.featuredPlan.title" @error="handleImageError" />
+                <div class="plan-overlay">
+                  <div class="plan-info">
+                    <h3>{{ creator.featuredPlan.title }}</h3>
+                    <div class="plan-stats">
+                      <span><i class="fas fa-eye"></i> {{ creator.featuredPlan.views }}</span>
+                      <span><i class="fas fa-heart"></i> {{ creator.featuredPlan.likes }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Recent Plans -->
-        <div class="recent-plans-section">
-          <h2>Recent Plans</h2>
-          <div class="plans-grid">
-            <div 
-              v-for="plan in creator.recentPlans" 
-              :key="plan.id" 
-              class="plan-card"
-              @click="viewPlan(plan.id)"
-            >
-              <img :src="plan.thumbnail" :alt="plan.title" @error="handleImageError" />
-              <div class="plan-info">
-                <h4>{{ plan.title }}</h4>
-                <div class="plan-stats">
-                  <span><i class="fas fa-eye"></i> {{ plan.views }}</span>
+          <aside class="sidebar">
+            <!-- Recent Plans in sticky sidebar -->
+            <div class="recent-plans-section">
+              <h2>Recent Plans</h2>
+              <div class="plans-grid">
+                <div 
+                  v-for="plan in creator.recentPlans" 
+                  :key="plan.id" 
+                  class="plan-card"
+                  @click="viewPlan(plan.id)"
+                >
+                  <img :src="plan.thumbnail" :alt="plan.title" @error="handleImageError" />
+                  <div class="plan-info">
+                    <h4>{{ plan.title }}</h4>
+                    <div class="plan-stats">
+                      <span><i class="fas fa-eye"></i> {{ plan.views }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -624,6 +630,14 @@ export default {
   padding: var(--spacing-3xl) 0;
 }
 
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-2xl);
+}
+
+.sidebar { position: sticky; top: 100px; height: fit-content; }
+
 .featured-plan-section,
 .recent-plans-section {
   margin-bottom: var(--spacing-3xl);
@@ -685,8 +699,8 @@ export default {
 
 .plans-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
 }
 
 .plan-card {
@@ -726,6 +740,8 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .content-grid { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
   .profile-content {
     flex-direction: column;
     align-items: center;
