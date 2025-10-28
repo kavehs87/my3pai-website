@@ -111,16 +111,7 @@
                 </div>
               </div>
 
-              <!-- Partnerships -->
-              <div v-if="creator.partnerships?.length" class="partnerships">
-                <h3>Partnerships</h3>
-                <div class="partnership-items">
-                  <a v-for="p in creator.partnerships" :key="p.url" :href="p.url" target="_blank" rel="noopener noreferrer nofollow" class="partner-link">
-                    <i class="fas fa-handshake"></i>
-                    <span>{{ p.label }}</span>
-                  </a>
-                </div>
-              </div>
+              
             </div>
             
             <div class="profile-actions">
@@ -547,9 +538,7 @@ export default {
 .platform-twitter:hover i { color: #1d9bf0; }
 .platform-generic:hover i { color: var(--secondary-color); }
 
-.partnership-items { display: flex; flex-direction: column; gap: 10px; }
-.partner-link { display: inline-flex; align-items: center; gap: 8px; color: var(--secondary-color); text-decoration: none; }
-.partner-link:hover { text-decoration: underline; }
+/* partnerships removed */
 
 .profile-actions {
   display: flex;
