@@ -144,7 +144,7 @@ export default {
     },
     selectCreator(creator) {
       console.log('Selected creator:', creator)
-      // TODO: Navigate to creator profile page
+      this.$router.push({ name: 'creator-profile', params: { id: creator.id } })
     },
     selectPlan(plan) {
       console.log('Selected plan:', plan)
