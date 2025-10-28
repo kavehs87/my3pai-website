@@ -266,9 +266,10 @@ export default {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 2px 0;
+  margin: 0 0 4px 0;
   text-decoration: none;
   transition: color var(--transition-normal);
+  display: block;
 }
 
 .creator-name:hover {
@@ -278,6 +279,7 @@ export default {
 .creator-followers {
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
+  margin: 0;
 }
 
 .clone-btn {
