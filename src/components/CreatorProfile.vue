@@ -230,10 +230,7 @@ export default {
         .replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)))
     },
 
-    roundedRating() {
-      const value = this.creator?.rating?.value || 0
-      return Math.round(value)
-    },
+    
 
     loadCreator() {
       const creatorId = parseInt(this.$route.params.id)
@@ -528,7 +525,8 @@ export default {
 .language-tag { background: var(--bg-secondary); color: var(--text-primary); padding: 4px 10px; border-radius: var(--radius-full); font-size: var(--font-size-sm); }
 .language-tag .proficiency { margin-left: 6px; color: var(--text-secondary); font-weight: 500; }
 
-.social-links { margin-bottom: var(--spacing-xl); }
+.languages { margin-bottom: var(--spacing-xl); }
+.social-links { margin-bottom: var(--spacing-2xl); }
 .social-items { display: flex; flex-wrap: wrap; column-gap: 16px; row-gap: 12px; }
 .social-link { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--bg-secondary); border-radius: var(--radius-full); color: var(--text-primary); text-decoration: none; transition: opacity var(--transition-normal); }
 .social-link i { width: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; color: var(--text-secondary); }
