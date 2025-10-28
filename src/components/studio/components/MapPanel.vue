@@ -13,7 +13,7 @@ export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], polyline: null, loadError: false }
+    return { map: null, markers: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null }
   },
   computed: {
     points() {
@@ -57,9 +57,11 @@ export default {
     createMap() {
       try {
         const center = this.points.length ? { lat: this.points[0].coords[0], lng: this.points[0].coords[1] } : { lat: 48.8566, lng: 2.3522 }
-        this.map = new window.google.maps.Map(this.$refs.mapEl, { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false })
-        // detect advanced markers
-        this.AdvancedMarkerElement = window.google?.maps?.marker?.AdvancedMarkerElement || null
+        const options = { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false }
+        if (this.mapId) options.mapId = this.mapId
+        this.map = new window.google.maps.Map(this.$refs.mapEl, options)
+        // detect advanced markers (requires vector map w/ mapId)
+        this.AdvancedMarkerElement = this.mapId ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) : null
         this.renderRoute()
       } catch (e) {
         console.error('Google Maps init failed', e)
@@ -79,7 +81,8 @@ export default {
         const pos = { lat: p.coords[0], lng: p.coords[1] }
         path.push(pos)
         // Advanced markers if available; otherwise fall back to classic Marker
-        if (this.AdvancedMarkerElement) {
+        const canUseAdvanced = !!this.AdvancedMarkerElement
+        if (canUseAdvanced) {
           const content = document.createElement('div')
           content.style.display = 'flex'
           content.style.alignItems = 'center'
