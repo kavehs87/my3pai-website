@@ -111,6 +111,23 @@
                 </div>
               </div>
 
+              <!-- Partnerships (badges) -->
+              <div v-if="creator.partnerships?.length" class="partnerships">
+                <h3>Partnerships</h3>
+                <div class="partner-badges">
+                  <a v-for="p in creator.partnerships"
+                     :key="p.url"
+                     :href="p.url"
+                     class="partner-badge"
+                     target="_blank"
+                     rel="noopener noreferrer nofollow"
+                  >
+                    <i class="fas fa-handshake"></i>
+                    <span>{{ p.label }}</span>
+                  </a>
+                </div>
+              </div>
+
               
             </div>
             
@@ -538,7 +555,26 @@ export default {
 .platform-twitter:hover i { color: #1d9bf0; }
 .platform-generic:hover i { color: var(--secondary-color); }
 
-/* partnerships removed */
+.partnerships { margin-top: var(--spacing-xl); }
+.partner-badges { display: flex; flex-wrap: wrap; gap: 10px; }
+.partner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  text-decoration: none;
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+}
+.partner-badge i { color: var(--secondary-color); }
+.partner-badge:hover {
+  background: #ecfeff;
+  border-color: #a5f3fc;
+  transform: translateY(-1px);
+}
 
 .profile-actions {
   display: flex;

@@ -24,7 +24,10 @@
         { "platform": "Instagram", "url": "https://instagram.com/travelwithemma" },
         { "platform": "TikTok", "url": "https://tiktok.com/@travelwithemma" }
       ],
-      
+      "partnerships": [
+        { "label": "GetYourGuide Tours", "url": "https://www.getyourguide.com/" },
+        { "label": "Booking.com", "url": "https://www.booking.com/" }
+      ],
       "bio": "Adventure seeker & travel content creator. Sharing authentic experiences from around the world 🌍",
       "location": "New York, USA",
       "joinedDate": "2022-03-15",
@@ -80,7 +83,9 @@
         { "platform": "YouTube", "url": "https://youtube.com/@parisexplorer" },
         { "platform": "Instagram", "url": "https://instagram.com/parisexplorer" }
       ],
-      
+      "partnerships": [
+        { "label": "GetYourGuide Paris", "url": "https://www.getyourguide.com/paris-l16/" }
+      ],
       "bio": "Paris local sharing hidden gems and authentic experiences. Born and raised in the City of Light ✨",
       "location": "Paris, France",
       "joinedDate": "2021-11-08",
@@ -136,7 +141,9 @@
         { "platform": "Instagram", "url": "https://instagram.com/balibeachlife" },
         { "platform": "TikTok", "url": "https://tiktok.com/@balibeachlife" }
       ],
-      
+      "partnerships": [
+        { "label": "Bali Tours", "url": "https://www.getyourguide.com/-l104/" }
+      ],
       "bio": "Bali beach expert & island life enthusiast. Discover the best beaches, sunsets, and local experiences 🏝️",
       "location": "Bali, Indonesia",
       "joinedDate": "2021-06-20",
@@ -192,7 +199,9 @@
         { "platform": "YouTube", "url": "https://youtube.com/@nycfoodie" },
         { "platform": "Instagram", "url": "https://instagram.com/nycfoodie" }
       ],
-      
+      "partnerships": [
+        { "label": "Food Tours NYC", "url": "https://www.getyourguide.com/new-york-city-l59/food-gourmet-tours-tc105/" }
+      ],
       "bio": "NYC food scene expert. From street food to fine dining, I'll show you where the locals eat 🍕",
       "location": "New York, USA",
       "joinedDate": "2022-01-10",
@@ -247,7 +256,9 @@
       "socialLinks": [
         { "platform": "Instagram", "url": "https://instagram.com/greekislands" }
       ],
-      
+      "partnerships": [
+        { "label": "Island Hopping Tours", "url": "https://www.getyourguide.com/greece-n56/" }
+      ],
       "bio": "Greek islands specialist. Discover the most beautiful islands, beaches, and sunsets in Greece 🇬🇷",
       "location": "Santorini, Greece",
       "joinedDate": "2021-09-12",
@@ -303,7 +314,9 @@
         { "platform": "Instagram", "url": "https://instagram.com/dubailuxury" },
         { "platform": "TikTok", "url": "https://tiktok.com/@dubailuxury" }
       ],
-      
+      "partnerships": [
+        { "label": "Desert Safari", "url": "https://www.getyourguide.com/dubai-l173/desert-safaris-tc247/" }
+      ],
       "bio": "Dubai luxury travel expert. From 7-star hotels to desert adventures, experience the best of Dubai 🏙️",
       "location": "Dubai, UAE",
       "joinedDate": "2022-02-28",
