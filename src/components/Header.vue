@@ -16,6 +16,7 @@
           <a href="#" class="nav-link">Create</a>
           <a href="#" class="nav-link">Saved</a>
           <a href="#" class="nav-link">My Itineraries</a>
+          <router-link to="/studio" class="nav-link">Studio</router-link>
         </nav>
 
         <!-- Language/Currency Selector -->
@@ -27,11 +28,15 @@
           <div class="separator"></div>
         </div>
 
-        <!-- User Profile -->
+        <!-- User Profile / Login -->
         <div class="user-profile">
-          <div class="profile-picture">
-            <img src="https://i.pravatar.cc/40?img=41" alt="Profile" />
+          <div v-if="isLoggedIn" class="profile-picture">
+            <img :src="user.avatar || 'https://i.pravatar.cc/40?img=41'" :alt="user.name" />
           </div>
+          <button v-else class="login-btn" @click="showLoginModal">
+            <i class="fas fa-user"></i>
+            <span>Sign In</span>
+          </button>
         </div>
 
         <!-- Mobile Menu Toggle -->
@@ -49,6 +54,7 @@
           <a href="#" class="mobile-nav-link">Create</a>
           <a href="#" class="mobile-nav-link">Saved</a>
           <a href="#" class="mobile-nav-link">My Itineraries</a>
+          <router-link to="/studio" class="mobile-nav-link">Studio</router-link>
         </nav>
         <div class="mobile-user-actions">
           <div class="mobile-language">
@@ -61,20 +67,80 @@
         </div>
       </div>
     </div>
+
+    <!-- Login Modal -->
+    <LoginModal 
+      :isOpen="showLogin" 
+      @close="closeLoginModal" 
+      @login-success="handleLoginSuccess"
+      @switch-to-signup="handleSwitchToSignup"
+    />
+
+    <!-- Signup Modal -->
+    <SignupModal 
+      :isOpen="showSignup" 
+      @close="closeSignupModal" 
+      @signup-success="handleSignupSuccess"
+      @switch-to-login="handleSwitchToLogin"
+    />
   </header>
 </template>
 
 <script>
+import LoginModal from './LoginModal.vue'
+import SignupModal from './SignupModal.vue'
+
 export default {
   name: 'Header',
+  components: {
+    LoginModal,
+    SignupModal
+  },
   data() {
     return {
-      mobileMenuOpen: false
+      mobileMenuOpen: false,
+      showLogin: false,
+      showSignup: false,
+      isLoggedIn: false,
+      user: {
+        name: '',
+        email: '',
+        avatar: ''
+      }
     }
   },
   methods: {
     toggleMobileMenu() {
       this.mobileMenuOpen = !this.mobileMenuOpen
+    },
+    showLoginModal() {
+      this.showLogin = true
+    },
+    closeLoginModal() {
+      this.showLogin = false
+    },
+    handleLoginSuccess(userData) {
+      this.isLoggedIn = true
+      this.user = userData
+      this.closeLoginModal()
+      // TODO: Store user data in localStorage or Vuex
+    },
+    handleSwitchToSignup() {
+      this.showLogin = false
+      this.showSignup = true
+    },
+    closeSignupModal() {
+      this.showSignup = false
+    },
+    handleSignupSuccess(userData) {
+      this.isLoggedIn = true
+      this.user = userData
+      this.closeSignupModal()
+      // TODO: Store user data in localStorage or Vuex
+    },
+    handleSwitchToLogin() {
+      this.showSignup = false
+      this.showLogin = true
     }
   }
 }
@@ -197,6 +263,30 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.login-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--secondary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.login-btn:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
+.login-btn i {
+  font-size: var(--font-size-sm);
 }
 
 .mobile-menu-toggle {
