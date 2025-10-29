@@ -23,7 +23,14 @@
             <Timeline :hours="day.hours" />
           </div>
           <div class="layers">
-            <LayerRow v-for="layer in day.layers" :key="layer.id" :layer="layer" :hours="day.hours" @select="selectEvent" />
+            <LayerRow
+              v-for="layer in day.layers"
+              :key="layer.id"
+              :layer="layer"
+              :hours="day.hours"
+              @select="selectEvent"
+              @attach-file="handleAttachFile"
+            />
           </div>
           <!-- AIHints hidden per request -->
         </div>
@@ -68,7 +75,17 @@ export default {
       console.log('Studio prompt submit:', q)
     },
     handlePickImage() { console.log('Studio pick image') },
-    handleMic() { console.log('Studio mic') }
+    handleMic() { console.log('Studio mic') },
+    handleAttachFile({ layerId, eventId, attachment }) {
+      // find event and attach file (mock only)
+      const layer = this.day.layers.find(l => l.id === layerId)
+      if (!layer) return
+      const ev = layer.events.find(e => e.id === eventId)
+      if (!ev) return
+      if (!Array.isArray(ev.attachments)) ev.attachments = []
+      ev.attachments.push(attachment)
+      console.log('[Studio] Attached file to event', { layerId, eventId, attachment })
+    }
   }
 }
 </script>

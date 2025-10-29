@@ -2,7 +2,17 @@
   <div class="layer-row">
     <div class="label">{{ layer.name }}</div>
     <div class="track">
-      <EventBlock v-for="ev in layer.events" :key="ev.id" :event="ev" :hours="hours" :colorFill="layerColor(layer.id).fill" :colorStroke="layerColor(layer.id).stroke" @update-time="onUpdateTime" @click.native="$emit('select', ev)" />
+      <EventBlock
+        v-for="ev in layer.events"
+        :key="ev.id"
+        :event="ev"
+        :hours="hours"
+        :colorFill="layerColor(layer.id).fill"
+        :colorStroke="layerColor(layer.id).stroke"
+        @update-time="onUpdateTime"
+        @attach-file="onAttachFile"
+        @click.native="$emit('select', ev)"
+      />
     </div>
   </div>
 </template>
@@ -30,6 +40,10 @@ export default {
         this.layer.events[idx].start = start
         this.layer.events[idx].end = end
       }
+    },
+    onAttachFile({ eventId, attachment }) {
+      // emit upward so Studio can centralize attachments
+      this.$emit('attach-file', { layerId: this.layer.id, eventId, attachment })
     }
   }
 }

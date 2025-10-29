@@ -3,6 +3,14 @@
     <span class="handle handle-left" @mousedown.stop.prevent="onResizeStart('left', $event)"></span>
     <span class="title">{{ event.title }}</span>
     <span class="time">{{ event.start }}–{{ event.end }}</span>
+
+    <!-- Attachments: paperclip button + count badge -->
+    <button class="attach-btn" type="button" @click.stop="openFilePicker" title="Attach file">
+      <i class="fas fa-paperclip"></i>
+      <span v-if="(event.attachments && event.attachments.length)" class="badge">{{ event.attachments.length }}</span>
+    </button>
+    <input ref="fileInput" class="hidden-file" type="file" @change="onFileSelected" accept="image/*,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" />
+
     <span class="handle handle-right" @mousedown.stop.prevent="onResizeStart('right', $event)"></span>
   </div>
   
@@ -111,6 +119,37 @@ export default {
       this.tempEndMin = this.timeToMinutes(this.event.end) - dayStart
       window.addEventListener('mousemove', this.onMouseMove)
       window.addEventListener('mouseup', this.onMouseUp, { once: true })
+    },
+    openFilePicker() {
+      const el = this.$refs.fileInput
+      if (el) el.click()
+    },
+    onFileSelected(e) {
+      const file = e.target.files && e.target.files[0]
+      if (!file) return
+      // Create lightweight attachment object with preview for images/PDF
+      const reader = new FileReader()
+      reader.onload = () => {
+        const attachment = {
+          id: `${this.event.id}-${Date.now()}`,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          previewUrl: typeof reader.result === 'string' ? reader.result : null
+        }
+        this.$emit('attach-file', { eventId: this.event.id, attachment })
+        // reset input so selecting the same file again will trigger change
+        e.target.value = ''
+      }
+      // For images and PDFs, read as DataURL; otherwise, skip preview
+      if (/^image\//.test(file.type) || file.type === 'application/pdf') {
+        reader.readAsDataURL(file)
+      } else {
+        // no preview, but still emit metadata
+        const attachment = { id: `${this.event.id}-${Date.now()}`, name: file.name, type: file.type, size: file.size, previewUrl: null }
+        this.$emit('attach-file', { eventId: this.event.id, attachment })
+        e.target.value = ''
+      }
     }
   }
 }
@@ -124,6 +163,12 @@ export default {
 .handle-right { right: 0; border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
 .event .title { color: var(--text-primary); font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .event .time { color: var(--text-secondary); font-size: 11px; }
+
+.attach-btn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 26px; padding: 0 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; transition: var(--transition-normal); }
+.attach-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.attach-btn i { font-size: 12px; }
+.badge { background: var(--secondary-color); color: #fff; border-radius: 10px; padding: 0 6px; font-size: 10px; line-height: 16px; }
+.hidden-file { display: none; }
 </style>
 
 
