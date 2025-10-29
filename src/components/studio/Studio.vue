@@ -33,6 +33,7 @@
               @hover-event="handleHoverEvent"
               @unhover-event="handleUnhoverEvent"
               @focus-event="handleFocusEvent"
+              @export-event="handleExportEvent"
             />
           </div>
           <!-- AIHints hidden per request -->
@@ -97,6 +98,14 @@ export default {
     },
     handleFocusEvent({ eventId }) {
       this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent(eventId, { center: true, pulseOnly: false })
+    },
+    handleExportEvent({ layerId, eventId, provider }) {
+      const layer = this.day.layers.find(l => l.id === layerId)
+      const ev = layer?.events?.find(e => e.id === eventId)
+      if (!ev) return
+      // Mock: log and briefly highlight on the map to confirm action
+      console.log(`[Export Mock] Provider=${provider} | Event=${ev.title} (${ev.start}-${ev.end})`)
+      this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent(eventId, { pulseOnly: true })
     }
   }
 }

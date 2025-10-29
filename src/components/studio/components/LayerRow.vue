@@ -15,6 +15,7 @@
         @hover-event="onHover"
         @unhover-event="onUnhover"
         @focus-event="onFocus"
+        @export-event="onExport"
         @click.native="$emit('select', ev)"
       />
     </div>
@@ -58,6 +59,7 @@ export default {
     onHover({ eventId }) { this.$emit('hover-event', { eventId }) },
     onUnhover({ eventId }) { this.$emit('unhover-event', { eventId }) },
     onFocus({ eventId }) { this.$emit('focus-event', { eventId }) },
+    onExport({ eventId, provider }) { this.$emit('export-event', { layerId: this.layer.id, eventId, provider }) },
     toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m },
     computeIssues() {
       const events = (this.layer.events || []).slice().sort((a,b)=> this.toMin(a.start)-this.toMin(b.start))
@@ -100,7 +102,7 @@ export default {
 <style scoped>
 .layer-row { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: center; }
 .label { color: var(--text-secondary); font-weight: 600; }
-.track { position: relative; height: 52px; background: var(--bg-secondary); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); overflow: hidden; }
+.track { position: relative; height: 52px; background: var(--bg-secondary); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); overflow: visible; }
 .layer-warnings { grid-column: 2 / 3; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .warning-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 8px; font-size: 12px; background: rgba(245,158,11,0.12); color: #b45309; border: 1px solid rgba(245,158,11,0.25); }
 .warning-chip.danger { background: rgba(239,68,68,0.12); color: #b91c1c; border-color: rgba(239,68,68,0.25); }

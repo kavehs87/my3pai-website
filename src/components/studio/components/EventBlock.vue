@@ -13,12 +13,27 @@
     <span class="title">{{ event.title }}</span>
     <span class="time">{{ event.start }}–{{ event.end }}</span>
 
-    <!-- Attachments: paperclip button + count badge -->
-    <button class="attach-btn" type="button" @click.stop="openFilePicker" title="Attach file">
-      <i class="fas fa-paperclip"></i>
-      <span v-if="(event.attachments && event.attachments.length)" class="badge">{{ event.attachments.length }}</span>
-    </button>
-    <input ref="fileInput" class="hidden-file" type="file" @change="onFileSelected" accept="image/*,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" />
+    <!-- Actions (grouped) -->
+    <div class="action-group">
+      <!-- Attachments: paperclip button + count badge -->
+      <button class="icon-btn" type="button" @click.stop="openFilePicker" title="Attach file">
+        <i class="fas fa-paperclip"></i>
+        <span v-if="(event.attachments && event.attachments.length)" class="badge">{{ event.attachments.length }}</span>
+      </button>
+      <input ref="fileInput" class="hidden-file" type="file" @change="onFileSelected" accept="image/*,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" />
+
+      <!-- Export to calendar -->
+      <div class="export-wrap">
+        <button class="icon-btn" type="button" @click.stop="toggleExport" title="Export to calendar">
+          <i class="fas fa-calendar-plus"></i>
+        </button>
+        <div v-if="showExport" class="export-menu" @click.stop>
+          <button class="export-item" type="button" @click="emitExport('google')"><i class="fab fa-google"></i><span>Google Calendar</span></button>
+          <button class="export-item" type="button" @click="emitExport('outlook')"><i class="fab fa-microsoft"></i><span>Outlook</span></button>
+          <button class="export-item" type="button" @click="emitExport('apple')"><i class="fab fa-apple"></i><span>Apple (.ics)</span></button>
+        </div>
+      </div>
+    </div>
 
     <span class="handle handle-right" @mousedown.stop.prevent="onResizeStart('right', $event)"></span>
   </div>
@@ -30,7 +45,7 @@ export default {
   name: 'EventBlock',
   props: { event: Object, hours: Object, colorFill: String, colorStroke: String, issue: Object },
   data() {
-    return { isDragging: false, isResizing: false, resizeSide: null, dragOffsetPx: 0, tempStartMin: null, tempEndMin: null }
+    return { isDragging: false, isResizing: false, resizeSide: null, dragOffsetPx: 0, tempStartMin: null, tempEndMin: null, showExport: false }
   },
   computed: {
     styleObject() {
@@ -142,6 +157,17 @@ export default {
     emitFocus() {
       this.$emit('focus-event', { eventId: this.event.id })
     },
+    toggleExport() {
+      this.showExport = !this.showExport
+      if (this.showExport) {
+        document.addEventListener('click', this.closeExportOnce, { once: true })
+      }
+    },
+    closeExportOnce() { this.showExport = false },
+    emitExport(provider) {
+      this.$emit('export-event', { eventId: this.event.id, provider })
+      this.showExport = false
+    },
     openFilePicker() {
       const el = this.$refs.fileInput
       if (el) el.click()
@@ -188,11 +214,18 @@ export default {
 .event .title { color: var(--text-primary); font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .event .time { color: var(--text-secondary); font-size: 11px; }
 
-.attach-btn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 26px; padding: 0 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-light); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; transition: var(--transition-normal); }
-.attach-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
-.attach-btn i { font-size: 12px; }
-.badge { background: var(--secondary-color); color: #fff; border-radius: 10px; padding: 0 6px; font-size: 10px; line-height: 16px; }
+.action-group { margin-left: auto; display: inline-flex; align-items: center; gap: 0; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-light); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; transition: var(--transition-normal); position: relative; }
+.icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.icon-btn i { font-size: 12px; }
+.badge { background: var(--secondary-color); color: #fff; border-radius: 8px; padding: 0 5px; font-size: 10px; line-height: 14px; position: absolute; top: -6px; right: -6px; }
 .hidden-file { display: none; }
+
+.export-wrap { position: relative; display: inline-flex; }
+.export-menu { position: absolute; top: 30px; right: 0; background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-sm); box-shadow: var(--shadow-light); min-width: 160px; padding: 6px; z-index: 10000; }
+.export-item { width: 100%; display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: transparent; border: none; color: var(--text-primary); cursor: pointer; border-radius: var(--radius-sm); }
+.export-item i { width: 14px; text-align: center; color: var(--text-secondary); }
+.export-item:hover { background: var(--bg-secondary); }
 </style>
 
 

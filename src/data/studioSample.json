@@ -12,7 +12,7 @@
             "id": "checkin",
             "title": "Hotel Astoria - Check-in",
             "start": "08:00",
-            "end": "08:30",
+            "end": "09:30",
             "coords": [48.8738, 2.2950],
             "type": "accommodation",
             "notes": "Drop bags"
@@ -51,7 +51,7 @@
             "id": "breakfast",
             "title": "Cafe de Flore - Breakfast",
             "start": "08:30",
-            "end": "09:00",
+            "end": "10:00",
             "coords": [48.8546, 2.3339],
             "type": "meal"
           },
@@ -59,7 +59,7 @@
             "id": "lunch",
             "title": "Bistrot Lunch",
             "start": "11:30",
-            "end": "12:30",
+            "end": "12:45",
             "coords": [48.8625, 2.3358],
             "type": "meal"
           }
@@ -72,7 +72,7 @@
           {
             "id": "metro1",
             "title": "Metro to Louvre",
-            "start": "12:30",
+            "start": "11:30",
             "end": "13:00",
             "coords": [48.8586, 2.3477],
             "type": "transport"
