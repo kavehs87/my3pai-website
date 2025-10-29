@@ -1,5 +1,5 @@
 <template>
-  <div class="event" :class="{ dragging: isDragging || isResizing }" :style="styleObject" @mousedown.prevent="onMouseDown">
+  <div class="event" :class="eventClass" :style="styleObject" @mousedown.prevent="onMouseDown" :title="issue && issue.message ? issue.message : ''">
     <span class="handle handle-left" @mousedown.stop.prevent="onResizeStart('left', $event)"></span>
     <span class="title">{{ event.title }}</span>
     <span class="time">{{ event.start }}–{{ event.end }}</span>
@@ -19,7 +19,7 @@
 <script>
 export default {
   name: 'EventBlock',
-  props: { event: Object, hours: Object, colorFill: String, colorStroke: String },
+  props: { event: Object, hours: Object, colorFill: String, colorStroke: String, issue: Object },
   data() {
     return { isDragging: false, isResizing: false, resizeSide: null, dragOffsetPx: 0, tempStartMin: null, tempEndMin: null }
   },
@@ -40,6 +40,13 @@ export default {
       if (this.colorFill) styles.background = this.colorFill
       if (this.colorStroke) styles.borderColor = this.colorStroke
       return styles
+    },
+    eventClass() {
+      return {
+        dragging: this.isDragging || this.isResizing,
+        warning: this.issue && this.issue.type === 'too-close',
+        danger: this.issue && this.issue.type === 'overlap'
+      }
     }
   },
   methods: {
@@ -158,6 +165,8 @@ export default {
 <style scoped>
 .event { position: absolute; top: 6px; height: 40px; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: var(--radius-sm); display:flex; align-items:center; gap:8px; padding: 0 10px; cursor: grab; user-select: none; }
 .event.dragging { opacity: .9; cursor: grabbing; }
+.event.warning { box-shadow: 0 0 0 2px rgba(245,158,11,0.4) inset; }
+.event.danger { box-shadow: 0 0 0 2px rgba(239,68,68,0.5) inset; }
 .handle { position: absolute; top: 0; width: 8px; height: 100%; background: rgba(0,0,0,0.06); cursor: ew-resize; }
 .handle-left { left: 0; border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
 .handle-right { right: 0; border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
