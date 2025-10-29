@@ -1,5 +1,14 @@
 <template>
-  <div class="event" :class="eventClass" :style="styleObject" @mousedown.prevent="onMouseDown" :title="issue && issue.message ? issue.message : ''">
+  <div
+    class="event"
+    :class="eventClass"
+    :style="styleObject"
+    @mousedown.prevent="onMouseDown"
+    @mouseenter.stop="emitHover(true)"
+    @mouseleave.stop="emitHover(false)"
+    @click.stop="emitFocus()"
+    :title="issue && issue.message ? issue.message : ''"
+  >
     <span class="handle handle-left" @mousedown.stop.prevent="onResizeStart('left', $event)"></span>
     <span class="title">{{ event.title }}</span>
     <span class="time">{{ event.start }}–{{ event.end }}</span>
@@ -126,6 +135,12 @@ export default {
       this.tempEndMin = this.timeToMinutes(this.event.end) - dayStart
       window.addEventListener('mousemove', this.onMouseMove)
       window.addEventListener('mouseup', this.onMouseUp, { once: true })
+    },
+    emitHover(isEnter) {
+      this.$emit(isEnter ? 'hover-event' : 'unhover-event', { eventId: this.event.id })
+    },
+    emitFocus() {
+      this.$emit('focus-event', { eventId: this.event.id })
     },
     openFilePicker() {
       const el = this.$refs.fileInput

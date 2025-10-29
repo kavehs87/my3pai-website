@@ -17,7 +17,7 @@ export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], circles: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true') }
+    return { map: null, markers: [], circles: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {} }
   },
   computed: {
     points() {
@@ -102,6 +102,7 @@ export default {
       this.markers = []
       this.circles?.forEach(c => c.setMap && c.setMap(null))
       this.circles = []
+      this.idToShape = {}
       if (this.polyline) { this.polyline.setMap(null); this.polyline = null }
 
       const path = []
@@ -142,12 +143,13 @@ export default {
             console.log('[MapPanel] AdvancedMarker created:', adv, 'position:', adv.position)
             this.markers.push(adv)
             
-            // ALSO add a circle as backup to guarantee visibility
+            // ALSO add a circle as backup to guarantee visibility (color-coded by layer)
+            const layerColor = this.layerColors[p.layer]?.fill || '#10b981'
             const circle = new window.google.maps.Circle({
-              strokeColor: '#0e7a5a',
+              strokeColor: layerColor,
               strokeOpacity: 0.9,
               strokeWeight: 2,
-              fillColor: '#10b981',
+              fillColor: layerColor,
               fillOpacity: 0.7,
               map: _map,
               center: pos,
@@ -155,6 +157,7 @@ export default {
               zIndex: 999
             })
             this.circles.push(circle)
+            this.idToShape[p.id] = { marker: adv, circle, color: layerColor, position: pos, content }
             console.log('[MapPanel] Backup circle added for AdvancedMarker')
           } catch (err) {
             console.error('[MapPanel] AdvancedMarker creation failed:', err)
@@ -184,6 +187,7 @@ export default {
           })
           console.log('[MapPanel] Circle overlay created:', circle)
           this.circles.push(circle)
+          this.idToShape[p.id] = { marker, circle, color: this.layerColors[p.layer]?.fill || '#10b981', position: pos }
         }
       })
       if (path.length) {
@@ -199,6 +203,89 @@ export default {
         path.forEach(pt => bounds.extend(pt))
         _map.fitBounds(bounds, 50)
       }
+    },
+
+    highlightEvent(eventId, opts = {}) {
+      const shape = this.idToShape[eventId]
+      if (!shape) return
+      // ensure CSS for advanced marker pulse
+      this.ensurePulseCSS && this.ensurePulseCSS()
+      // emphasize circle
+      shape.circle.setOptions({
+        strokeColor: '#ef4444',
+        fillColor: '#ef4444',
+        strokeWeight: 3,
+        zIndex: 2000
+      })
+      if (shape.content) {
+        shape.content.classList.add('pulse-marker')
+      }
+      // pulse ring effect (dummy)
+      this.pulse(eventId)
+      if (opts.center) {
+        _map.panTo(shape.position)
+      }
+    },
+
+    clearHighlight(eventId) {
+      const shape = this.idToShape[eventId]
+      if (!shape) return
+      shape.circle.setOptions({
+        strokeColor: shape.color,
+        fillColor: shape.color,
+        strokeWeight: 2,
+        zIndex: 999
+      })
+      if (shape.content) {
+        shape.content.classList.remove('pulse-marker')
+      }
+      this.stopPulse(eventId)
+    },
+
+    pulse(eventId) {
+      const shape = this.idToShape[eventId]
+      if (!shape) return
+      this.stopPulse(eventId)
+      const basePos = shape.position
+      let step = 0
+      const makeRing = (radius, opacity) => new window.google.maps.Circle({
+        map: _map,
+        center: basePos,
+        radius,
+        strokeOpacity: 0,
+        fillOpacity: opacity,
+        fillColor: '#ef4444',
+        zIndex: 2500
+      })
+      const ring = makeRing(30, 0.35)
+      const timer = setInterval(() => {
+        step += 1
+        const r = 30 + step * 10
+        const o = Math.max(0, 0.35 - step * 0.06)
+        ring.setRadius(r)
+        ring.setOptions({ fillOpacity: o })
+        if (step > 6) {
+          ring.setMap(null)
+          clearInterval(timer)
+          delete this.pulseTimers[eventId]
+        }
+      }, 80)
+      this.pulseTimers[eventId] = { ring, timer }
+    },
+
+    stopPulse(eventId) {
+      const t = this.pulseTimers[eventId]
+      if (!t) return
+      clearInterval(t.timer)
+      t.ring && t.ring.setMap(null)
+      delete this.pulseTimers[eventId]
+    },
+    ensurePulseCSS() {
+      if (document.getElementById('map-pulse-style')) return
+      const style = document.createElement('style')
+      style.id = 'map-pulse-style'
+      style.textContent = `@keyframes mapPulseScale{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,0.45)}50%{transform:scale(1.15);box-shadow:0 0 0 10px rgba(239,68,68,0.15)}100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,0)}}.pulse-marker{animation:mapPulseScale .9s ease-in-out 0s 3;}`
+      document.head.appendChild(style)
     }
   }
 }

@@ -12,7 +12,7 @@
         <div class="studio-grid" style="min-height: 0;">
           <Sidebar />
           <div class="main">
-            <MapPanel :layers="day.layers" />
+            <MapPanel ref="mapPanel" :layers="day.layers" />
           </div>
         </div>
 
@@ -30,6 +30,9 @@
               :hours="day.hours"
               @select="selectEvent"
               @attach-file="handleAttachFile"
+              @hover-event="handleHoverEvent"
+              @unhover-event="handleUnhoverEvent"
+              @focus-event="handleFocusEvent"
             />
           </div>
           <!-- AIHints hidden per request -->
@@ -85,6 +88,15 @@ export default {
       if (!Array.isArray(ev.attachments)) ev.attachments = []
       ev.attachments.push(attachment)
       console.log('[Studio] Attached file to event', { layerId, eventId, attachment })
+    },
+    handleHoverEvent({ eventId }) {
+      this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent(eventId, { pulseOnly: true })
+    },
+    handleUnhoverEvent({ eventId }) {
+      this.$refs.mapPanel && this.$refs.mapPanel.clearHighlight(eventId)
+    },
+    handleFocusEvent({ eventId }) {
+      this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent(eventId, { center: true, pulseOnly: false })
     }
   }
 }

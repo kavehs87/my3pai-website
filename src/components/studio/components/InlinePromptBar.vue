@@ -9,14 +9,6 @@
         @keydown.enter.prevent="emitSubmit"
       />
     </div>
-    <div class="left-icons">
-      <button class="icon-btn" type="button" @click="emitImage" title="Add image">
-        <i class="fas fa-image"></i>
-      </button>
-      <button class="icon-btn" type="button" @click="emitMic" title="Record voice">
-        <i class="fas fa-microphone"></i>
-      </button>
-    </div>
     <div class="right-icons">
       <button class="send-btn" type="button" @click="emitSubmit" title="Send">
         <i class="fas fa-paper-plane"></i>

@@ -12,6 +12,9 @@
         :issue="issuesMap[ev.id]"
         @update-time="onUpdateTime"
         @attach-file="onAttachFile"
+        @hover-event="onHover"
+        @unhover-event="onUnhover"
+        @focus-event="onFocus"
         @click.native="$emit('select', ev)"
       />
     </div>
@@ -52,6 +55,9 @@ export default {
       // emit upward so Studio can centralize attachments
       this.$emit('attach-file', { layerId: this.layer.id, eventId, attachment })
     },
+    onHover({ eventId }) { this.$emit('hover-event', { eventId }) },
+    onUnhover({ eventId }) { this.$emit('unhover-event', { eventId }) },
+    onFocus({ eventId }) { this.$emit('focus-event', { eventId }) },
     toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m },
     computeIssues() {
       const events = (this.layer.events || []).slice().sort((a,b)=> this.toMin(a.start)-this.toMin(b.start))
