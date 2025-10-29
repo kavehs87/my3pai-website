@@ -79,6 +79,10 @@
           </label>
         </div>
 
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
         <button type="submit" class="signup-btn" :disabled="isLoading || !isFormValid">
           <span v-if="isLoading" class="loading-spinner"></span>
           {{ isLoading ? 'Creating Account...' : 'Create Account' }}
@@ -105,6 +109,8 @@
 </template>
 
 <script>
+import apiService from '../services/api.js'
+
 export default {
   name: 'SignupModal',
   props: {
@@ -123,7 +129,8 @@ export default {
         confirmPassword: '',
         agreeTerms: false
       },
-      isLoading: false
+      isLoading: false,
+      errorMessage: ''
     }
   },
   computed: {
@@ -147,27 +154,27 @@ export default {
       
       this.isLoading = true
       try {
-        // TODO: Replace with actual API call
-        console.log('Signup attempt:', this.form)
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        // Emit success event
-        this.$emit('signup-success', {
-          firstName: this.form.firstName,
-          lastName: this.form.lastName,
+        const result = await apiService.register({
+          first_name: this.form.firstName,
+          last_name: this.form.lastName,
           email: this.form.email,
-          name: `${this.form.firstName} ${this.form.lastName}`,
-          display_name: `${this.form.firstName} ${this.form.lastName}`,
-          picture: 'https://i.pravatar.cc/40?img=41',
-          avatar: 'https://i.pravatar.cc/40?img=41'
+          password: this.form.password,
+          password_confirmation: this.form.confirmPassword
         })
         
-        this.closeModal()
+        if (result.success) {
+          // Store the token
+          apiService.setToken(result.data.token)
+          
+          // Emit success event with user data
+          this.$emit('signup-success', result.data.user)
+          this.closeModal()
+        } else {
+          this.errorMessage = result.error || 'Registration failed'
+        }
       } catch (error) {
         console.error('Signup failed:', error)
-        // TODO: Show error message
+        this.errorMessage = error.message || 'Registration failed. Please try again.'
       } finally {
         this.isLoading = false
       }
@@ -180,6 +187,7 @@ export default {
     },
     
     switchToLogin() {
+      this.errorMessage = ''
       this.$emit('switch-to-login')
     }
   }
@@ -419,6 +427,17 @@ export default {
 
 .login-link a:hover {
   text-decoration: underline;
+}
+
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  text-align: center;
 }
 
 @media (max-width: 480px) {

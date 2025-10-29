@@ -42,6 +42,10 @@
           <a href="#" class="forgot-link">Forgot password?</a>
         </div>
 
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
         <button type="submit" class="login-btn" :disabled="isLoading">
           <span v-if="isLoading" class="loading-spinner"></span>
           {{ isLoading ? 'Signing in...' : 'Sign In' }}
@@ -68,6 +72,8 @@
 </template>
 
 <script>
+import apiService from '../services/api.js'
+
 export default {
   name: 'LoginModal',
   props: {
@@ -83,7 +89,8 @@ export default {
         password: '',
         remember: false
       },
-      isLoading: false
+      isLoading: false,
+      errorMessage: ''
     }
   },
   methods: {
@@ -94,30 +101,24 @@ export default {
     async handleLogin() {
       this.isLoading = true
       try {
-        // For now, we'll simulate login since you only have Google OAuth
-        // In a real app, you'd have a POST /api/login endpoint
-        console.log('Login attempt:', this.form)
-        
-        // Simulate API call (replace with actual login endpoint when available)
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        // For demo purposes, create a mock user
-        const mockUser = {
+        const result = await apiService.login({
           email: this.form.email,
-          name: 'John Doe',
-          display_name: 'John Doe',
-          picture: 'https://i.pravatar.cc/40?img=41',
-          avatar: 'https://i.pravatar.cc/40?img=41'
+          password: this.form.password
+        })
+        
+        if (result.success) {
+          // Store the token
+          apiService.setToken(result.data.token)
+          
+          // Emit success event with user data
+          this.$emit('login-success', result.data.user)
+          this.closeModal()
+        } else {
+          this.errorMessage = result.error || 'Login failed'
         }
-        
-        // Emit success event
-        this.$emit('login-success', mockUser)
-        
-        this.closeModal()
       } catch (error) {
         console.error('Login failed:', error)
-        // TODO: Show error message to user
-        alert('Login failed. Please try again.')
+        this.errorMessage = error.message || 'Login failed. Please check your credentials and try again.'
       } finally {
         this.isLoading = false
       }
@@ -130,6 +131,7 @@ export default {
     },
     
     switchToSignup() {
+      this.errorMessage = ''
       this.$emit('switch-to-signup')
     }
   }
@@ -365,6 +367,17 @@ export default {
 
 .signup-link a:hover {
   text-decoration: underline;
+}
+
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  text-align: center;
 }
 
 @media (max-width: 480px) {

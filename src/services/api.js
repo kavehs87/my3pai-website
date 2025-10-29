@@ -91,6 +91,22 @@ class ApiService {
     return result
   }
 
+  // Register with email/password
+  async register(userData) {
+    return this.request('/register', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    })
+  }
+
+  // Login with email/password
+  async login(credentials) {
+    return this.request('/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials)
+    })
+  }
+
   // Handle OAuth callback (if needed for frontend)
   async handleOAuthCallback(code, state) {
     // This might be handled by your Laravel backend automatically
