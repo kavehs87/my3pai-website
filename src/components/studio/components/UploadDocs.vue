@@ -1,13 +1,5 @@
 <template>
   <div class="upload-card">
-    <div class="upload-header">
-      <div class="title">
-        <i class="fas fa-file-upload"></i>
-        <span>Upload travel documents</span>
-      </div>
-      <div class="hint">PDF, images — tickets, vouchers, reservations</div>
-    </div>
-
     <div
       class="dropzone"
       @dragover.prevent
@@ -74,6 +66,14 @@ export default {
       })
     },
     async simulatePipeline(item) {
+      // Guard: ensure nothing stays stuck beyond a timeout
+      const guard = setTimeout(() => {
+        if (item.state !== 'done' && item.state !== 'error' && !item._emitted) {
+          item.state = 'done'
+          item._emitted = true
+          this.$emit('parsed', this.makeSuggestion(item.file))
+        }
+      }, 5000)
       try {
         item.state = 'uploading'
         await new Promise(r => setTimeout(r, 500 + Math.random()*500))
@@ -81,9 +81,14 @@ export default {
         await new Promise(r => setTimeout(r, 900 + Math.random()*900))
         const suggestion = this.makeSuggestion(item.file)
         item.state = 'done'
-        this.$emit('parsed', suggestion)
+        if (!item._emitted) {
+          item._emitted = true
+          this.$emit('parsed', suggestion)
+        }
       } catch (e) {
         item.state = 'error'
+      } finally {
+        clearTimeout(guard)
       }
     },
     makeSuggestion(file) {
@@ -115,17 +120,12 @@ export default {
 
 <style scoped>
 .upload-card { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); }
-.upload-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-sm) var(--spacing-md); border-bottom: 1px solid var(--border-light); }
-.upload-header .title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text-primary); font-size: 14px; }
-.upload-header .title i { color: var(--text-secondary); font-size: 13px; }
-.upload-header .hint { color: var(--text-tertiary); font-size: 11px; }
-
-.dropzone { padding: var(--spacing-md); }
+.dropzone { padding: var(--spacing-sm); }
 .dropzone-inner { border: 2px dashed var(--border-light); border-radius: var(--radius-md); padding: var(--spacing-lg); text-align: center; color: var(--text-secondary); cursor: pointer; }
 .dropzone-inner i { display: block; font-size: 18px; margin-bottom: 6px; color: var(--text-tertiary); }
 .hidden-file { display: none; }
 
-.items { border-top: 1px solid var(--border-light); padding: var(--spacing-sm) var(--spacing-md); display: flex; flex-direction: column; gap: 8px; }
+.items { border-top: 1px solid var(--border-light); padding: var(--spacing-xs) var(--spacing-sm); display: flex; flex-direction: column; gap: 6px; }
 .item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; }
 .meta { display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 13px; }
 .meta i { color: var(--text-secondary); }
