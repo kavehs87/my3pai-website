@@ -17,7 +17,7 @@ export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], circles: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, debugRoute: true }
+    return { map: null, markers: [], circles: [], polyline: null, polylines: [], loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, debugRoute: true }
   },
   computed: {
     points() {
@@ -59,6 +59,9 @@ export default {
       // Remove circles
       this.circles?.forEach(c => c.setMap && c.setMap(null))
       this.circles = []
+      // Remove all polylines
+      ;(this.polylines || []).forEach(pl => { try { pl && pl.setMap && pl.setMap(null) } catch (e) {} })
+      this.polylines = []
       // Stop and remove pulse rings
       Object.keys(this.pulseTimers || {}).forEach(id => this.stopPulse(id))
       this.pulseTimers = {}
@@ -73,6 +76,7 @@ export default {
       this.idToShape = {}
       // Remove route polyline
       if (this.polyline) { this.polyline.setMap(null); this.polyline = null }
+      if (this.debugRoute) console.debug('[StudioMap] clearAll: cleared markers/circles/polylines')
     },
     initGoogleMaps() {
       const existing = window.google && window.google.maps
@@ -206,6 +210,7 @@ export default {
           strokeWeight: 3
         })
         this.polyline.setMap(_map)
+        this.polylines.push(this.polyline)
         const bounds = new window.google.maps.LatLngBounds()
         path.forEach(pt => bounds.extend(pt))
         _map.fitBounds(bounds, 50)
