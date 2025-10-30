@@ -15,7 +15,23 @@
         <button class="btn" type="button" @click="triggerFile">Attach file</button>
       </div>
     </div>
-    
+    <div class="options-section danger-section">
+      <div class="section-title">Danger Zone</div>
+      <button class="btn btn-danger" type="button" @click="showConfirmDelete">
+        <i class="fas fa-trash"></i> Delete Event
+      </button>
+    </div>
+    <!-- Confirmation Dialog -->
+    <div v-if="showConfirm" class="confirm-dialog">
+      <div class="confirm-content">
+        <div class="confirm-title">Delete Event?</div>
+        <div class="confirm-message">Are you sure you want to delete "{{ event && event.title ? event.title : 'this event' }}"? This action cannot be undone.</div>
+        <div class="confirm-actions">
+          <button class="btn btn-secondary" type="button" @click="cancelDelete">Cancel</button>
+          <button class="btn btn-danger" type="button" @click="confirmDelete">Delete</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -23,7 +39,10 @@
 export default {
   name: 'EventOptionsOverlay',
   props: { visible: Boolean, event: Object, layerId: String },
-  emits: ['close', 'attach-file'],
+  emits: ['close', 'attach-file', 'delete-event'],
+  data() {
+    return { showConfirm: false }
+  },
   methods: {
     triggerFile() { const el = this.$refs.fileInput; if (el) el.click() },
     onFileSelected(e) {
@@ -47,6 +66,18 @@ export default {
         this.$emit('attach-file', { layerId: this.layerId, eventId: this.event.id, attachment })
         e.target.value = ''
       }
+    },
+    showConfirmDelete() {
+      this.showConfirm = true
+    },
+    cancelDelete() {
+      this.showConfirm = false
+    },
+    confirmDelete() {
+      if (!this.event) return
+      this.$emit('delete-event', { layerId: this.layerId, eventId: this.event.id })
+      this.showConfirm = false
+      this.$emit('close')
     }
   }
 }
@@ -64,5 +95,17 @@ export default {
 .muted { color: var(--text-tertiary); }
 .attach-row { margin-top: 8px; }
 .hidden-file { display: none; }
+
+.danger-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light); }
+.btn-danger { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #ef4444; }
+.btn-danger:hover { background: #ef4444; color: #fff; }
+.btn-secondary { background: var(--bg-secondary); border-color: var(--border-light); color: var(--text-primary); }
+
+.confirm-dialog { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 30000; }
+.confirm-content { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 20px; max-width: 400px; width: 90%; box-shadow: var(--shadow-light); }
+.confirm-title { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+.confirm-message { color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5; }
+.confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.confirm-actions .btn { padding: 8px 16px; }
 /* calendar export buttons removed */
 </style>

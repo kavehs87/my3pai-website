@@ -42,6 +42,7 @@
               :layerId="options.layerId"
               @close="closeOptions"
               @attach-file="handleAttachFile"
+              @delete-event="handleDeleteEvent"
             />
           </div>
         </div>
@@ -194,7 +195,20 @@ export default {
       const ev = layer?.events?.find(e => e.id === eventId) || null
       this.options = { visible: true, layerId, event: ev }
     },
-    closeOptions() { this.options.visible = false }
+    closeOptions() { this.options.visible = false },
+    handleDeleteEvent({ layerId, eventId }) {
+      const layer = this.currentDay.layers.find(l => l.id === layerId)
+      if (!layer || !layer.events) return
+      const idx = layer.events.findIndex(e => e.id === eventId)
+      if (idx !== -1) {
+        layer.events.splice(idx, 1)
+        // Close overlay and refresh map
+        this.closeOptions()
+        this.$nextTick(() => {
+          this.$refs.mapPanel && this.$refs.mapPanel.renderRoute && this.$refs.mapPanel.renderRoute()
+        })
+      }
+    }
   }
 }
 </script>
