@@ -36,32 +36,14 @@
             <div class="prompt-row">
               <InlinePromptBar :dense="true" @submit="handlePrompt" @pick-image="handlePickImage" @mic="handleMic" />
             </div>
-            <!-- Event options overlay -->
-            <div v-if="options.visible" class="options-overlay">
-              <div class="options-header">
-                <div class="title">{{ options.event?.title || 'Event options' }}</div>
-                <button class="close-btn" type="button" @click="closeOptions"><i class="fas fa-times"></i></button>
-              </div>
-              <div class="options-section">
-                <div class="section-title">Attachments</div>
-                <div v-if="!options.event?.attachments || !options.event.attachments.length" class="muted">No attachments</div>
-                <ul v-else class="attachments">
-                  <li v-for="att in options.event.attachments" :key="att.id">{{ att.name }}</li>
-                </ul>
-                <div class="attach-row">
-                  <input ref="optsFile" class="hidden-file" type="file" @change="onOptionsFileSelected" accept="image/*,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" />
-                  <button class="btn" type="button" @click="triggerOptionsFile">Attach file</button>
-                </div>
-              </div>
-              <div class="options-section">
-                <div class="section-title">Export to calendar</div>
-                <div class="export-buttons">
-                  <button class="btn" type="button" @click="exportFromOptions('google')"><i class="fab fa-google"></i> Google</button>
-                  <button class="btn" type="button" @click="exportFromOptions('outlook')"><i class="fab fa-microsoft"></i> Outlook</button>
-                  <button class="btn" type="button" @click="exportFromOptions('apple')"><i class="fab fa-apple"></i> Apple (.ics)</button>
-                </div>
-              </div>
-            </div>
+            <EventOptionsOverlay
+              :visible="options.visible"
+              :event="options.event"
+              :layerId="options.layerId"
+              @close="closeOptions"
+              @attach-file="handleAttachFile"
+              @export-event="handleExportEvent"
+            />
           </div>
         </div>
 
@@ -102,11 +84,12 @@ import Sidebar from './components/Sidebar.vue'
 import InlinePromptBar from './components/InlinePromptBar.vue'
 import Timeline from './components/Timeline.vue'
 import LayerRow from './components/LayerRow.vue'
+import EventOptionsOverlay from './components/EventOptionsOverlay.vue'
 // import AIHints from './components/AIHints.vue'
 
 export default {
   name: 'Studio',
-  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, InlinePromptBar },
+  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, InlinePromptBar, EventOptionsOverlay },
   data() {
     return {
       days: data.days || [data.day].filter(Boolean),
@@ -200,37 +183,7 @@ export default {
       const ev = layer?.events?.find(e => e.id === eventId) || null
       this.options = { visible: true, layerId, event: ev }
     },
-    closeOptions() { this.options.visible = false },
-    triggerOptionsFile() {
-      const el = this.$refs.optsFile
-      if (el) el.click()
-    },
-    onOptionsFileSelected(e) {
-      const file = e.target.files && e.target.files[0]
-      if (!file || !this.options.event) return
-      const reader = new FileReader()
-      reader.onload = () => {
-        const attachment = {
-          id: `${this.options.event.id}-${Date.now()}`,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          previewUrl: typeof reader.result === 'string' ? reader.result : null
-        }
-        this.handleAttachFile({ layerId: this.options.layerId, eventId: this.options.event.id, attachment })
-        e.target.value = ''
-      }
-      if (/^image\//.test(file.type) || file.type === 'application/pdf') reader.readAsDataURL(file)
-      else {
-        const attachment = { id: `${this.options.event.id}-${Date.now()}`, name: file.name, type: file.type, size: file.size, previewUrl: null }
-        this.handleAttachFile({ layerId: this.options.layerId, eventId: this.options.event.id, attachment })
-        e.target.value = ''
-      }
-    },
-    exportFromOptions(provider) {
-      if (!this.options.event) return
-      this.handleExportEvent({ layerId: this.options.layerId, eventId: this.options.event.id, provider })
-    }
+    closeOptions() { this.options.visible = false }
   }
 }
 </script>
@@ -259,19 +212,7 @@ export default {
 /* Prompt row spacing */
 /* .prompt-row { margin-top: var(--spacing-sm); margin-bottom: var(--spacing-lg); } */
 
-/* Options overlay */
-.options-overlay { position: absolute; top: 10px; right: 10px; width: 320px; max-width: calc(100% - 20px); background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); padding: 12px; z-index: 20000; }
-.options-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.options-header .title { font-weight: 600; color: var(--text-primary); }
-.close-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; }
-.close-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
-.options-section { margin-top: 8px; }
-.section-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .02em; }
-.attachments { margin: 0; padding-left: 16px; color: var(--text-primary); }
-.muted { color: var(--text-tertiary); }
-.attach-row { margin-top: 8px; }
-.hidden-file { display: none; }
-.export-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Options overlay styles moved to EventOptionsOverlay.vue */
 
 /* Days */
 .days-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md); gap: var(--spacing-md); }
