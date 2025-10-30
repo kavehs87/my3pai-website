@@ -15,14 +15,7 @@
         <button class="btn" type="button" @click="triggerFile">Attach file</button>
       </div>
     </div>
-    <div class="options-section">
-      <div class="section-title">Export to calendar</div>
-      <div class="export-buttons">
-        <button class="btn" type="button" @click="emitExport('google')"><i class="fab fa-google"></i> Google</button>
-        <button class="btn" type="button" @click="emitExport('outlook')"><i class="fab fa-microsoft"></i> Outlook</button>
-        <button class="btn" type="button" @click="emitExport('apple')"><i class="fab fa-apple"></i> Apple (.ics)</button>
-      </div>
-    </div>
+    
   </div>
 </template>
 
@@ -30,7 +23,7 @@
 export default {
   name: 'EventOptionsOverlay',
   props: { visible: Boolean, event: Object, layerId: String },
-  emits: ['close', 'attach-file', 'export-event'],
+  emits: ['close', 'attach-file'],
   methods: {
     triggerFile() { const el = this.$refs.fileInput; if (el) el.click() },
     onFileSelected(e) {
@@ -54,10 +47,6 @@ export default {
         this.$emit('attach-file', { layerId: this.layerId, eventId: this.event.id, attachment })
         e.target.value = ''
       }
-    },
-    emitExport(provider) {
-      if (!this.event) return
-      this.$emit('export-event', { layerId: this.layerId, eventId: this.event.id, provider })
     }
   }
 }
@@ -75,5 +64,5 @@ export default {
 .muted { color: var(--text-tertiary); }
 .attach-row { margin-top: 8px; }
 .hidden-file { display: none; }
-.export-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+/* calendar export buttons removed */
 </style>

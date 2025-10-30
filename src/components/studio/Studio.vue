@@ -42,7 +42,6 @@
               :layerId="options.layerId"
               @close="closeOptions"
               @attach-file="handleAttachFile"
-              @export-event="handleExportEvent"
             />
           </div>
         </div>
