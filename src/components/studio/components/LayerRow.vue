@@ -1,7 +1,7 @@
 <template>
   <div class="layer-row">
     <div class="label">{{ layer.name }}</div>
-    <div class="track" @dragover.prevent @drop="onDrop">
+    <div class="track" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
       <EventBlock
         v-for="ev in layer.events"
         :key="ev.id"
@@ -58,11 +58,21 @@ export default {
     onFocus({ eventId }) { this.$emit('focus-event', { eventId }) },
     onExport({ eventId, provider }) { this.$emit('export-event', { layerId: this.layer.id, eventId, provider }) },
     onOpenOptions(payload) { this.$emit('open-options', payload) },
+    onDragOver(e) {
+      e.preventDefault()
+      // Allow dragover to proceed; actual category check happens in onDrop
+      e.dataTransfer.dropEffect = 'copy'
+    },
+    onDragLeave() {
+      // Reset any visual state if needed
+    },
     onDrop(e) {
       try {
         const data = e.dataTransfer.getData('application/json')
         if (!data) return
         const payload = JSON.parse(data)
+        // Only allow drop if the item's category matches this layer
+        if (payload.layerId !== this.layer.id) return
         const rect = e.currentTarget.getBoundingClientRect()
         const px = Math.min(Math.max(e.clientX - rect.left, 0), rect.width)
         const dayStartMin = this.toMin(this.hours.start)
