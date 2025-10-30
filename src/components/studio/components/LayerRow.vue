@@ -7,15 +7,15 @@
         :key="ev.id"
         :event="ev"
         :hours="hours"
+        :layerId="layer.id"
         :colorFill="layerColor(layer.id).fill"
         :colorStroke="layerColor(layer.id).stroke"
         :issue="issuesMap[ev.id]"
         @update-time="onUpdateTime"
-        @attach-file="onAttachFile"
         @hover-event="onHover"
         @unhover-event="onUnhover"
         @focus-event="onFocus"
-        @export-event="onExport"
+        @open-options="onOpenOptions"
         @click.native="$emit('select', ev)"
       />
     </div>
@@ -52,14 +52,12 @@ export default {
         this.layer.events[idx].end = end
       }
     },
-    onAttachFile({ eventId, attachment }) {
-      // emit upward so Studio can centralize attachments
-      this.$emit('attach-file', { layerId: this.layer.id, eventId, attachment })
-    },
+    onAttachFile({ eventId, attachment }) { this.$emit('attach-file', { layerId: this.layer.id, eventId, attachment }) },
     onHover({ eventId }) { this.$emit('hover-event', { eventId }) },
     onUnhover({ eventId }) { this.$emit('unhover-event', { eventId }) },
     onFocus({ eventId }) { this.$emit('focus-event', { eventId }) },
     onExport({ eventId, provider }) { this.$emit('export-event', { layerId: this.layer.id, eventId, provider }) },
+    onOpenOptions(payload) { this.$emit('open-options', payload) },
     toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m },
     computeIssues() {
       const events = (this.layer.events || []).slice().sort((a,b)=> this.toMin(a.start)-this.toMin(b.start))

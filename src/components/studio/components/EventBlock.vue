@@ -13,26 +13,12 @@
     <span class="title">{{ event.title }}</span>
     <span class="time">{{ event.start }}–{{ event.end }}</span>
 
-    <!-- Actions (grouped) -->
+    <!-- Single options button -->
     <div class="action-group">
-      <!-- Attachments: paperclip button + count badge -->
-      <button class="icon-btn" type="button" @click.stop="openFilePicker" title="Attach file">
-        <i class="fas fa-paperclip"></i>
+      <button class="icon-btn" type="button" @click.stop="emitOptions" title="Options">
+        <i class="fas fa-ellipsis-h"></i>
         <span v-if="(event.attachments && event.attachments.length)" class="badge">{{ event.attachments.length }}</span>
       </button>
-      <input ref="fileInput" class="hidden-file" type="file" @change="onFileSelected" accept="image/*,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" />
-
-      <!-- Export to calendar -->
-      <div class="export-wrap">
-        <button class="icon-btn" type="button" @click.stop="toggleExport" title="Export to calendar">
-          <i class="fas fa-calendar-plus"></i>
-        </button>
-        <div v-if="showExport" class="export-menu" @click.stop>
-          <button class="export-item" type="button" @click="emitExport('google')"><i class="fab fa-google"></i><span>Google Calendar</span></button>
-          <button class="export-item" type="button" @click="emitExport('outlook')"><i class="fab fa-microsoft"></i><span>Outlook</span></button>
-          <button class="export-item" type="button" @click="emitExport('apple')"><i class="fab fa-apple"></i><span>Apple (.ics)</span></button>
-        </div>
-      </div>
     </div>
 
     <span class="handle handle-right" @mousedown.stop.prevent="onResizeStart('right', $event)"></span>
@@ -43,9 +29,9 @@
 <script>
 export default {
   name: 'EventBlock',
-  props: { event: Object, hours: Object, colorFill: String, colorStroke: String, issue: Object },
+  props: { event: Object, hours: Object, colorFill: String, colorStroke: String, issue: Object, layerId: String },
   data() {
-    return { isDragging: false, isResizing: false, resizeSide: null, dragOffsetPx: 0, tempStartMin: null, tempEndMin: null, showExport: false }
+    return { isDragging: false, isResizing: false, resizeSide: null, dragOffsetPx: 0, tempStartMin: null, tempEndMin: null }
   },
   computed: {
     styleObject() {
@@ -157,48 +143,7 @@ export default {
     emitFocus() {
       this.$emit('focus-event', { eventId: this.event.id })
     },
-    toggleExport() {
-      this.showExport = !this.showExport
-      if (this.showExport) {
-        document.addEventListener('click', this.closeExportOnce, { once: true })
-      }
-    },
-    closeExportOnce() { this.showExport = false },
-    emitExport(provider) {
-      this.$emit('export-event', { eventId: this.event.id, provider })
-      this.showExport = false
-    },
-    openFilePicker() {
-      const el = this.$refs.fileInput
-      if (el) el.click()
-    },
-    onFileSelected(e) {
-      const file = e.target.files && e.target.files[0]
-      if (!file) return
-      // Create lightweight attachment object with preview for images/PDF
-      const reader = new FileReader()
-      reader.onload = () => {
-        const attachment = {
-          id: `${this.event.id}-${Date.now()}`,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          previewUrl: typeof reader.result === 'string' ? reader.result : null
-        }
-        this.$emit('attach-file', { eventId: this.event.id, attachment })
-        // reset input so selecting the same file again will trigger change
-        e.target.value = ''
-      }
-      // For images and PDFs, read as DataURL; otherwise, skip preview
-      if (/^image\//.test(file.type) || file.type === 'application/pdf') {
-        reader.readAsDataURL(file)
-      } else {
-        // no preview, but still emit metadata
-        const attachment = { id: `${this.event.id}-${Date.now()}`, name: file.name, type: file.type, size: file.size, previewUrl: null }
-        this.$emit('attach-file', { eventId: this.event.id, attachment })
-        e.target.value = ''
-      }
-    }
+    emitOptions() { this.$emit('open-options', { layerId: this.layerId, eventId: this.event.id }) }
   }
 }
 </script>
@@ -221,11 +166,7 @@ export default {
 .badge { background: var(--secondary-color); color: #fff; border-radius: 8px; padding: 0 5px; font-size: 10px; line-height: 14px; position: absolute; top: -6px; right: -6px; }
 .hidden-file { display: none; }
 
-.export-wrap { position: relative; display: inline-flex; }
-.export-menu { position: absolute; top: 30px; right: 0; background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-sm); box-shadow: var(--shadow-light); min-width: 160px; padding: 6px; z-index: 10000; }
-.export-item { width: 100%; display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: transparent; border: none; color: var(--text-primary); cursor: pointer; border-radius: var(--radius-sm); }
-.export-item i { width: 14px; text-align: center; color: var(--text-secondary); }
-.export-item:hover { background: var(--bg-secondary); }
+/* export styles removed in favor of overlay */
 </style>
 
 

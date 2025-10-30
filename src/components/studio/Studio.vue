@@ -30,6 +30,32 @@
             <div class="prompt-row">
               <InlinePromptBar :dense="true" @submit="handlePrompt" @pick-image="handlePickImage" @mic="handleMic" />
             </div>
+            <!-- Event options overlay -->
+            <div v-if="options.visible" class="options-overlay">
+              <div class="options-header">
+                <div class="title">{{ options.event?.title || 'Event options' }}</div>
+                <button class="close-btn" type="button" @click="closeOptions"><i class="fas fa-times"></i></button>
+              </div>
+              <div class="options-section">
+                <div class="section-title">Attachments</div>
+                <div v-if="!options.event?.attachments || !options.event.attachments.length" class="muted">No attachments</div>
+                <ul v-else class="attachments">
+                  <li v-for="att in options.event.attachments" :key="att.id">{{ att.name }}</li>
+                </ul>
+                <div class="attach-row">
+                  <input ref="optsFile" class="hidden-file" type="file" @change="onOptionsFileSelected" accept="image/*,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" />
+                  <button class="btn" type="button" @click="triggerOptionsFile">Attach file</button>
+                </div>
+              </div>
+              <div class="options-section">
+                <div class="section-title">Export to calendar</div>
+                <div class="export-buttons">
+                  <button class="btn" type="button" @click="exportFromOptions('google')"><i class="fab fa-google"></i> Google</button>
+                  <button class="btn" type="button" @click="exportFromOptions('outlook')"><i class="fab fa-microsoft"></i> Outlook</button>
+                  <button class="btn" type="button" @click="exportFromOptions('apple')"><i class="fab fa-apple"></i> Apple (.ics)</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -79,7 +105,8 @@ export default {
       days: data.days || [data.day].filter(Boolean),
       selectedDayIndex: 0,
       aiHints: data.aiHints,
-      selected: null
+      selected: null,
+      options: { visible: false, layerId: null, event: null }
     }
   },
   computed: {
@@ -160,6 +187,42 @@ export default {
       // Mock: log and briefly highlight on the map to confirm action
       console.log(`[Export Mock] Provider=${provider} | Event=${ev.title} (${ev.start}-${ev.end})`)
       this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent(eventId, { pulseOnly: true })
+    },
+    openEventOptions({ layerId, eventId }) {
+      const layer = this.currentDay.layers.find(l => l.id === layerId)
+      const ev = layer?.events?.find(e => e.id === eventId) || null
+      this.options = { visible: true, layerId, event: ev }
+    },
+    closeOptions() { this.options.visible = false },
+    triggerOptionsFile() {
+      const el = this.$refs.optsFile
+      if (el) el.click()
+    },
+    onOptionsFileSelected(e) {
+      const file = e.target.files && e.target.files[0]
+      if (!file || !this.options.event) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        const attachment = {
+          id: `${this.options.event.id}-${Date.now()}`,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          previewUrl: typeof reader.result === 'string' ? reader.result : null
+        }
+        this.handleAttachFile({ layerId: this.options.layerId, eventId: this.options.event.id, attachment })
+        e.target.value = ''
+      }
+      if (/^image\//.test(file.type) || file.type === 'application/pdf') reader.readAsDataURL(file)
+      else {
+        const attachment = { id: `${this.options.event.id}-${Date.now()}`, name: file.name, type: file.type, size: file.size, previewUrl: null }
+        this.handleAttachFile({ layerId: this.options.layerId, eventId: this.options.event.id, attachment })
+        e.target.value = ''
+      }
+    },
+    exportFromOptions(provider) {
+      if (!this.options.event) return
+      this.handleExportEvent({ layerId: this.options.layerId, eventId: this.options.event.id, provider })
     }
   }
 }
@@ -181,12 +244,27 @@ export default {
 .studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); min-height: 0; height: 100%; align-items: stretch; margin-bottom: var(--spacing-sm); }
 .studio-grid .sidebar { align-self: start; }
 .main { display: flex; flex-direction: column; gap: var(--spacing-sm); flex: 1; }
+.main { position: relative; }
 .editor { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); }
 .editor-max { width: 100%; max-width: none; margin-top: auto; padding: var(--spacing-lg); }
 .layers { display: flex; flex-direction: column; gap: 10px; }
 
 /* Prompt row spacing */
 /* .prompt-row { margin-top: var(--spacing-sm); margin-bottom: var(--spacing-lg); } */
+
+/* Options overlay */
+.options-overlay { position: absolute; top: 10px; right: 10px; width: 320px; max-width: calc(100% - 20px); background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); padding: 12px; z-index: 20000; }
+.options-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.options-header .title { font-weight: 600; color: var(--text-primary); }
+.close-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; }
+.close-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.options-section { margin-top: 8px; }
+.section-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .02em; }
+.attachments { margin: 0; padding-left: 16px; color: var(--text-primary); }
+.muted { color: var(--text-tertiary); }
+.attach-row { margin-top: 8px; }
+.hidden-file { display: none; }
+.export-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* Days */
 .days-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md); gap: var(--spacing-md); }
