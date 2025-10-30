@@ -9,10 +9,29 @@
 
     <div class="studio-body">
       <div class="container">
+        <!-- Day switcher -->
+        <div class="days-toolbar">
+          <div class="days-tabs">
+            <button
+              v-for="(d, idx) in days"
+              :key="d.id || idx"
+              class="day-tab"
+              :class="{ active: idx === selectedDayIndex }"
+              type="button"
+              @click="switchDay(idx)"
+              :title="d.date"
+            >
+              Day {{ idx + 1 }}<span class="muted" v-if="d.city"> — {{ d.city }}</span>
+            </button>
+          </div>
+          <div class="days-actions">
+            <button class="btn" type="button" @click="addDay()"><i class="fas fa-plus"></i> Add day</button>
+          </div>
+        </div>
         <div class="studio-grid" style="min-height: 0;">
           <Sidebar />
           <div class="main">
-            <MapPanel ref="mapPanel" :layers="day.layers" />
+            <MapPanel ref="mapPanel" :layers="currentDay.layers" />
           </div>
         </div>
 
@@ -20,14 +39,14 @@
         <div class="editor editor-max">
           <div class="timeline-row">
             <div></div>
-            <Timeline :hours="day.hours" />
+            <Timeline :hours="currentDay.hours" />
           </div>
           <div class="layers">
             <LayerRow
-              v-for="layer in day.layers"
+              v-for="layer in currentDay.layers"
               :key="layer.id"
               :layer="layer"
-              :hours="day.hours"
+              :hours="currentDay.hours"
               @select="selectEvent"
               @attach-file="handleAttachFile"
               @hover-event="handleHoverEvent"
@@ -59,14 +78,49 @@ export default {
   components: { Header, MapPanel, Timeline, LayerRow, Sidebar, InlinePromptBar },
   data() {
     return {
-      day: data.day,
+      days: data.days || [data.day].filter(Boolean),
+      selectedDayIndex: 0,
       aiHints: data.aiHints,
       selected: null
+    }
+  },
+  computed: {
+    currentDay() {
+      return this.days[this.selectedDayIndex]
     }
   },
   methods: {
     selectEvent(event) {
       this.selected = event
+    },
+    switchDay(idx) {
+      if (idx < 0 || idx >= this.days.length) return
+      this.selectedDayIndex = idx
+      // refresh map markers for the new day
+      this.$nextTick(() => {
+        this.$refs.mapPanel && this.$refs.mapPanel.renderRoute && this.$refs.mapPanel.renderRoute()
+      })
+    },
+    addDay() {
+      const base = this.currentDay || { city: '', date: '', hours: { start: '08:00', end: '20:00' }, layers: [] }
+      const newIdx = this.days.length + 1
+      const deepCopy = JSON.parse(JSON.stringify(base))
+      // Clear events for a fresh day
+      deepCopy.layers = (deepCopy.layers || []).map(l => ({ ...l, events: [] }))
+      deepCopy.id = `day-${newIdx}`
+      // Optionally bump date if ISO
+      if (base.date && /^\d{4}-\d{2}-\d{2}$/.test(base.date)) {
+        const dt = new Date(base.date)
+        if (!isNaN(dt.getTime())) {
+          dt.setDate(dt.getDate() + 1)
+          const yyyy = dt.getFullYear()
+          const mm = String(dt.getMonth() + 1).padStart(2, '0')
+          const dd = String(dt.getDate()).padStart(2, '0')
+          deepCopy.date = `${yyyy}-${mm}-${dd}`
+        }
+      }
+      this.days.push(deepCopy)
+      this.switchDay(this.days.length - 1)
     },
     generateAI() {
       console.log('AI generate (mock)')
@@ -82,7 +136,7 @@ export default {
     handleMic() { console.log('Studio mic') },
     handleAttachFile({ layerId, eventId, attachment }) {
       // find event and attach file (mock only)
-      const layer = this.day.layers.find(l => l.id === layerId)
+      const layer = this.currentDay.layers.find(l => l.id === layerId)
       if (!layer) return
       const ev = layer.events.find(e => e.id === eventId)
       if (!ev) return
@@ -100,7 +154,7 @@ export default {
       this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent(eventId, { center: true, pulseOnly: false })
     },
     handleExportEvent({ layerId, eventId, provider }) {
-      const layer = this.day.layers.find(l => l.id === layerId)
+      const layer = this.currentDay.layers.find(l => l.id === layerId)
       const ev = layer?.events?.find(e => e.id === eventId)
       if (!ev) return
       // Mock: log and briefly highlight on the map to confirm action
@@ -130,6 +184,14 @@ export default {
 .editor { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); }
 .editor-max { width: 100%; max-width: none; margin-top: auto; padding: var(--spacing-lg); }
 .layers { display: flex; flex-direction: column; gap: 10px; }
+
+/* Days */
+.days-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md); gap: var(--spacing-md); }
+.days-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.day-tab { padding: 6px 10px; border: 1px solid var(--border-light); background: var(--bg-primary); color: var(--text-secondary); border-radius: 8px; cursor: pointer; }
+.day-tab.active { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-light); }
+.day-tab .muted { color: var(--text-tertiary); font-weight: 400; }
+.days-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
 
 /* Ensure container stretches and allows editor to push to bottom */
 .studio-body > .container { display: flex; flex-direction: column; flex: 1; }

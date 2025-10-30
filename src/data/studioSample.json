@@ -1,86 +1,89 @@
 {
-  "day": {
-    "city": "Paris",
-    "date": "2025-11-01",
-    "hours": { "start": "08:00", "end": "20:00" },
-    "layers": [
-      {
-        "id": "accommodation",
-        "name": "Accommodation",
-        "events": [
-          {
-            "id": "checkin",
-            "title": "Hotel Astoria - Check-in",
-            "start": "08:00",
-            "end": "09:30",
-            "coords": [48.8738, 2.2950],
-            "type": "accommodation",
-            "notes": "Drop bags"
-          }
-        ]
-      },
-      {
-        "id": "activities",
-        "name": "Activities",
-        "events": [
-          {
-            "id": "bus_tour",
-            "title": "Hop-on Bus Tour",
-            "start": "09:00",
-            "end": "11:00",
-            "coords": [48.8584, 2.2945],
-            "type": "activity",
-            "notes": "Start near Eiffel Tower"
-          },
-          {
-            "id": "louvre",
-            "title": "Louvre Museum",
-            "start": "13:00",
-            "end": "15:30",
-            "coords": [48.8606, 2.3376],
-            "type": "activity",
-            "notes": "Prebooked tickets"
-          }
-        ]
-      },
-      {
-        "id": "food",
-        "name": "Food & Drink",
-        "events": [
-          {
-            "id": "breakfast",
-            "title": "Cafe de Flore - Breakfast",
-            "start": "08:30",
-            "end": "10:00",
-            "coords": [48.8546, 2.3339],
-            "type": "meal"
-          },
-          {
-            "id": "lunch",
-            "title": "Bistrot Lunch",
-            "start": "11:30",
-            "end": "12:45",
-            "coords": [48.8625, 2.3358],
-            "type": "meal"
-          }
-        ]
-      },
-      {
-        "id": "transport",
-        "name": "Transportation",
-        "events": [
-          {
-            "id": "metro1",
-            "title": "Metro to Louvre",
-            "start": "11:30",
-            "end": "13:00",
-            "coords": [48.8586, 2.3477],
-            "type": "transport"
-          }
-        ]
-      }
-    ]
-  },
+  "days": [
+    {
+      "id": "day-1",
+      "city": "Paris",
+      "date": "2025-11-01",
+      "hours": { "start": "08:00", "end": "20:00" },
+      "layers": [
+        {
+          "id": "accommodation",
+          "name": "Accommodation",
+          "events": [
+            {
+              "id": "checkin",
+              "title": "Hotel Astoria - Check-in",
+              "start": "08:00",
+              "end": "09:30",
+              "coords": [48.8738, 2.2950],
+              "type": "accommodation",
+              "notes": "Drop bags"
+            }
+          ]
+        },
+        {
+          "id": "activities",
+          "name": "Activities",
+          "events": [
+            {
+              "id": "bus_tour",
+              "title": "Hop-on Bus Tour",
+              "start": "09:00",
+              "end": "11:00",
+              "coords": [48.8584, 2.2945],
+              "type": "activity",
+              "notes": "Start near Eiffel Tower"
+            },
+            {
+              "id": "louvre",
+              "title": "Louvre Museum",
+              "start": "13:00",
+              "end": "15:30",
+              "coords": [48.8606, 2.3376],
+              "type": "activity",
+              "notes": "Prebooked tickets"
+            }
+          ]
+        },
+        {
+          "id": "food",
+          "name": "Food & Drink",
+          "events": [
+            {
+              "id": "breakfast",
+              "title": "Cafe de Flore - Breakfast",
+              "start": "08:30",
+              "end": "10:00",
+              "coords": [48.8546, 2.3339],
+              "type": "meal"
+            },
+            {
+              "id": "lunch",
+              "title": "Bistrot Lunch",
+              "start": "11:30",
+              "end": "12:45",
+              "coords": [48.8625, 2.3358],
+              "type": "meal"
+            }
+          ]
+        },
+        {
+          "id": "transport",
+          "name": "Transportation",
+          "events": [
+            {
+              "id": "metro1",
+              "title": "Metro to Louvre",
+              "start": "11:30",
+              "end": "13:00",
+              "coords": [48.8586, 2.3477],
+              "type": "transport"
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "aiHints": [
     "Add a cafe stop between Museum and Bus Tour?",
     "You have 3 hours free — would you like to visit the Eiffel Tower?",
