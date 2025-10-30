@@ -38,7 +38,7 @@ export default {
   props: { layer: Object, hours: Object },
   computed: {
     currentDragLayerId() { return currentDragLayerId },
-    isDragDisallowed() { return !this.isDragAllowed && currentDragLayerId !== null && currentDragLayerId !== this.layer.id }
+    isDragDisallowed() { return this.hasActiveDrag && !this.isDragAllowed && currentDragLayerId !== null && currentDragLayerId !== this.layer.id }
   },
   methods: {
     layerColor(id) {
@@ -66,6 +66,7 @@ export default {
     onOpenOptions(payload) { this.$emit('open-options', payload) },
     onDragOver(e) {
       e.preventDefault()
+      this.hasActiveDrag = true
       // Check if dragged item belongs to this layer
       if (currentDragLayerId === this.layer.id) {
         e.dataTransfer.dropEffect = 'copy'
@@ -77,9 +78,11 @@ export default {
     },
     onDragLeave() {
       this.isDragAllowed = false
+      this.hasActiveDrag = false
     },
     onDrop(e) {
       this.isDragAllowed = false
+      this.hasActiveDrag = false
       clearDragLayerId()
       try {
         const data = e.dataTransfer.getData('application/json')
@@ -133,7 +136,7 @@ export default {
     }
   },
   data() {
-    return { issuesMap: {}, warnings: [], isDragAllowed: false }
+    return { issuesMap: {}, warnings: [], isDragAllowed: false, hasActiveDrag: false }
   },
   watch: {
     layer: { handler() { this.computeIssues() }, deep: true }
