@@ -98,10 +98,19 @@ export default {
     renderRoute() {
       if (!_map || !window.google?.maps) return
       // clear old
-      this.markers.forEach(m => m.setMap(null))
+      this.markers.forEach(m => {
+        if (m && typeof m.setMap === 'function') {
+          m.setMap(null)
+        } else if (m && 'map' in m) {
+          // AdvancedMarkerElement uses .map property instead of setMap
+          try { m.map = null } catch (e) {}
+        }
+      })
       this.markers = []
       this.circles?.forEach(c => c.setMap && c.setMap(null))
       this.circles = []
+      // stop any active pulse rings
+      Object.keys(this.pulseTimers || {}).forEach(id => this.stopPulse(id))
       this.idToShape = {}
       if (this.polyline) { this.polyline.setMap(null); this.polyline = null }
 
