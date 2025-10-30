@@ -17,7 +17,7 @@ export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], circles: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {} }
+    return { map: null, markers: [], circles: [], polyline: null, loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, debugRoute: true }
   },
   computed: {
     points() {
@@ -103,16 +103,7 @@ export default {
         _map = new window.google.maps.Map(this.$refs.mapEl, options)
         // detect advanced markers (requires vector map w/ mapId) + flag
         this.AdvancedMarkerElement = (this.useAdvanced && this.mapId) ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) : null
-        // Diagnostics for proxy/reactivity and capabilities
-        try {
-          // Vue proxies often report true with isProxy if stored in reactive state
-          console.log('[DBG] map created; isProxy:', isProxy && isProxy(_map), 'ctor:', _map && _map.constructor && _map.constructor.name)
-          // @ts-ignore - capabilities present on vector maps
-          const caps = _map && _map.mapCapabilities
-          console.log('[DBG] capabilities:', caps)
-          console.log('[DBG] has AdvancedMarkerElement:', !!window.google?.maps?.marker?.AdvancedMarkerElement)
-        } catch (e) {}
-        console.log('[MapPanel] Map created. mapId:', this.mapId, 'useAdvanced:', this.useAdvanced, 'AdvancedMarkerElement:', !!this.AdvancedMarkerElement)
+        // Quiet: remove verbose diagnostics; use targeted debug instead
         // Wait for map to be ready before adding markers
         window.google.maps.event.addListenerOnce(_map, 'idle', () => {
           this.renderRoute()
@@ -130,14 +121,12 @@ export default {
       this.clearAll()
 
       const path = []
-      console.log('[MapPanel] renderRoute points:', this.points.length, this.points)
+      if (this.debugRoute) console.debug('[StudioMap] renderRoute:start events=', this.points.length)
       this.points.forEach((p, idx) => {
         const pos = { lat: p.coords[0], lng: p.coords[1] }
-        console.log('[MapPanel] Point', idx + 1, 'pos:', pos, 'title:', p.title)
         path.push(pos)
         // Advanced markers if available; otherwise fall back to classic Marker
         const canUseAdvanced = !!this.AdvancedMarkerElement
-        console.log('[MapPanel] canUseAdvanced:', canUseAdvanced, 'Creating marker at', pos)
         if (canUseAdvanced) {
           const content = document.createElement('div')
           content.style.cssText = `
@@ -155,7 +144,6 @@ export default {
             border: 3px solid white;
           `
           content.textContent = String(idx + 1)
-          console.log('[MapPanel] Content element created:', content)
           try {
             const adv = new this.AdvancedMarkerElement({ 
               map: _map, 
@@ -164,7 +152,6 @@ export default {
               content,
               zIndex: 1000
             })
-            console.log('[MapPanel] AdvancedMarker created:', adv, 'position:', adv.position)
             this.markers.push(adv)
             
             // ALSO add a circle as backup to guarantee visibility (color-coded by layer)
@@ -182,12 +169,10 @@ export default {
             })
             this.circles.push(circle)
             this.idToShape[p.id] = { marker: adv, circle, color: layerColor, position: pos, content }
-            console.log('[MapPanel] Backup circle added for AdvancedMarker')
           } catch (err) {
             console.error('[MapPanel] AdvancedMarker creation failed:', err)
           }
         } else {
-          console.log('[MapPanel] Creating classic Marker at', pos)
           const marker = new window.google.maps.Marker({
             position: pos,
             map: _map,
@@ -196,7 +181,6 @@ export default {
             // Use default pin to guarantee visibility across styles
             zIndex: 1000
           })
-          console.log('[MapPanel] Classic Marker created:', marker)
           this.markers.push(marker)
           // Add a small circle to ensure visibility regardless of style
           const circle = new window.google.maps.Circle({
@@ -209,7 +193,6 @@ export default {
             center: pos,
             radius: 35
           })
-          console.log('[MapPanel] Circle overlay created:', circle)
           this.circles.push(circle)
           this.idToShape[p.id] = { marker, circle, color: this.layerColors[p.layer]?.fill || '#10b981', position: pos }
         }
@@ -226,7 +209,9 @@ export default {
         const bounds = new window.google.maps.LatLngBounds()
         path.forEach(pt => bounds.extend(pt))
         _map.fitBounds(bounds, 50)
+        if (this.debugRoute) console.debug('[StudioMap] renderRoute:polyline set pts=', path.length)
       }
+      if (this.debugRoute) console.debug('[StudioMap] renderRoute:done markers=', this.markers.length, 'circles=', this.circles.length, 'polyline?', !!this.polyline)
     },
 
     highlightEvent(eventId, opts = {}) {
