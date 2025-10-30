@@ -17,7 +17,7 @@ export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], circles: [], polyline: null, polylines: [], loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, debugRoute: true, isRebuilding: false }
+    return { map: null, markers: [], circles: [], polyline: null, polylines: [], loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, isRebuilding: false }
   },
   computed: {
     points() {
@@ -96,7 +96,6 @@ export default {
       this.idToShape = {}
       // Remove route polyline
       if (this.polyline) { this.polyline.setMap(null); this.polyline = null }
-      if (this.debugRoute) console.debug('[StudioMap] clearAll: cleared markers/circles/polylines')
     },
     initGoogleMaps() {
       const existing = window.google && window.google.maps
@@ -145,7 +144,7 @@ export default {
       this.clearAll()
 
       const path = []
-      if (this.debugRoute) console.debug('[StudioMap] renderRoute:start events=', this.points.length)
+      
       this.points.forEach((p, idx) => {
         const pos = { lat: p.coords[0], lng: p.coords[1] }
         path.push(pos)
@@ -234,9 +233,9 @@ export default {
         const bounds = new window.google.maps.LatLngBounds()
         path.forEach(pt => bounds.extend(pt))
         _map.fitBounds(bounds, 50)
-        if (this.debugRoute) console.debug('[StudioMap] renderRoute:polyline set pts=', path.length)
+        
       }
-      if (this.debugRoute) console.debug('[StudioMap] renderRoute:done markers=', this.markers.length, 'circles=', this.circles.length, 'polyline?', !!this.polyline)
+      
     },
 
     highlightEvent(eventId, opts = {}) {

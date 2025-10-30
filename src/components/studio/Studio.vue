@@ -96,12 +96,10 @@ export default {
     switchDay(idx) {
       if (idx < 0 || idx >= this.days.length) return
       // Clear previous day's overlays before switching
-      console.debug('[Studio] switchDay: clearing overlays for day', this.selectedDayIndex, '->', idx)
       this.$refs.mapPanel && this.$refs.mapPanel.clearAll && this.$refs.mapPanel.clearAll()
       this.selectedDayIndex = idx
       // Rebuild the map to guarantee full cleanup of previous overlays
       this.$nextTick(() => {
-        console.debug('[Studio] switchDay: rebuilding map for day', this.selectedDayIndex)
         this.$refs.mapPanel && this.$refs.mapPanel.rebuildMap && this.$refs.mapPanel.rebuildMap()
       })
     },
