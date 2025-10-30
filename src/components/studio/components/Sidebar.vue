@@ -18,7 +18,8 @@
                 :key="item.key"
                 class="draggable-item"
                 draggable="true"
-                @dragstart="onDragStart($event, toPayload(sec.id, item))"
+                @dragstart="onDragStart($event, toPayload(sec.id, item), sec.id)"
+                @dragend="onDragEnd"
                 :title="item.title"
               >
                 <i :class="item.icon"></i><span class="ellipsis">{{ item.title }}</span>
@@ -32,6 +33,8 @@
 </template>
 
 <script>
+import { setDragLayerId, clearDragLayerId } from './dragState.js'
+
 const ITEM_HEIGHT = 36
 const VIEW_ITEMS = 12
 const BUFFER = 6
@@ -127,9 +130,13 @@ export default {
       const durationMin = item.durationMin || (type === 'transport' ? 30 : (type === 'meal' ? 60 : 90))
       return { layerId, title: item.title, coords, type, durationMin }
     },
-    onDragStart(e, payload) {
+    onDragStart(e, payload, layerId) {
       try { e.dataTransfer.setData('application/json', JSON.stringify(payload)) } catch (err) {}
       e.dataTransfer.effectAllowed = 'copy'
+      setDragLayerId(layerId)
+    },
+    onDragEnd() {
+      clearDragLayerId()
     },
     toggle(id) {
       const wasOpen = this.expanded[id]

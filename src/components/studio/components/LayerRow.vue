@@ -1,7 +1,7 @@
 <template>
   <div class="layer-row">
     <div class="label">{{ layer.name }}</div>
-    <div class="track" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop">
+    <div class="track" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop" :class="{ 'drag-allowed': isDragAllowed, 'drag-disallowed': isDragDisallowed }">
       <EventBlock
         v-for="ev in layer.events"
         :key="ev.id"
@@ -30,10 +30,16 @@
 
 <script>
 import EventBlock from './EventBlock.vue'
+import { currentDragLayerId, clearDragLayerId } from './dragState.js'
+
 export default {
   name: 'LayerRow',
   components: { EventBlock },
   props: { layer: Object, hours: Object },
+  computed: {
+    currentDragLayerId() { return currentDragLayerId },
+    isDragDisallowed() { return !this.isDragAllowed && currentDragLayerId !== null && currentDragLayerId !== this.layer.id }
+  },
   methods: {
     layerColor(id) {
       // consistent color mapping per layer type
@@ -60,13 +66,21 @@ export default {
     onOpenOptions(payload) { this.$emit('open-options', payload) },
     onDragOver(e) {
       e.preventDefault()
-      // Allow dragover to proceed; actual category check happens in onDrop
-      e.dataTransfer.dropEffect = 'copy'
+      // Check if dragged item belongs to this layer
+      if (currentDragLayerId === this.layer.id) {
+        e.dataTransfer.dropEffect = 'copy'
+        this.isDragAllowed = true
+      } else {
+        e.dataTransfer.dropEffect = 'none'
+        this.isDragAllowed = false
+      }
     },
     onDragLeave() {
-      // Reset any visual state if needed
+      this.isDragAllowed = false
     },
     onDrop(e) {
+      this.isDragAllowed = false
+      clearDragLayerId()
       try {
         const data = e.dataTransfer.getData('application/json')
         if (!data) return
@@ -119,7 +133,7 @@ export default {
     }
   },
   data() {
-    return { issuesMap: {}, warnings: [] }
+    return { issuesMap: {}, warnings: [], isDragAllowed: false }
   },
   watch: {
     layer: { handler() { this.computeIssues() }, deep: true }
@@ -131,7 +145,11 @@ export default {
 <style scoped>
 .layer-row { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: center; }
 .label { color: var(--text-secondary); font-weight: 600; }
-.track { position: relative; height: 52px; background: var(--bg-secondary); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); overflow: visible; }
+.track { position: relative; height: 52px; background: var(--bg-secondary); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); overflow: visible; transition: background-color 0.15s, border-color 0.15s; }
+.track.drag-allowed { background: rgba(16,185,129,0.1); border-color: #10b981; border-style: solid; }
+.track.drag-disallowed { background: rgba(239,68,68,0.1); border-color: #ef4444; border-style: solid; position: relative; }
+.track.drag-disallowed::after { content: '🚫'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 20px; pointer-events: none; opacity: 0.8; }
+.track.drag-allowed::after { content: '✓'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #10b981; font-weight: bold; pointer-events: none; }
 .layer-warnings { grid-column: 2 / 3; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .warning-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 8px; font-size: 12px; background: rgba(245,158,11,0.12); color: #b45309; border: 1px solid rgba(245,158,11,0.25); }
 .warning-chip.danger { background: rgba(239,68,68,0.12); color: #b91c1c; border-color: rgba(239,68,68,0.25); }
