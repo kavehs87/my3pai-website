@@ -36,8 +36,8 @@ export default {
   align-items: center; 
   gap: var(--spacing-md); 
   width: 100%; 
-  background: #e9e9e9; 
-  border: 1px solid rgba(0, 0, 0, 0.1); 
+  background: var(--bg-primary); 
+  border: 1px solid var(--border-light); 
   border-radius: var(--radius-lg); 
   padding: var(--spacing-md) var(--spacing-lg); 
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); 
