@@ -47,21 +47,68 @@ export default {
     }
   },
   created() {
-    // Generate mock catalogs (could be fetched later)
-    const make = (n, prefix, icon) => Array.from({ length: n }, (_, i) => ({ key: `${prefix}-${i+1}`, title: `${prefix} ${i+1}`, icon }))
+    // Meaningful mock catalogs (~10 each)
+    const acc = [
+      { key: 'hotel-lutetia', title: 'Hotel Lutetia', icon: 'fas fa-hotel', coords: [48.8516, 2.3254] },
+      { key: 'le-bristol', title: 'Le Bristol Paris', icon: 'fas fa-hotel', coords: [48.8718, 2.3132] },
+      { key: 'ritz-paris', title: 'Ritz Paris', icon: 'fas fa-hotel', coords: [48.8686, 2.3285] },
+      { key: 'regina-louvre', title: 'Hotel Regina Louvre', icon: 'fas fa-hotel', coords: [48.8635, 2.3319] },
+      { key: 'pullman-eiffel', title: 'Pullman Paris Tour Eiffel', icon: 'fas fa-hotel', coords: [48.8553, 2.2933] },
+      { key: 'le-six', title: 'Hotel Le Six', icon: 'fas fa-hotel', coords: [48.8437, 2.3231] },
+      { key: 'citizenm-ce', title: 'citizenM Champs-Élysées', icon: 'fas fa-hotel', coords: [48.8693, 2.3047] },
+      { key: 'crillon', title: 'Hôtel de Crillon', icon: 'fas fa-hotel', coords: [48.8680, 2.3212] },
+      { key: 'pont-neuf', title: 'Maison Albar Le Pont-Neuf', icon: 'fas fa-hotel', coords: [48.8601, 2.3452] },
+      { key: 'dorsay-hotel', title: "Hôtel d'Orsay", icon: 'fas fa-hotel', coords: [48.8593, 2.3255] }
+    ]
+    const act = [
+      { key: 'eiffel', title: 'Eiffel Tower', icon: 'fas fa-landmark', coords: [48.8584, 2.2945], durationMin: 120 },
+      { key: 'louvre', title: 'Louvre Museum', icon: 'fas fa-landmark', coords: [48.8606, 2.3376], durationMin: 150 },
+      { key: 'notre-dame', title: 'Notre-Dame Cathedral', icon: 'fas fa-church', coords: [48.8530, 2.3499], durationMin: 60 },
+      { key: 'sacre-coeur', title: 'Sacré-Cœur & Montmartre', icon: 'fas fa-church', coords: [48.8867, 2.3431], durationMin: 90 },
+      { key: 'seine-cruise', title: 'Seine River Cruise', icon: 'fas fa-ship', coords: [48.8589, 2.3123], durationMin: 60 },
+      { key: 'orsay', title: 'Musée d’Orsay', icon: 'fas fa-landmark', coords: [48.8600, 2.3266], durationMin: 120 },
+      { key: 'lux-gardens', title: 'Luxembourg Gardens', icon: 'fas fa-tree', coords: [48.8462, 2.3371], durationMin: 60 },
+      { key: 'arc', title: 'Arc de Triomphe', icon: 'fas fa-archway', coords: [48.8738, 2.2950], durationMin: 45 },
+      { key: 'sainte-chapelle', title: 'Sainte-Chapelle', icon: 'fas fa-church', coords: [48.8554, 2.3450], durationMin: 45 },
+      { key: 'versailles', title: 'Versailles Day Trip', icon: 'fas fa-crown', coords: [48.8049, 2.1204], durationMin: 240 }
+    ]
+    const food = [
+      { key: 'cafe-de-flore', title: 'Café de Flore', icon: 'fas fa-mug-hot', coords: [48.8546, 2.3339], durationMin: 60 },
+      { key: 'les-deux-magots', title: 'Les Deux Magots', icon: 'fas fa-mug-hot', coords: [48.8553, 2.3330], durationMin: 60 },
+      { key: 'breizh-cafe', title: 'Breizh Café', icon: 'fas fa-utensils', coords: [48.8577, 2.3601], durationMin: 60 },
+      { key: 'las-du-fallafel', title: "L'As du Fallafel", icon: 'fas fa-utensils', coords: [48.8570, 2.3619], durationMin: 45 },
+      { key: 'le-comptoir', title: 'Le Comptoir du Relais', icon: 'fas fa-utensils', coords: [48.8529, 2.3375], durationMin: 75 },
+      { key: 'paul-bert', title: 'Bistrot Paul Bert', icon: 'fas fa-utensils', coords: [48.8537, 2.3841], durationMin: 90 },
+      { key: 'angelina', title: 'Angelina (Hot Chocolate)', icon: 'fas fa-ice-cream', coords: [48.8661, 2.3266], durationMin: 45 },
+      { key: 'pierre-herme', title: 'Pierre Hermé (Macarons)', icon: 'fas fa-cookie-bite', coords: [48.8519, 2.3327], durationMin: 30 },
+      { key: 'septime', title: 'Septime', icon: 'fas fa-utensils', coords: [48.8530, 2.3807], durationMin: 120 },
+      { key: 'frenchie', title: 'Frenchie', icon: 'fas fa-utensils', coords: [48.8688, 2.3473], durationMin: 120 }
+    ]
+    const transport = [
+      { key: 'metro-l1', title: 'Metro Line 1 Ride', icon: 'fas fa-subway', coords: [48.8656, 2.3211], durationMin: 25 },
+      { key: 'rer-a', title: 'RER A to Disneyland', icon: 'fas fa-train', coords: [48.8763, 2.3574], durationMin: 45 },
+      { key: 'taxi-left-bank', title: 'Taxi Transfer (Left Bank)', icon: 'fas fa-taxi', coords: [48.8530, 2.3499], durationMin: 35 },
+      { key: 'bus-42', title: 'Bus 42 Ride', icon: 'fas fa-bus', coords: [48.8738, 2.2950], durationMin: 30 },
+      { key: 'uber-montmartre', title: 'Uber to Montmartre', icon: 'fas fa-car-side', coords: [48.8867, 2.3431], durationMin: 25 },
+      { key: 'velib', title: 'Vélib Bike Ride', icon: 'fas fa-bicycle', coords: [48.8566, 2.3522], durationMin: 20 },
+      { key: 'rer-c-versailles', title: 'RER C to Versailles', icon: 'fas fa-train', coords: [48.8566, 2.3270], durationMin: 40 },
+      { key: 'metro-l4', title: 'Metro Line 4 Ride', icon: 'fas fa-subway', coords: [48.8440, 2.3290], durationMin: 20 },
+      { key: 'tgv-lyon', title: 'TGV from Gare de Lyon', icon: 'fas fa-train', coords: [48.8443, 2.3730], durationMin: 15 },
+      { key: 'cdg-transfer', title: 'Airport Transfer (CDG)', icon: 'fas fa-plane-departure', coords: [49.0097, 2.5479], durationMin: 45 }
+    ]
     this.sections = [
-      { id: 'accommodation', title: 'Accommodation', icon: 'fas fa-bed', items: make(400, 'Hotel', 'fas fa-hotel') },
-      { id: 'activities', title: 'Activities', icon: 'fas fa-border-all', items: make(250, 'Activity', 'fas fa-person-hiking') },
-      { id: 'food', title: 'Food & Drink', icon: 'fas fa-utensils', items: make(200, 'Place', 'fas fa-mug-hot') },
-      { id: 'transport', title: 'Transportation', icon: 'fas fa-plane', items: make(150, 'Transfer', 'fas fa-taxi') }
+      { id: 'accommodation', title: 'Accommodation', icon: 'fas fa-bed', items: acc },
+      { id: 'activities', title: 'Activities', icon: 'fas fa-border-all', items: act },
+      { id: 'food', title: 'Food & Drink', icon: 'fas fa-utensils', items: food },
+      { id: 'transport', title: 'Transportation', icon: 'fas fa-plane', items: transport }
     ]
   },
   methods: {
     toPayload(layerId, item) {
-      // Default coords mock; in real app these come from the item
-      const coords = layerId === 'accommodation' ? [48.8738, 2.295] : layerId === 'activities' ? [48.8584, 2.2945] : layerId === 'food' ? [48.8546, 2.3339] : [48.8586, 2.3477]
+      const coords = item.coords || (layerId === 'accommodation' ? [48.8738, 2.295] : layerId === 'activities' ? [48.8584, 2.2945] : layerId === 'food' ? [48.8546, 2.3339] : [48.8586, 2.3477])
       const type = layerId === 'food' ? 'meal' : (layerId === 'transport' ? 'transport' : (layerId === 'accommodation' ? 'accommodation' : 'activity'))
-      return { layerId, title: item.title, coords, type, durationMin: type === 'transport' ? 30 : (type === 'meal' ? 60 : 90) }
+      const durationMin = item.durationMin || (type === 'transport' ? 30 : (type === 'meal' ? 60 : 90))
+      return { layerId, title: item.title, coords, type, durationMin }
     },
     onDragStart(e, payload) {
       try { e.dataTransfer.setData('application/json', JSON.stringify(payload)) } catch (err) {}
