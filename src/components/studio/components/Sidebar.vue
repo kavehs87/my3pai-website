@@ -41,7 +41,7 @@ export default {
   data() {
     return {
       search: '',
-      expanded: { accommodation: true, activities: true, food: true, transport: true },
+      expanded: { accommodation: false, activities: false, food: false, transport: false },
       scrollTopBySection: {},
       sections: []
     }
@@ -67,7 +67,7 @@ export default {
       try { e.dataTransfer.setData('application/json', JSON.stringify(payload)) } catch (err) {}
       e.dataTransfer.effectAllowed = 'copy'
     },
-    toggle(id) { this.$set(this.expanded, id, !this.expanded[id]) },
+    toggle(id) { this.expanded[id] = !this.expanded[id] },
     onScroll(id, evt) { this.$set(this.scrollTopBySection, id, evt.target.scrollTop) },
     filtered(sec) {
       if (!this.search) return sec.items
