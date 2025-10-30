@@ -1,5 +1,5 @@
 <template>
-  <div class="inline-prompt">
+  <div class="inline-prompt" :class="{ dense }">
     <div class="prompt-input-wrapper">
       <input
         v-model="query"
@@ -20,7 +20,7 @@
 <script>
 export default {
   name: 'InlinePromptBar',
-  props: { placeholder: { type: String, default: "Share your dream trip. I'll map the way." } },
+  props: { placeholder: { type: String, default: "Share your dream trip. I'll map the way." }, dense: { type: Boolean, default: false } },
   data() { return { query: '' } },
   methods: {
     emitSubmit() { this.$emit('submit', this.query.trim()) },
@@ -41,6 +41,11 @@ export default {
   border-radius: var(--radius-lg); 
   padding: var(--spacing-md) var(--spacing-lg); 
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); 
+}
+
+.inline-prompt.dense {
+  padding: var(--spacing-sm) var(--spacing-md);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
 
 .prompt-input-wrapper {
@@ -106,6 +111,12 @@ export default {
   width: 40px; 
   height: 40px; 
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); 
+}
+
+.inline-prompt.dense .send-btn {
+  width: 34px;
+  height: 34px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.12);
 }
 
 .send-btn:hover:not(:disabled) { 

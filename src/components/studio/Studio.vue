@@ -27,12 +27,10 @@
           <Sidebar />
           <div class="main">
             <MapPanel ref="mapPanel" :layers="currentDay.layers" />
+            <div class="prompt-row">
+              <InlinePromptBar :dense="true" @submit="handlePrompt" @pick-image="handlePickImage" @mic="handleMic" />
+            </div>
           </div>
-        </div>
-
-        <!-- Prompt bar below map, above timeline/editor -->
-        <div class="prompt-row">
-          <InlinePromptBar @submit="handlePrompt" @pick-image="handlePickImage" @mic="handleMic" />
         </div>
 
         <!-- Timeline/editor below, full width under grid -->
@@ -188,7 +186,7 @@ export default {
 .layers { display: flex; flex-direction: column; gap: 10px; }
 
 /* Prompt row spacing */
-.prompt-row { margin-bottom: var(--spacing-lg); }
+.prompt-row { margin-top: var(--spacing-sm); margin-bottom: var(--spacing-lg); }
 
 /* Days */
 .days-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md); gap: var(--spacing-md); }
