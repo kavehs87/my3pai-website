@@ -17,7 +17,7 @@ export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], circles: [], polyline: null, polylines: [], loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, debugRoute: true }
+    return { map: null, markers: [], circles: [], polyline: null, polylines: [], loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, debugRoute: true, isRebuilding: false }
   },
   computed: {
     points() {
@@ -39,12 +39,32 @@ export default {
   watch: {
     points: {
       handler() {
+        if (this.isRebuilding) return
         this.renderRoute()
       },
       deep: true
     }
   },
   methods: {
+    rebuildMap() {
+      if (!window.google?.maps) return
+      this.isRebuilding = true
+      this.clearAll()
+      // Recreate the map instance to guarantee a clean slate
+      try {
+        const center = this.points.length ? { lat: this.points[0].coords[0], lng: this.points[0].coords[1] } : { lat: 48.8566, lng: 2.3522 }
+        const options = { center, zoom: 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: false }
+        if (this.mapId) options.mapId = this.mapId
+        _map = new window.google.maps.Map(this.$refs.mapEl, options)
+        this.AdvancedMarkerElement = (this.useAdvanced && this.mapId) ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) : null
+        window.google.maps.event.addListenerOnce(_map, 'idle', () => {
+          this.isRebuilding = false
+          this.renderRoute()
+        })
+      } catch (e) {
+        this.isRebuilding = false
+      }
+    },
     clearAll() {
       if (!_map || !window.google?.maps) return
       // Remove markers (classic and AdvancedMarker)

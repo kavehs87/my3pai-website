@@ -99,9 +99,10 @@ export default {
       console.debug('[Studio] switchDay: clearing overlays for day', this.selectedDayIndex, '->', idx)
       this.$refs.mapPanel && this.$refs.mapPanel.clearAll && this.$refs.mapPanel.clearAll()
       this.selectedDayIndex = idx
-      // Rely on prop change + MapPanel watcher to render new day
+      // Rebuild the map to guarantee full cleanup of previous overlays
       this.$nextTick(() => {
-        console.debug('[Studio] switchDay: new day set', this.selectedDayIndex)
+        console.debug('[Studio] switchDay: rebuilding map for day', this.selectedDayIndex)
+        this.$refs.mapPanel && this.$refs.mapPanel.rebuildMap && this.$refs.mapPanel.rebuildMap()
       })
     },
     addDay() {
