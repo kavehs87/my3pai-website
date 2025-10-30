@@ -103,6 +103,23 @@ export default {
       { id: 'transport', title: 'Transportation', icon: 'fas fa-plane', items: transport }
     ]
   },
+  watch: {
+    search(newVal) {
+      if (!newVal || !newVal.trim()) {
+        // Clear search: close all categories
+        Object.keys(this.expanded).forEach(k => { this.expanded[k] = false })
+      } else {
+        // Search active: auto-expand categories with matching items
+        const q = newVal.toLowerCase().trim()
+        this.sections.forEach(sec => {
+          const hasMatches = sec.items.some(it => it.title.toLowerCase().includes(q))
+          this.expanded[sec.id] = hasMatches
+          // Close others if accordion behavior is desired; otherwise keep all matching open
+          // For now, keep all matching categories open
+        })
+      }
+    }
+  },
   methods: {
     toPayload(layerId, item) {
       const coords = item.coords || (layerId === 'accommodation' ? [48.8738, 2.295] : layerId === 'activities' ? [48.8584, 2.2945] : layerId === 'food' ? [48.8546, 2.3339] : [48.8586, 2.3477])
