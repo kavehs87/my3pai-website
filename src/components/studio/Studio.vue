@@ -29,7 +29,12 @@
           </div>
         </div>
         <div class="studio-grid" style="min-height: 0;">
-          <Sidebar />
+          <div class="sidebar">
+            <Sidebar />
+            <div class="sidebar-upload">
+              <UploadDocs @parsed="handleDocumentParsed" />
+            </div>
+          </div>
           <div class="main">
             <MapPanel ref="mapPanel" :layers="currentDay.layers" />
           </div>
@@ -71,11 +76,12 @@ import Sidebar from './components/Sidebar.vue'
 import InlinePromptBar from './components/InlinePromptBar.vue'
 import Timeline from './components/Timeline.vue'
 import LayerRow from './components/LayerRow.vue'
+import UploadDocs from './components/UploadDocs.vue'
 // import AIHints from './components/AIHints.vue'
 
 export default {
   name: 'Studio',
-  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, InlinePromptBar },
+  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, InlinePromptBar, UploadDocs },
   data() {
     return {
       days: data.days || [data.day].filter(Boolean),
@@ -162,6 +168,20 @@ export default {
       // Mock: log and briefly highlight on the map to confirm action
       console.log(`[Export Mock] Provider=${provider} | Event=${ev.title} (${ev.start}-${ev.end})`)
       this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent(eventId, { pulseOnly: true })
+    },
+    handleDocumentParsed(suggestion) {
+      if (!suggestion) return
+      const { layer: targetLayerId = 'activities', title = 'Imported document', start = '10:00', end = '11:00', coords = [48.8566, 2.3522], notes = '' } = suggestion
+      const layer = this.currentDay.layers.find(l => l.id === targetLayerId) || this.currentDay.layers[0]
+      if (!layer) return
+      const id = `doc-${Date.now()}`
+      layer.events = layer.events || []
+      layer.events.push({ id, title, start, end, coords, type: targetLayerId === 'transport' ? 'transport' : (targetLayerId === 'accommodation' ? 'accommodation' : 'activity'), notes })
+      // Visual confirmation on map
+      this.$nextTick(() => {
+        this.$refs.mapPanel && this.$refs.mapPanel.renderRoute && this.$refs.mapPanel.renderRoute()
+        this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent && this.$refs.mapPanel.highlightEvent(id, { pulseOnly: true, center: true })
+      })
     }
   }
 }
@@ -181,7 +201,8 @@ export default {
 .container { max-width: 100%; width: 100%; padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
 .studio-body { padding: var(--spacing-lg) 0; flex: 1; display: flex; min-height: 0; }
 .studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); min-height: 0; height: 100%; align-items: stretch; margin-bottom: var(--spacing-lg); }
-.studio-grid .sidebar { align-self: start; }
+.studio-grid .sidebar { align-self: start; display: flex; flex-direction: column; gap: var(--spacing-lg); }
+.sidebar-upload { position: sticky; top: var(--spacing-sm); }
 .main { display: flex; flex-direction: column; gap: var(--spacing-lg); flex: 1; }
 .editor { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); }
 .editor-max { width: 100%; max-width: none; margin-top: auto; padding: var(--spacing-lg); }
