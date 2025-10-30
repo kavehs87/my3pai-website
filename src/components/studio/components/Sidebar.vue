@@ -114,7 +114,13 @@ export default {
       try { e.dataTransfer.setData('application/json', JSON.stringify(payload)) } catch (err) {}
       e.dataTransfer.effectAllowed = 'copy'
     },
-    toggle(id) { this.expanded[id] = !this.expanded[id] },
+    toggle(id) {
+      const wasOpen = this.expanded[id]
+      // Close all sections
+      Object.keys(this.expanded).forEach(k => { this.expanded[k] = false })
+      // If the clicked one was closed, open it now
+      if (!wasOpen) this.expanded[id] = true
+    },
     onScroll(id, evt) { this.$set(this.scrollTopBySection, id, evt.target.scrollTop) },
     filtered(sec) {
       if (!this.search) return sec.items
