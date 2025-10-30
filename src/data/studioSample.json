@@ -82,6 +82,169 @@
           ]
         }
       ]
+    },
+    {
+      "id": "day-2",
+      "city": "Paris",
+      "date": "2025-11-02",
+      "hours": { "start": "08:00", "end": "21:00" },
+      "layers": [
+        {
+          "id": "accommodation",
+          "name": "Accommodation",
+          "events": [
+            {
+              "id": "breakfast_hotel",
+              "title": "Hotel Breakfast",
+              "start": "08:00",
+              "end": "08:45",
+              "coords": [48.8738, 2.2950],
+              "type": "accommodation",
+              "notes": "Light breakfast before sightseeing"
+            }
+          ]
+        },
+        {
+          "id": "activities",
+          "name": "Activities",
+          "events": [
+            {
+              "id": "notre_dame",
+              "title": "Notre-Dame area stroll",
+              "start": "09:30",
+              "end": "11:00",
+              "coords": [48.8530, 2.3499],
+              "type": "activity",
+              "notes": "Walk around Île de la Cité"
+            },
+            {
+              "id": "montmartre",
+              "title": "Montmartre & Sacré-Cœur",
+              "start": "14:00",
+              "end": "16:00",
+              "coords": [48.8867, 2.3431],
+              "type": "activity",
+              "notes": "View over Paris"
+            }
+          ]
+        },
+        {
+          "id": "food",
+          "name": "Food & Drink",
+          "events": [
+            {
+              "id": "latin_lunch",
+              "title": "Latin Quarter Lunch",
+              "start": "11:30",
+              "end": "12:45",
+              "coords": [48.8494, 2.3470],
+              "type": "meal"
+            },
+            {
+              "id": "bistro_dinner",
+              "title": "Montmartre Bistro Dinner",
+              "start": "19:00",
+              "end": "20:30",
+              "coords": [48.8860, 2.3390],
+              "type": "meal"
+            }
+          ]
+        },
+        {
+          "id": "transport",
+          "name": "Transportation",
+          "events": [
+            {
+              "id": "metro_nd",
+              "title": "Metro to Notre-Dame",
+              "start": "09:00",
+              "end": "09:25",
+              "coords": [48.8586, 2.3477],
+              "type": "transport"
+            },
+            {
+              "id": "metro_montmartre",
+              "title": "Metro to Montmartre",
+              "start": "13:15",
+              "end": "13:50",
+              "coords": [48.8820, 2.3430],
+              "type": "transport"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-3",
+      "city": "Versailles",
+      "date": "2025-11-03",
+      "hours": { "start": "08:00", "end": "19:00" },
+      "layers": [
+        {
+          "id": "accommodation",
+          "name": "Accommodation",
+          "events": []
+        },
+        {
+          "id": "activities",
+          "name": "Activities",
+          "events": [
+            {
+              "id": "palace",
+              "title": "Palace of Versailles",
+              "start": "10:00",
+              "end": "13:00",
+              "coords": [48.8049, 2.1204],
+              "type": "activity",
+              "notes": "Hall of Mirrors, Gardens"
+            },
+            {
+              "id": "gardens",
+              "title": "Versailles Gardens Walk",
+              "start": "14:00",
+              "end": "15:30",
+              "coords": [48.8040, 2.1110],
+              "type": "activity"
+            }
+          ]
+        },
+        {
+          "id": "food",
+          "name": "Food & Drink",
+          "events": [
+            {
+              "id": "versailles_lunch",
+              "title": "Brasserie Lunch near Palace",
+              "start": "13:10",
+              "end": "13:50",
+              "coords": [48.8055, 2.1230],
+              "type": "meal"
+            }
+          ]
+        },
+        {
+          "id": "transport",
+          "name": "Transportation",
+          "events": [
+            {
+              "id": "train_out",
+              "title": "RER to Versailles",
+              "start": "08:45",
+              "end": "09:35",
+              "coords": [48.8566, 2.3522],
+              "type": "transport"
+            },
+            {
+              "id": "train_back",
+              "title": "Return to Paris",
+              "start": "16:30",
+              "end": "17:20",
+              "coords": [48.8566, 2.3522],
+              "type": "transport"
+            }
+          ]
+        }
+      ]
     }
   ],
   "aiHints": [
