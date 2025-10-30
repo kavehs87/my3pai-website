@@ -20,6 +20,12 @@
             </button>
           </div>
           <div class="days-actions">
+            <div class="toolbar-buttons">
+              <button class="btn secondary" type="button">Itinerary Timeline</button>
+              <button class="btn secondary" type="button">Export to Calendar</button>
+              <button class="btn secondary" type="button">Statistics</button>
+              <button class="btn secondary" type="button">Export as File</button>
+            </div>
             <button class="btn" type="button" @click="addDay()"><i class="fas fa-plus"></i> Add day</button>
           </div>
         </div>
@@ -273,7 +279,9 @@ export default {
 .day-tab { padding: 6px 10px; border: 1px solid var(--border-light); background: var(--bg-primary); color: var(--text-secondary); border-radius: 8px; cursor: pointer; }
 .day-tab.active { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-light); }
 .day-tab .muted { color: var(--text-tertiary); font-weight: 400; }
+.days-actions { display: flex; align-items: center; gap: var(--spacing-sm); flex-wrap: wrap; }
 .days-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
+.toolbar-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-right: auto; }
 
 /* Ensure container stretches and allows editor to push to bottom */
 .studio-body > .container { display: flex; flex-direction: column; flex: 1; }
