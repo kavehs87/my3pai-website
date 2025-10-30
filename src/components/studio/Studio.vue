@@ -95,6 +95,8 @@ export default {
     },
     switchDay(idx) {
       if (idx < 0 || idx >= this.days.length) return
+      // Clear previous day's overlays before switching
+      this.$refs.mapPanel && this.$refs.mapPanel.clearAll && this.$refs.mapPanel.clearAll()
       this.selectedDayIndex = idx
       // refresh map markers for the new day
       this.$nextTick(() => {

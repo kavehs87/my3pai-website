@@ -45,6 +45,35 @@ export default {
     }
   },
   methods: {
+    clearAll() {
+      if (!_map || !window.google?.maps) return
+      // Remove markers (classic and AdvancedMarker)
+      this.markers.forEach(m => {
+        if (m && typeof m.setMap === 'function') {
+          m.setMap(null)
+        } else if (m && 'map' in m) {
+          try { m.map = null } catch (e) {}
+        }
+      })
+      this.markers = []
+      // Remove circles
+      this.circles?.forEach(c => c.setMap && c.setMap(null))
+      this.circles = []
+      // Stop and remove pulse rings
+      Object.keys(this.pulseTimers || {}).forEach(id => this.stopPulse(id))
+      this.pulseTimers = {}
+      // Remove any shapes tracked by id
+      Object.values(this.idToShape || {}).forEach(s => {
+        try { s.circle && s.circle.setMap && s.circle.setMap(null) } catch (e) {}
+        try {
+          if (s.marker && typeof s.marker.setMap === 'function') s.marker.setMap(null)
+          else if (s.marker && 'map' in s.marker) s.marker.map = null
+        } catch (e) {}
+      })
+      this.idToShape = {}
+      // Remove route polyline
+      if (this.polyline) { this.polyline.setMap(null); this.polyline = null }
+    },
     initGoogleMaps() {
       const existing = window.google && window.google.maps
       if (existing) {
@@ -97,22 +126,8 @@ export default {
 
     renderRoute() {
       if (!_map || !window.google?.maps) return
-      // clear old
-      this.markers.forEach(m => {
-        if (m && typeof m.setMap === 'function') {
-          m.setMap(null)
-        } else if (m && 'map' in m) {
-          // AdvancedMarkerElement uses .map property instead of setMap
-          try { m.map = null } catch (e) {}
-        }
-      })
-      this.markers = []
-      this.circles?.forEach(c => c.setMap && c.setMap(null))
-      this.circles = []
-      // stop any active pulse rings
-      Object.keys(this.pulseTimers || {}).forEach(id => this.stopPulse(id))
-      this.idToShape = {}
-      if (this.polyline) { this.polyline.setMap(null); this.polyline = null }
+      // clear previous overlays fully
+      this.clearAll()
 
       const path = []
       console.log('[MapPanel] renderRoute points:', this.points.length, this.points)
