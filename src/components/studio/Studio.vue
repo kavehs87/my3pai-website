@@ -65,6 +65,7 @@
               @focus-event="handleFocusEvent"
               @export-event="handleExportEvent"
               @open-options="openEventOptions"
+              @add-event="handleAddEvent"
             />
           </div>
           <!-- AIHints hidden per request -->
@@ -176,6 +177,17 @@ export default {
       // Mock: log and briefly highlight on the map to confirm action
       console.log(`[Export Mock] Provider=${provider} | Event=${ev.title} (${ev.start}-${ev.end})`)
       this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent(eventId, { pulseOnly: true })
+    },
+    handleAddEvent({ layerId, event }) {
+      const layer = this.currentDay.layers.find(l => l.id === layerId)
+      if (!layer) return
+      const id = `${layerId}-${Date.now()}`
+      layer.events = layer.events || []
+      layer.events.push({ id, ...event })
+      // brief map feedback
+      this.$nextTick(() => {
+        this.$refs.mapPanel && this.$refs.mapPanel.highlightEvent && this.$refs.mapPanel.highlightEvent(id, { pulseOnly: true, center: true })
+      })
     },
     openEventOptions({ layerId, eventId }) {
       const layer = this.currentDay.layers.find(l => l.id === layerId)

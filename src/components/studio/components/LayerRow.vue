@@ -1,7 +1,7 @@
 <template>
   <div class="layer-row">
     <div class="label">{{ layer.name }}</div>
-    <div class="track">
+    <div class="track" @dragover.prevent @drop="onDrop">
       <EventBlock
         v-for="ev in layer.events"
         :key="ev.id"
@@ -58,6 +58,27 @@ export default {
     onFocus({ eventId }) { this.$emit('focus-event', { eventId }) },
     onExport({ eventId, provider }) { this.$emit('export-event', { layerId: this.layer.id, eventId, provider }) },
     onOpenOptions(payload) { this.$emit('open-options', payload) },
+    onDrop(e) {
+      try {
+        const data = e.dataTransfer.getData('application/json')
+        if (!data) return
+        const payload = JSON.parse(data)
+        const rect = e.currentTarget.getBoundingClientRect()
+        const px = Math.min(Math.max(e.clientX - rect.left, 0), rect.width)
+        const dayStartMin = this.toMin(this.hours.start)
+        const dayEndMin = this.toMin(this.hours.end)
+        const total = dayEndMin - dayStartMin
+        const minFromStart = Math.round((px / rect.width) * total)
+        const snap = 15
+        const snapped = Math.round(minFromStart / snap) * snap
+        const duration = Math.max(15, Math.min(payload.durationMin || 60, total))
+        const startAbs = dayStartMin + Math.min(Math.max(snapped, 0), total - duration)
+        const endAbs = startAbs + duration
+        const toTime = (m)=> `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`
+        const eventPartial = { title: payload.title, start: toTime(startAbs), end: toTime(endAbs), coords: payload.coords, type: payload.type }
+        this.$emit('add-event', { layerId: this.layer.id, event: eventPartial })
+      } catch (err) {}
+    },
     toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m },
     computeIssues() {
       const events = (this.layer.events || []).slice().sort((a,b)=> this.toMin(a.start)-this.toMin(b.start))
