@@ -77,6 +77,7 @@
               @unhover-event="handleUnhoverEvent"
               @focus-event="handleFocusEvent"
               @export-event="handleExportEvent"
+              @open-options="openEventOptions"
             />
           </div>
           <!-- AIHints hidden per request -->
