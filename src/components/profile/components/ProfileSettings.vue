@@ -66,72 +66,69 @@
           </div>
         </div>
 
-        <div class="settings-section">
-          <h2>Preferences</h2>
+        <div class="settings-section" id="preferences-section">
+          <h2>Preferences & Notifications</h2>
           <div class="settings-form">
+            <div class="preferences-row">
+              <div class="form-group">
+                <label>Currency</label>
+                <select v-model="form.currency" class="form-input">
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="JPY">JPY (¥)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Language</label>
+                <select v-model="form.language" class="form-input">
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Timezone</label>
+                <select v-model="form.timezone" class="form-input">
+                  <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                  <option value="America/New_York">Eastern Time (ET)</option>
+                  <option value="Europe/London">London (GMT)</option>
+                  <option value="Asia/Tokyo">Tokyo (JST)</option>
+                </select>
+              </div>
+            </div>
+            
             <div class="form-group">
-              <label>Currency</label>
-              <select v-model="form.currency" class="form-input">
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="JPY">JPY (¥)</option>
-              </select>
+              <label>Notifications</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input
+                    v-model="form.notifications.email"
+                    type="checkbox"
+                    class="checkbox-input"
+                  />
+                  <span>Email Notifications</span>
+                </label>
+                <label class="checkbox-label">
+                  <input
+                    v-model="form.notifications.push"
+                    type="checkbox"
+                    class="checkbox-input"
+                  />
+                  <span>Push Notifications</span>
+                </label>
+                <label class="checkbox-label">
+                  <input
+                    v-model="form.notifications.marketing"
+                    type="checkbox"
+                    class="checkbox-input"
+                  />
+                  <span>Marketing Emails</span>
+                </label>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Language</label>
-              <select v-model="form.language" class="form-input">
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Timezone</label>
-              <select v-model="form.timezone" class="form-input">
-                <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                <option value="America/New_York">Eastern Time (ET)</option>
-                <option value="Europe/London">London (GMT)</option>
-                <option value="Asia/Tokyo">Tokyo (JST)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="settings-section" id="notifications-section">
-          <h2>Notifications</h2>
-          <div class="settings-form">
-            <div class="checkbox-group">
-              <label class="checkbox-label">
-                <input
-                  v-model="form.notifications.email"
-                  type="checkbox"
-                  class="checkbox-input"
-                />
-                <span>Email Notifications</span>
-              </label>
-            </div>
-            <div class="checkbox-group">
-              <label class="checkbox-label">
-                <input
-                  v-model="form.notifications.push"
-                  type="checkbox"
-                  class="checkbox-input"
-                />
-                <span>Push Notifications</span>
-              </label>
-            </div>
-            <div class="checkbox-group">
-              <label class="checkbox-label">
-                <input
-                  v-model="form.notifications.marketing"
-                  type="checkbox"
-                  class="checkbox-input"
-                />
-                <span>Marketing Emails</span>
-              </label>
-            </div>
+            
             <button class="save-btn" @click="savePreferences">
               <i class="fas fa-save"></i>
               Save Preferences
