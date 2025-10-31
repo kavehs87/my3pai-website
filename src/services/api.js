@@ -246,6 +246,9 @@ class ApiService {
   }
 
   // Trips CRUD
+  async getTrip(id) {
+    return this.request(`/profile/trips/${id}`)
+  }
   async getTrips(status = null) {
     const query = status ? `?status=${status}` : ''
     return this.request(`/profile/trips${query}`)
@@ -263,6 +266,29 @@ class ApiService {
       method: 'PUT',
       body: JSON.stringify(tripData)
     })
+  }
+
+  async uploadTripThumbnail(id, file) {
+    const formData = new FormData()
+    formData.append('thumbnail', file)
+    const url = `${this.baseURL}/profile/trips/${id}/thumbnail`
+    const headers = { 'Accept': 'application/json' }
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.message || `HTTP ${res.status}: ${res.statusText}`)
+      }
+      return { success: true, data }
+    } catch (e) {
+      console.error('Upload trip thumbnail failed:', e)
+      return { success: false, error: e.message }
+    }
   }
 
   async deleteTrip(id) {

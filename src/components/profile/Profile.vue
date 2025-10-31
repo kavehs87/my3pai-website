@@ -304,9 +304,16 @@ export default {
       try {
         const result = await apiService.getTrips(status)
         if (result.success) {
-          // Normalize trip data format
-          const trips = result.data || []
-          this.allTrips = trips.map(trip => ({
+          // Handle possible nested shapes from backend
+          // result.data -> API service wrapper
+          // could be { data: { trips: [...] } } or directly array
+          const apiResponse = result.data
+          const payload = (apiResponse && (apiResponse.data || apiResponse)) || []
+          const tripsArray = Array.isArray(payload)
+            ? payload
+            : (payload.trips || payload.items || [])
+
+          this.allTrips = (tripsArray || []).map(trip => ({
             id: trip.id,
             title: trip.title,
             thumbnail: trip.thumbnail,
@@ -345,14 +352,10 @@ export default {
       // TODO: Navigate to plan detail page
     },
     handleCreateTrip() {
-      console.log('Create new trip')
-      // TODO: Navigate to trip creation page or open modal
-      this.$router.push('/studio')
+      this.$router.push({ name: 'trip-new' })
     },
     handleEditTrip(tripId) {
-      console.log('Edit trip:', tripId)
-      // TODO: Navigate to trip edit page
-      this.$router.push('/studio')
+      this.$router.push({ name: 'trip-edit', params: { id: tripId } })
     },
     async handleDeleteTrip(tripId) {
       if (!confirm('Are you sure you want to delete this trip?')) return
