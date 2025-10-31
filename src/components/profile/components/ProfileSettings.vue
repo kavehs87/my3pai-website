@@ -221,9 +221,10 @@ export default {
       immediate: true,
       deep: true,
       handler(newUser) {
-        if (newUser && Object.keys(newUser).length > 0) {
+        if (newUser && newUser.id) {
+          // Extract preferences - handle both nested and flat structures
           const prefs = newUser.preferences || {}
-          const notifs = prefs.notifications || {}
+          const notifications = prefs.notifications || {}
           
           this.form = {
             firstName: newUser.firstName || newUser.first_name || '',
@@ -236,13 +237,11 @@ export default {
             language: prefs.language || 'en',
             timezone: prefs.timezone || 'America/Los_Angeles',
             notifications: {
-              email: notifs.email !== undefined ? notifs.email : true,
-              push: notifs.push !== undefined ? notifs.push : true,
-              marketing: notifs.marketing !== undefined ? notifs.marketing : false
+              email: notifications.email ?? prefs.notifications_email ?? true,
+              push: notifications.push ?? prefs.notifications_push ?? true,
+              marketing: notifications.marketing ?? prefs.notifications_marketing ?? false
             },
-            socialLinks: (newUser.socialLinks || []).length > 0 
-              ? [...newUser.socialLinks] 
-              : []
+            socialLinks: newUser.socialLinks ? [...newUser.socialLinks] : (newUser.social_links ? [...newUser.social_links] : [])
           }
         }
       }
