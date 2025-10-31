@@ -14,13 +14,18 @@
           v-for="filter in filters"
           :key="filter.value"
           :class="['filter-btn', { active: activeFilter === filter.value }]"
-          @click="activeFilter = filter.value"
+          @click="handleFilterChange(filter.value)"
         >
           {{ filter.label }}
         </button>
       </div>
 
-      <div class="trips-grid" v-if="filteredTrips.length > 0">
+      <div v-if="loading" class="loading-state">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading trips...</p>
+      </div>
+
+      <div class="trips-grid" v-else-if="filteredTrips.length > 0">
         <div
           v-for="trip in filteredTrips"
           :key="trip.id"
@@ -61,7 +66,7 @@
         </div>
       </div>
 
-      <div v-else class="empty-state">
+      <div v-else-if="!loading" class="empty-state">
         <i class="fas fa-map-marked-alt"></i>
         <h3>No trips found</h3>
         <p>{{ activeFilter === 'all' ? "Start planning your first adventure!" : `No ${activeFilter} trips yet.` }}</p>
@@ -81,6 +86,10 @@ export default {
     trips: {
       type: Array,
       default: () => []
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -103,6 +112,11 @@ export default {
     }
   },
   methods: {
+    handleFilterChange(filter) {
+      this.activeFilter = filter
+      // Emit event to parent to reload trips with filter
+      this.$emit('filter-change', filter === 'all' ? null : filter)
+    },
     formatDateRange(start, end) {
       const startDate = new Date(start)
       const endDate = new Date(end)
@@ -339,6 +353,18 @@ export default {
   font-size: var(--font-size-base);
   color: var(--text-secondary);
   margin: 0 0 var(--spacing-lg) 0;
+}
+
+.loading-state {
+  text-align: center;
+  padding: var(--spacing-3xl);
+  color: var(--text-secondary);
+}
+
+.loading-state i {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--spacing-md);
+  color: var(--secondary-color);
 }
 
 @media (max-width: 768px) {

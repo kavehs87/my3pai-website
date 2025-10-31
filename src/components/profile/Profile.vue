@@ -2,12 +2,20 @@
   <div class="profile-page">
     <Header />
     
-    <ProfileHeader
-      :user="profileData.user"
-      @edit-profile="handleEditProfile"
-      @edit-avatar="handleEditAvatar"
-      @edit-cover="handleEditCover"
-    />
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading profile...</p>
+      </div>
+    </div>
+    
+    <template v-else>
+      <ProfileHeader
+        :user="profileData.user"
+        @edit-profile="handleEditProfile"
+        @edit-avatar="handleEditAvatar"
+        @edit-cover="handleEditCover"
+      />
     
     <ProfileTabs
       :active-tab="activeTab"
@@ -26,14 +34,16 @@
         @view-plan="handleViewPlan"
       />
       
-      <ProfileTrips
-        v-if="activeTab === 'trips'"
-        :trips="profileData.recentTrips"
-        @create-trip="handleCreateTrip"
-        @view-trip="handleViewTrip"
-        @edit-trip="handleEditTrip"
-        @delete-trip="handleDeleteTrip"
-      />
+    <ProfileTrips
+      v-if="activeTab === 'trips'"
+      :trips="allTrips"
+      :loading="isLoadingTrips"
+      @create-trip="handleCreateTrip"
+      @view-trip="handleViewTrip"
+      @edit-trip="handleEditTrip"
+      @delete-trip="handleDeleteTrip"
+      @filter-change="loadTrips"
+    />
       
       <ProfileSettings
         v-if="activeTab === 'settings'"
@@ -44,6 +54,7 @@
         @delete-account="handleDeleteAccount"
       />
     </div>
+    </template>
   </div>
 </template>
 
@@ -54,7 +65,7 @@ import ProfileTabs from './components/ProfileTabs.vue'
 import ProfileOverview from './components/ProfileOverview.vue'
 import ProfileTrips from './components/ProfileTrips.vue'
 import ProfileSettings from './components/ProfileSettings.vue'
-import profileData from '../../data/profile.json'
+import apiService from '../../services/api.js'
 
 export default {
   name: 'Profile',
@@ -69,10 +80,20 @@ export default {
   data() {
     return {
       activeTab: 'overview',
-      profileData: profileData,
+      profileData: {
+        user: {},
+        stats: {},
+        recentTrips: [],
+        itineraries: [],
+        savedPlans: []
+      },
+      allTrips: [],
+      isLoading: true,
+      isLoadingTrips: false,
+      error: null,
       tabs: [
         { id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null },
-        { id: 'trips', label: 'Trips', icon: 'fas fa-map-marked-alt', count: profileData.recentTrips?.length || 0 },
+        { id: 'trips', label: 'Trips', icon: 'fas fa-map-marked-alt', count: 0 },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ]
     }
@@ -83,6 +104,10 @@ export default {
       handler(tab) {
         if (tab && ['overview', 'trips', 'settings'].includes(tab)) {
           this.activeTab = tab
+          // Load trips when trips tab is active
+          if (tab === 'trips') {
+            this.loadTrips()
+          }
         } else if (!tab) {
           // Default to overview if no tab specified
           this.activeTab = 'overview'
@@ -97,14 +122,72 @@ export default {
       this.activeTab = tab
     }
     
-    // Load profile data (will be replaced with API call later)
+    // Load profile data from API
     this.loadProfileData()
   },
   methods: {
-    loadProfileData() {
-      // TODO: Replace with API call
-      // For now, use mock data from JSON
-      console.log('Loading profile data:', this.profileData)
+    async loadProfileData() {
+      this.isLoading = true
+      this.error = null
+      try {
+        const result = await apiService.getProfile()
+        if (result.success) {
+          // Normalize API response to match frontend expectations
+          const data = result.data
+          
+          // Normalize user data (handle both camelCase and snake_case)
+          const user = data.user || {}
+          const normalizedUser = {
+            id: user.id,
+            firstName: user.firstName || user.first_name,
+            lastName: user.lastName || user.last_name,
+            email: user.email,
+            username: user.username,
+            avatar: user.avatar,
+            coverImage: user.coverImage || user.cover_image,
+            bio: user.bio,
+            location: user.location,
+            joinedDate: user.joinedDate || user.created_at,
+            verified: user.verified || false,
+            preferences: user.preferences || {},
+            socialLinks: user.socialLinks || user.social_links || []
+          }
+          
+          // Normalize trips (handle date field names)
+          const normalizeTrips = (trips) => {
+            return (trips || []).map(trip => ({
+              id: trip.id,
+              title: trip.title,
+              thumbnail: trip.thumbnail,
+              destination: trip.destination,
+              startDate: trip.startDate || trip.start_date,
+              endDate: trip.endDate || trip.end_date,
+              days: trip.days,
+              status: trip.status,
+              createdAt: trip.createdAt || trip.created_at
+            }))
+          }
+          
+          this.profileData = {
+            user: normalizedUser,
+            stats: data.stats || {},
+            recentTrips: normalizeTrips(data.recentTrips || data.recent_trips),
+            itineraries: data.itineraries || [],
+            savedPlans: data.savedPlans || data.saved_plans || []
+          }
+          
+          // Update trip count in tabs
+          this.tabs[1].count = this.profileData.recentTrips?.length || 0
+        } else {
+          this.error = result.error || 'Failed to load profile'
+          console.error('Profile load error:', result.error)
+        }
+      } catch (error) {
+        this.error = error.message || 'Failed to load profile'
+        console.error('Profile load error:', error)
+      } finally {
+        this.isLoading = false
+      }
     },
     handleTabChange(tab) {
       this.activeTab = tab
@@ -115,18 +198,88 @@ export default {
       this.activeTab = 'settings'
       this.$router.replace({ query: { ...this.$route.query, tab: 'settings' } })
     },
-    handleEditAvatar() {
-      console.log('Edit avatar clicked')
-      // TODO: Implement avatar upload
+    async handleEditAvatar() {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/jpeg,image/jpg,image/png,image/webp'
+      input.onchange = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        
+        try {
+          const result = await apiService.uploadAvatar(file)
+          if (result.success) {
+            // Update local profile data
+            this.profileData.user.avatar = result.data.avatar
+            alert('Avatar updated successfully!')
+            // Reload profile to get latest data
+            await this.loadProfileData()
+          } else {
+            alert(`Failed to upload avatar: ${result.error}`)
+          }
+        } catch (error) {
+          alert(`Error uploading avatar: ${error.message}`)
+        }
+      }
+      input.click()
     },
-    handleEditCover() {
-      console.log('Edit cover clicked')
-      // TODO: Implement cover upload
+    async handleEditCover() {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/jpeg,image/jpg,image/png,image/webp'
+      input.onchange = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        
+        try {
+          const result = await apiService.uploadCover(file)
+          if (result.success) {
+            // Update local profile data
+            this.profileData.user.coverImage = result.data.coverImage
+            alert('Cover image updated successfully!')
+            // Reload profile to get latest data
+            await this.loadProfileData()
+          } else {
+            alert(`Failed to upload cover: ${result.error}`)
+          }
+        } catch (error) {
+          alert(`Error uploading cover: ${error.message}`)
+        }
+      }
+      input.click()
+    },
+    async loadTrips(status = null) {
+      this.isLoadingTrips = true
+      try {
+        const result = await apiService.getTrips(status)
+        if (result.success) {
+          // Normalize trip data format
+          const trips = result.data || []
+          this.allTrips = trips.map(trip => ({
+            id: trip.id,
+            title: trip.title,
+            thumbnail: trip.thumbnail,
+            destination: trip.destination,
+            startDate: trip.startDate || trip.start_date,
+            endDate: trip.endDate || trip.end_date,
+            days: trip.days,
+            status: trip.status,
+            createdAt: trip.createdAt || trip.created_at
+          }))
+        } else {
+          console.error('Failed to load trips:', result.error)
+        }
+      } catch (error) {
+        console.error('Error loading trips:', error)
+      } finally {
+        this.isLoadingTrips = false
+      }
     },
     handleViewAll(type) {
       if (type === 'trips') {
         this.activeTab = 'trips'
         this.$router.replace({ query: { ...this.$route.query, tab: 'trips' } })
+        this.loadTrips()
       } else if (type === 'saved') {
         console.log('View all saved plans')
         // TODO: Navigate to saved plans page
@@ -150,38 +303,105 @@ export default {
       // TODO: Navigate to trip edit page
       this.$router.push('/studio')
     },
-    handleDeleteTrip(tripId) {
-      if (confirm('Are you sure you want to delete this trip?')) {
-        console.log('Delete trip:', tripId)
-        // TODO: Implement trip deletion via API
+    async handleDeleteTrip(tripId) {
+      if (!confirm('Are you sure you want to delete this trip?')) return
+      
+      try {
+        const result = await apiService.deleteTrip(tripId)
+        if (result.success) {
+          alert('Trip deleted successfully!')
+          // Reload profile data
+          await this.loadProfileData()
+        } else {
+          alert(`Failed to delete trip: ${result.error}`)
+        }
+      } catch (error) {
+        alert(`Error deleting trip: ${error.message}`)
       }
     },
-    handleSaveProfile(formData) {
-      console.log('Save profile:', formData)
-      // TODO: Implement profile save via API
-      // Show success message
-      alert('Profile updated successfully!')
+    async handleSaveProfile(formData) {
+      try {
+        // Convert camelCase to snake_case for API
+        const apiData = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          username: formData.username,
+          bio: formData.bio,
+          location: formData.location
+        }
+        
+        const result = await apiService.updateProfile(apiData)
+        if (result.success) {
+          alert('Profile updated successfully!')
+          // Reload profile data
+          await this.loadProfileData()
+        } else {
+          alert(`Failed to update profile: ${result.error}`)
+        }
+      } catch (error) {
+        alert(`Error updating profile: ${error.message}`)
+      }
     },
-    handleSavePreferences(preferences) {
-      console.log('Save preferences:', preferences)
-      // TODO: Implement preferences save via API
-      // Show success message
-      alert('Preferences saved successfully!')
+    async handleSavePreferences(preferences) {
+      try {
+        const result = await apiService.updatePreferences(preferences)
+        if (result.success) {
+          alert('Preferences saved successfully!')
+          // Reload profile data
+          await this.loadProfileData()
+        } else {
+          alert(`Failed to save preferences: ${result.error}`)
+        }
+      } catch (error) {
+        alert(`Error saving preferences: ${error.message}`)
+      }
     },
-    handleChangePassword() {
-      console.log('Change password')
-      // TODO: Open change password modal
+    async handleChangePassword() {
+      const currentPassword = prompt('Enter current password:')
+      if (!currentPassword) return
+      
       const newPassword = prompt('Enter new password:')
-      if (newPassword) {
-        console.log('Password change requested')
+      if (!newPassword) return
+      
+      const confirmPassword = prompt('Confirm new password:')
+      if (newPassword !== confirmPassword) {
+        alert('Passwords do not match!')
+        return
+      }
+      
+      try {
+        const result = await apiService.changePassword({
+          currentPassword,
+          newPassword,
+          newPasswordConfirmation: confirmPassword
+        })
+        if (result.success) {
+          alert('Password changed successfully!')
+        } else {
+          alert(`Failed to change password: ${result.error}`)
+        }
+      } catch (error) {
+        alert(`Error changing password: ${error.message}`)
       }
     },
-    handleDeleteAccount() {
-      if (confirm('Are you absolutely sure? This will permanently delete your account and all associated data.')) {
-        console.log('Delete account')
-        // TODO: Implement account deletion via API
-        // Redirect to home page after deletion
-        this.$router.push('/')
+    async handleDeleteAccount() {
+      if (!confirm('Are you absolutely sure? This will permanently delete your account and all associated data.')) return
+      
+      const password = prompt('Enter your password to confirm account deletion:')
+      if (!password) return
+      
+      try {
+        const result = await apiService.deleteAccount(password)
+        if (result.success) {
+          alert('Account deleted successfully')
+          // Clear auth token and redirect
+          apiService.removeToken()
+          this.$router.push('/')
+        } else {
+          alert(`Failed to delete account: ${result.error}`)
+        }
+      } catch (error) {
+        alert(`Error deleting account: ${error.message}`)
       }
     }
   }
@@ -196,6 +416,30 @@ export default {
 
 .profile-content {
   padding: 0;
+}
+
+.loading-overlay {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+}
+
+.loading-spinner {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.loading-spinner i {
+  font-size: var(--font-size-4xl);
+  color: var(--secondary-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.loading-spinner p {
+  font-size: var(--font-size-lg);
+  margin: 0;
 }
 </style>
 

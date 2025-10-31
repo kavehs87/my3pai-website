@@ -37,10 +37,10 @@
                 <i class="fas fa-map-marker-alt"></i>
                 <span>{{ user.location }}</span>
               </div>
-              <div class="joined-date">
-                <i class="fas fa-calendar"></i>
-                <span>Joined {{ formatDate(user.joinedDate) }}</span>
-              </div>
+            <div class="joined-date">
+              <i class="fas fa-calendar"></i>
+              <span>Joined {{ formatDate(user.joinedDate || user.created_at) }}</span>
+            </div>
             </div>
           </div>
         </div>

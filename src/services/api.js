@@ -116,6 +116,163 @@ class ApiService {
       body: JSON.stringify({ code, state })
     })
   }
+
+  // Profile API Methods
+  
+  // Get user profile with stats
+  async getProfile() {
+    return this.request('/profile')
+  }
+
+  // Update user profile
+  async updateProfile(profileData) {
+    return this.request('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData)
+    })
+  }
+
+  // Upload avatar
+  async uploadAvatar(file) {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    
+    const url = `${this.baseURL}/profile/avatar`
+    const headers = { 'Accept': 'application/json' }
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      return { success: true, data }
+    } catch (error) {
+      console.error('Avatar upload failed:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Upload cover image
+  async uploadCover(file) {
+    const formData = new FormData()
+    formData.append('cover', file)
+    
+    const url = `${this.baseURL}/profile/cover`
+    const headers = { 'Accept': 'application/json' }
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      return { success: true, data }
+    } catch (error) {
+      console.error('Cover upload failed:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Get preferences
+  async getPreferences() {
+    return this.request('/profile/preferences')
+  }
+
+  // Update preferences
+  async updatePreferences(preferences) {
+    return this.request('/profile/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(preferences)
+    })
+  }
+
+  // Social Links CRUD
+  async getSocialLinks() {
+    return this.request('/profile/social-links')
+  }
+
+  async createSocialLink(linkData) {
+    return this.request('/profile/social-links', {
+      method: 'POST',
+      body: JSON.stringify(linkData)
+    })
+  }
+
+  async updateSocialLink(id, linkData) {
+    return this.request(`/profile/social-links/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(linkData)
+    })
+  }
+
+  async deleteSocialLink(id) {
+    return this.request(`/profile/social-links/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Trips CRUD
+  async getTrips(status = null) {
+    const query = status ? `?status=${status}` : ''
+    return this.request(`/profile/trips${query}`)
+  }
+
+  async createTrip(tripData) {
+    return this.request('/profile/trips', {
+      method: 'POST',
+      body: JSON.stringify(tripData)
+    })
+  }
+
+  async updateTrip(id, tripData) {
+    return this.request(`/profile/trips/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(tripData)
+    })
+  }
+
+  async deleteTrip(id) {
+    return this.request(`/profile/trips/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Change password
+  async changePassword(passwordData) {
+    return this.request('/profile/change-password', {
+      method: 'POST',
+      body: JSON.stringify(passwordData)
+    })
+  }
+
+  // Delete account
+  async deleteAccount(password) {
+    return this.request('/profile/account', {
+      method: 'DELETE',
+      body: JSON.stringify({ password })
+    })
+  }
 }
 
 // Create singleton instance
