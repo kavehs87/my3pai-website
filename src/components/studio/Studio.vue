@@ -146,9 +146,10 @@ export default {
     sharePlan() {
       console.log('Share plan (mock)')
     },
-    handlePrompt(q) {
-      if (!q) return
-      console.log('Studio prompt submit:', q)
+    handlePrompt({ query, image }) {
+      if (!query && !image) return
+      console.log('Studio prompt submit:', { query, image: image ? { name: image.name, size: image.size, type: image.type } : null })
+      // TODO: Process prompt with optional image
     },
     handlePickImage() { console.log('Studio pick image') },
     handleMic() { console.log('Studio mic') },
