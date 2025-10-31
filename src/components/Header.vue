@@ -139,12 +139,16 @@ export default {
     // Listen for auth success events from OAuth callback
     eventBus.on('auth-success', this.handleAuthSuccess)
     
+    // Listen for profile update events (avatar, profile changes)
+    eventBus.on('profile-updated', this.handleProfileUpdate)
+    
     // Add click outside handler for dropdown
     document.addEventListener('click', this.handleClickOutside)
   },
   beforeUnmount() {
     // Clean up event listener
     eventBus.off('auth-success', this.handleAuthSuccess)
+    eventBus.off('profile-updated', this.handleProfileUpdate)
     
     // Remove click outside handler
     document.removeEventListener('click', this.handleClickOutside)
@@ -224,6 +228,30 @@ export default {
       this.isLoggedIn = true
       this.user = userData
       this.showProfileDropdown = false
+    },
+    handleProfileUpdate(updatedUser) {
+      // Update user data when profile is updated (e.g., avatar change)
+      if (updatedUser && this.isLoggedIn) {
+        // Update specific fields
+        if (updatedUser.avatar) {
+          this.user.avatar = updatedUser.avatar
+          this.user.picture = updatedUser.avatar
+          this.user.photo_url = updatedUser.avatar
+        }
+        if (updatedUser.firstName) {
+          this.user.first_name = updatedUser.firstName
+          this.user.name = `${updatedUser.firstName} ${this.user.last_name || updatedUser.lastName || ''}`.trim()
+        }
+        if (updatedUser.lastName) {
+          this.user.last_name = updatedUser.lastName
+          this.user.name = `${this.user.first_name || updatedUser.firstName || ''} ${updatedUser.lastName}`.trim()
+        }
+        if (updatedUser.username) {
+          this.user.username = updatedUser.username
+        }
+        // Force Vue reactivity update
+        this.$forceUpdate()
+      }
     },
     handleClickOutside(event) {
       // Close dropdown if clicking outside of it

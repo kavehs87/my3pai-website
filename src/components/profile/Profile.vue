@@ -68,6 +68,7 @@ import ProfileTrips from './components/ProfileTrips.vue'
 import ProfileSettings from './components/ProfileSettings.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
+import eventBus from '../../utils/eventBus.js'
 
 export default {
   name: 'Profile',
@@ -233,8 +234,15 @@ export default {
           const result = await apiService.uploadAvatar(file)
           if (result.success) {
             // Update local profile data
-            this.profileData.user.avatar = result.data.avatar
+            const newAvatar = result.data.avatar || result.data.data?.avatar
+            this.profileData.user.avatar = newAvatar
             toast.success('Avatar updated successfully!')
+            
+            // Emit event to update Header navbar
+            eventBus.emit('profile-updated', {
+              avatar: newAvatar
+            })
+            
             // Reload profile to get latest data
             await this.loadProfileData()
           } else {
@@ -258,8 +266,15 @@ export default {
           const result = await apiService.uploadCover(file)
           if (result.success) {
             // Update local profile data
-            this.profileData.user.coverImage = result.data.coverImage
+            const newCover = result.data.coverImage || result.data.data?.coverImage
+            this.profileData.user.coverImage = newCover
             toast.success('Cover image updated successfully!')
+            
+            // Emit event to update Header navbar (if cover affects header)
+            eventBus.emit('profile-updated', {
+              coverImage: newCover
+            })
+            
             // Reload profile to get latest data
             await this.loadProfileData()
           } else {
@@ -390,6 +405,15 @@ export default {
           
           // Force Vue to recognize the change
           this.$forceUpdate()
+          
+          // Emit event to update Header navbar with updated user data
+          eventBus.emit('profile-updated', {
+            firstName: normalizedUser.firstName,
+            lastName: normalizedUser.lastName,
+            username: normalizedUser.username,
+            bio: normalizedUser.bio,
+            location: normalizedUser.location
+          })
           
           toast.success('Profile updated successfully!')
           // Also reload to get stats and other data fresh
