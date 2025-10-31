@@ -623,8 +623,47 @@ export default {
           // Store scroll position before reload
           const scrollYBefore = window.scrollY || window.pageYOffset || document.documentElement.scrollTop
           
-          // Reload profile data to get updated social links with IDs (don't preserve scroll, we'll scroll to section instead)
-          await this.loadProfileData(false)
+          // Reload profile data to get updated social links with IDs
+          // Skip loading overlay to prevent scroll jump
+          const wasLoading = this.isLoading
+          this.isLoading = false // Prevent overlay from showing
+          try {
+            const result = await apiService.getProfile()
+            if (result.success) {
+              const apiResponse = result.data
+              const data = apiResponse.data || apiResponse
+              const user = data.user || {}
+              const prefs = user.preferences || {}
+              const normalizedPreferences = {
+                currency: prefs.currency || 'USD',
+                language: prefs.language || 'en',
+                timezone: prefs.timezone || 'America/Los_Angeles',
+                notifications: {
+                  email: prefs.notifications?.email ?? prefs.notifications_email ?? true,
+                  push: prefs.notifications?.push ?? prefs.notifications_push ?? true,
+                  marketing: prefs.notifications?.marketing ?? prefs.notifications_marketing ?? false
+                }
+              }
+              const normalizedUser = {
+                id: user.id,
+                firstName: user.firstName || user.first_name || '',
+                lastName: user.lastName || user.last_name || '',
+                email: user.email || '',
+                username: user.username || '',
+                avatar: user.avatar || user.avatar_url || '',
+                coverImage: user.coverImage || user.cover_image || '',
+                bio: user.bio || '',
+                location: user.location || '',
+                joinedDate: user.joinedDate || user.created_at || '',
+                verified: user.verified || false,
+                preferences: normalizedPreferences,
+                socialLinks: user.socialLinks || user.social_links || []
+              }
+              this.profileData.user = normalizedUser
+            }
+          } catch (error) {
+            console.error('Error reloading profile:', error)
+          }
           // Update originalSocialLinks in ProfileSettings to match new state
           if (settingsComponent && this.profileData.user) {
             const links = this.profileData.user.socialLinks || this.profileData.user.social_links || []
@@ -632,9 +671,12 @@ export default {
             settingsComponent.form.socialLinks = links.map(link => ({ ...link }))
           }
           
-          // Wait for DOM to fully update and then restore scroll position
+          // Restore scroll position immediately to prevent jump
+          window.scrollTo(0, scrollYBefore)
+          
+          // Wait for DOM to fully update and then scroll to Social Links section
           await this.$nextTick()
-          // Use requestAnimationFrame to ensure DOM is ready
+          // Use double requestAnimationFrame to ensure DOM is ready
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               const socialLinksSection = document.getElementById('social-links-section')
@@ -644,15 +686,9 @@ export default {
                 const elementTop = rect.top + window.scrollY || window.pageYOffset || document.documentElement.scrollTop
                 const offset = 100 // Header offset
                 
-                // Scroll to the section
+                // Scroll to the section smoothly
                 window.scrollTo({
                   top: Math.max(0, elementTop - offset),
-                  behavior: 'smooth'
-                })
-              } else {
-                // Fallback: restore to previous position
-                window.scrollTo({
-                  top: scrollYBefore,
                   behavior: 'smooth'
                 })
               }
