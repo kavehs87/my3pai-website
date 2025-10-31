@@ -143,22 +143,42 @@
           <h2>Social Links</h2>
           <div class="settings-form">
             <div class="form-group" v-for="(link, index) in form.socialLinks" :key="index">
-              <label>{{ link.platform }}</label>
-              <div class="input-with-action">
-                <input
-                  v-model="link.url"
-                  type="url"
-                  :placeholder="`${link.platform} URL`"
-                  class="form-input"
-                />
-                <button
-                  v-if="form.socialLinks.length > 0"
-                  class="remove-btn"
-                  @click="removeSocialLink(index)"
-                  title="Remove"
-                >
-                  <i class="fas fa-times"></i>
-                </button>
+              <div class="social-link-row">
+                <div class="platform-select-wrapper">
+                  <label>Platform</label>
+                  <select v-model="link.platform" class="form-input">
+                    <option value="Website">Website</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Twitter">Twitter</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="YouTube">YouTube</option>
+                    <option value="TikTok">TikTok</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                    <option value="Pinterest">Pinterest</option>
+                    <option value="Snapchat">Snapchat</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="url-input-wrapper">
+                  <label>URL</label>
+                  <div class="input-with-action">
+                    <input
+                      v-model="link.url"
+                      type="url"
+                      :placeholder="`${link.platform} URL`"
+                      class="form-input"
+                    />
+                    <button
+                      v-if="form.socialLinks.length > 0"
+                      class="remove-btn"
+                      @click="removeSocialLink(index)"
+                      title="Remove"
+                      type="button"
+                    >
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <button class="add-btn" @click="addSocialLink">
@@ -288,7 +308,8 @@ export default {
     removeSocialLink(index) {
       this.form.socialLinks.splice(index, 1)
     },
-    async saveSocialLinks() {
+    saveSocialLinks() {
+      this.isSavingSocialLinks = true
       this.$emit('save-social-links', {
         current: this.form.socialLinks,
         original: this.originalSocialLinks
@@ -382,6 +403,26 @@ export default {
 
 .input-with-action .form-input {
   flex: 1;
+}
+
+.social-link-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: var(--spacing-md);
+  align-items: end;
+}
+
+.platform-select-wrapper,
+.url-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+@media (max-width: 768px) {
+  .social-link-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .remove-btn {

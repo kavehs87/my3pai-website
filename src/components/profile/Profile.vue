@@ -46,6 +46,7 @@
     />
       
       <ProfileSettings
+        ref="profileSettings"
         v-if="activeTab === 'settings'"
         :key="profileData.user?.id || 'settings'"
         :user="profileData.user || {}"
@@ -441,6 +442,12 @@ export default {
       }
     },
     async handleSaveSocialLinks({ current, original }) {
+      // Reset saving state in child component via event or ref
+      const settingsComponent = this.$refs.profileSettings
+      if (settingsComponent) {
+        settingsComponent.isSavingSocialLinks = true
+      }
+      
       try {
         // Identify changes:
         // 1. Links to delete (in original but not in current)
@@ -448,7 +455,6 @@ export default {
         // 3. Links to create (in current but not in original)
         
         const originalMap = new Map(original.map(link => [link.id, link]))
-        const currentMap = new Map(current.map((link, index) => [link.id || `new-${index}`, link]))
         
         // Find links to delete (have ID but not in current)
         const toDelete = original.filter(link => 
@@ -473,6 +479,7 @@ export default {
           const result = await apiService.deleteSocialLink(link.id)
           if (!result.success) {
             toast.error(`Failed to delete ${link.platform} link`)
+            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
             return
           }
         }
@@ -486,6 +493,7 @@ export default {
           })
           if (!result.success) {
             toast.error(`Failed to update ${link.platform} link`)
+            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
             return
           }
         }
@@ -499,6 +507,7 @@ export default {
           })
           if (!result.success) {
             toast.error(`Failed to create ${link.platform} link`)
+            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
             return
           }
         }
@@ -513,6 +522,11 @@ export default {
         }
       } catch (error) {
         toast.error(`Error saving social links: ${error.message}`)
+      } finally {
+        // Reset saving state
+        if (settingsComponent) {
+          settingsComponent.isSavingSocialLinks = false
+        }
       }
     },
     async handleChangePassword() {
