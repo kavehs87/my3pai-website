@@ -142,6 +142,8 @@
 </template>
 
 <script>
+import toast from '../utils/toast.js'
+
 export default {
   name: 'Footer',
   data() {
@@ -155,7 +157,7 @@ export default {
         console.log('Subscribing email:', this.email)
         // TODO: Implement newsletter subscription
         this.email = ''
-        alert('Thank you for subscribing!')
+        toast.success('Thank you for subscribing!')
       }
     }
   }

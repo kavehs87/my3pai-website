@@ -89,6 +89,8 @@
 </template>
 
 <script>
+import toast from '../utils/toast.js'
+
 export default {
   name: 'AIHeroSection',
   data() {
@@ -250,7 +252,7 @@ export default {
           this.startRecording(stream)
         } catch (error) {
           console.error('Microphone permission denied:', error)
-          alert('Microphone permission is required for voice input. Please allow access and try again.')
+          toast.warning('Microphone permission is required for voice input. Please allow access and try again.')
         }
       } else {
         // Stop recording

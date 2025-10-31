@@ -67,6 +67,7 @@ import ProfileOverview from './components/ProfileOverview.vue'
 import ProfileTrips from './components/ProfileTrips.vue'
 import ProfileSettings from './components/ProfileSettings.vue'
 import apiService from '../../services/api.js'
+import toast from '../../utils/toast.js'
 
 export default {
   name: 'Profile',
@@ -233,14 +234,14 @@ export default {
           if (result.success) {
             // Update local profile data
             this.profileData.user.avatar = result.data.avatar
-            alert('Avatar updated successfully!')
+            toast.success('Avatar updated successfully!')
             // Reload profile to get latest data
             await this.loadProfileData()
           } else {
-            alert(`Failed to upload avatar: ${result.error}`)
+            toast.error(`Failed to upload avatar: ${result.error}`)
           }
         } catch (error) {
-          alert(`Error uploading avatar: ${error.message}`)
+          toast.error(`Error uploading avatar: ${error.message}`)
         }
       }
       input.click()
@@ -258,14 +259,14 @@ export default {
           if (result.success) {
             // Update local profile data
             this.profileData.user.coverImage = result.data.coverImage
-            alert('Cover image updated successfully!')
+            toast.success('Cover image updated successfully!')
             // Reload profile to get latest data
             await this.loadProfileData()
           } else {
-            alert(`Failed to upload cover: ${result.error}`)
+            toast.error(`Failed to upload cover: ${result.error}`)
           }
         } catch (error) {
-          alert(`Error uploading cover: ${error.message}`)
+          toast.error(`Error uploading cover: ${error.message}`)
         }
       }
       input.click()
@@ -331,14 +332,14 @@ export default {
       try {
         const result = await apiService.deleteTrip(tripId)
         if (result.success) {
-          alert('Trip deleted successfully!')
+          toast.success('Trip deleted successfully!')
           // Reload profile data
           await this.loadProfileData()
         } else {
-          alert(`Failed to delete trip: ${result.error}`)
+          toast.error(`Failed to delete trip: ${result.error}`)
         }
       } catch (error) {
-        alert(`Error deleting trip: ${error.message}`)
+        toast.error(`Error deleting trip: ${error.message}`)
       }
     },
     async handleSaveProfile(formData) {
@@ -390,28 +391,28 @@ export default {
           // Force Vue to recognize the change
           this.$forceUpdate()
           
-          alert('Profile updated successfully!')
+          toast.success('Profile updated successfully!')
           // Also reload to get stats and other data fresh
           await this.loadProfileData()
         } else {
-          alert(`Failed to update profile: ${result.error || 'Unknown error'}`)
+          toast.error(`Failed to update profile: ${result.error || 'Unknown error'}`)
         }
       } catch (error) {
-        alert(`Error updating profile: ${error.message}`)
+        toast.error(`Error updating profile: ${error.message}`)
       }
     },
     async handleSavePreferences(preferences) {
       try {
         const result = await apiService.updatePreferences(preferences)
         if (result.success) {
-          alert('Preferences saved successfully!')
+          toast.success('Preferences saved successfully!')
           // Reload profile data
           await this.loadProfileData()
         } else {
-          alert(`Failed to save preferences: ${result.error}`)
+          toast.error(`Failed to save preferences: ${result.error}`)
         }
       } catch (error) {
-        alert(`Error saving preferences: ${error.message}`)
+        toast.error(`Error saving preferences: ${error.message}`)
       }
     },
     async handleChangePassword() {
@@ -423,7 +424,7 @@ export default {
       
       const confirmPassword = prompt('Confirm new password:')
       if (newPassword !== confirmPassword) {
-        alert('Passwords do not match!')
+        toast.error('Passwords do not match!')
         return
       }
       
@@ -434,12 +435,12 @@ export default {
           newPasswordConfirmation: confirmPassword
         })
         if (result.success) {
-          alert('Password changed successfully!')
+          toast.success('Password changed successfully!')
         } else {
-          alert(`Failed to change password: ${result.error}`)
+          toast.error(`Failed to change password: ${result.error}`)
         }
       } catch (error) {
-        alert(`Error changing password: ${error.message}`)
+        toast.error(`Error changing password: ${error.message}`)
       }
     },
     async handleDeleteAccount() {
@@ -451,15 +452,15 @@ export default {
       try {
         const result = await apiService.deleteAccount(password)
         if (result.success) {
-          alert('Account deleted successfully')
+          toast.success('Account deleted successfully')
           // Clear auth token and redirect
           apiService.removeToken()
           this.$router.push('/')
         } else {
-          alert(`Failed to delete account: ${result.error}`)
+          toast.error(`Failed to delete account: ${result.error}`)
         }
       } catch (error) {
-        alert(`Error deleting account: ${error.message}`)
+        toast.error(`Error deleting account: ${error.message}`)
       }
     }
   }
