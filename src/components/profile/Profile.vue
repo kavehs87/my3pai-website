@@ -408,22 +408,25 @@ export default {
             }
           }
           
-          // Update user object with normalized data - use Object.assign to ensure reactivity
-          Object.assign(this.profileData.user, {
+          // Normalize user data for consistent structure
+          const normalizedUser = {
             id: updatedUser.id,
-            firstName: updatedUser.firstName || updatedUser.first_name,
-            lastName: updatedUser.lastName || updatedUser.last_name,
-            email: updatedUser.email,
-            username: updatedUser.username,
-            avatar: updatedUser.avatar,
-            coverImage: updatedUser.coverImage || updatedUser.cover_image,
-            bio: updatedUser.bio,
-            location: updatedUser.location,
-            joinedDate: updatedUser.joinedDate || updatedUser.created_at || updatedUser.joinedDate,
+            firstName: updatedUser.firstName || updatedUser.first_name || '',
+            lastName: updatedUser.lastName || updatedUser.last_name || '',
+            email: updatedUser.email || '',
+            username: updatedUser.username || '',
+            avatar: updatedUser.avatar || updatedUser.avatar_url || '',
+            coverImage: updatedUser.coverImage || updatedUser.cover_image || '',
+            bio: updatedUser.bio || '',
+            location: updatedUser.location || '',
+            joinedDate: updatedUser.joinedDate || updatedUser.created_at || updatedUser.joined_date || '',
             verified: updatedUser.verified || false,
             preferences: normalizedPreferences,
             socialLinks: updatedUser.socialLinks || updatedUser.social_links || []
-          })
+          }
+          
+          // Update user object with normalized data - use Object.assign to ensure reactivity
+          Object.assign(this.profileData.user, normalizedUser)
           
           // Force Vue to recognize the change
           this.$forceUpdate()
