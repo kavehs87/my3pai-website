@@ -517,6 +517,12 @@ export default {
           toast.success('Social links saved successfully!')
           // Reload profile data to get updated social links with IDs
           await this.loadProfileData()
+          // Update originalSocialLinks in ProfileSettings to match new state
+          if (settingsComponent && this.profileData.user) {
+            const links = this.profileData.user.socialLinks || this.profileData.user.social_links || []
+            settingsComponent.originalSocialLinks = links.map(link => ({ ...link }))
+            settingsComponent.form.socialLinks = links.map(link => ({ ...link }))
+          }
         } else {
           toast.info('No changes to save')
         }
