@@ -486,10 +486,33 @@ export default {
         
         // Execute updates
         for (const link of toUpdate) {
+          // Validate URL is not empty
+          if (!link.url || !link.url.trim()) {
+            toast.error(`Please enter a URL for ${link.platform}`)
+            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
+            return
+          }
+          
+          // Format URL - ensure it has a protocol
+          let formattedUrl = link.url.trim()
+          // If URL doesn't start with http:// or https://, prepend https://
+          if (!/^https?:\/\//i.test(formattedUrl)) {
+            formattedUrl = `https://${formattedUrl}`
+          }
+          
+          // Basic URL validation
+          try {
+            new URL(formattedUrl)
+          } catch (e) {
+            toast.error(`Please enter a valid URL for ${link.platform}`)
+            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
+            return
+          }
+          
           // Convert to snake_case for Laravel backend
           const result = await apiService.updateSocialLink(link.id, {
             platform: link.platform,
-            url: link.url,
+            url: formattedUrl,
             is_public: link.public !== undefined ? link.public : true
           })
           if (!result.success) {
@@ -509,10 +532,26 @@ export default {
             return
           }
           
+          // Format URL - ensure it has a protocol
+          let formattedUrl = link.url.trim()
+          // If URL doesn't start with http:// or https://, prepend https://
+          if (!/^https?:\/\//i.test(formattedUrl)) {
+            formattedUrl = `https://${formattedUrl}`
+          }
+          
+          // Basic URL validation
+          try {
+            new URL(formattedUrl)
+          } catch (e) {
+            toast.error(`Please enter a valid URL for ${link.platform}`)
+            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
+            return
+          }
+          
           // Convert to snake_case for Laravel backend
           const result = await apiService.createSocialLink({
             platform: link.platform,
-            url: link.url.trim(),
+            url: formattedUrl,
             is_public: link.public !== undefined ? link.public : true
           })
           if (!result.success) {
