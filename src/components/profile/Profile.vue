@@ -108,9 +108,23 @@ export default {
           if (tab === 'trips') {
             this.loadTrips()
           }
+          // If settings tab and no profile data loaded yet, load it
+          if (tab === 'settings' && (!this.profileData.user || !this.profileData.user.id)) {
+            this.loadProfileData()
+          }
         } else if (!tab) {
           // Default to overview if no tab specified
           this.activeTab = 'overview'
+        }
+      }
+    },
+    'profileData.user': {
+      deep: true,
+      handler(newUser) {
+        // When user data updates, ensure ProfileSettings receives it
+        if (newUser && this.activeTab === 'settings') {
+          // Force update by triggering a reactive update
+          this.$forceUpdate()
         }
       }
     }
@@ -137,6 +151,7 @@ export default {
           
           // Normalize user data (handle both camelCase and snake_case)
           const user = data.user || {}
+          const prefs = user.preferences || {}
           const normalizedUser = {
             id: user.id,
             firstName: user.firstName || user.first_name,
@@ -149,7 +164,16 @@ export default {
             location: user.location,
             joinedDate: user.joinedDate || user.created_at,
             verified: user.verified || false,
-            preferences: user.preferences || {},
+            preferences: {
+              currency: prefs.currency || 'USD',
+              language: prefs.language || 'en',
+              timezone: prefs.timezone || 'America/Los_Angeles',
+              notifications: {
+                email: prefs.notifications?.email ?? prefs.notifications_email ?? true,
+                push: prefs.notifications?.push ?? prefs.notifications_push ?? true,
+                marketing: prefs.notifications?.marketing ?? prefs.notifications_marketing ?? false
+              }
+            },
             socialLinks: user.socialLinks || user.social_links || []
           }
           

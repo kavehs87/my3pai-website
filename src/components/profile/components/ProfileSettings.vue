@@ -219,24 +219,30 @@ export default {
   watch: {
     user: {
       immediate: true,
+      deep: true,
       handler(newUser) {
-        if (newUser) {
+        if (newUser && Object.keys(newUser).length > 0) {
+          const prefs = newUser.preferences || {}
+          const notifs = prefs.notifications || {}
+          
           this.form = {
-            firstName: newUser.firstName || '',
-            lastName: newUser.lastName || '',
+            firstName: newUser.firstName || newUser.first_name || '',
+            lastName: newUser.lastName || newUser.last_name || '',
             email: newUser.email || '',
             username: newUser.username || '',
             bio: newUser.bio || '',
             location: newUser.location || '',
-            currency: newUser.preferences?.currency || 'USD',
-            language: newUser.preferences?.language || 'en',
-            timezone: newUser.preferences?.timezone || 'America/Los_Angeles',
+            currency: prefs.currency || 'USD',
+            language: prefs.language || 'en',
+            timezone: prefs.timezone || 'America/Los_Angeles',
             notifications: {
-              email: newUser.preferences?.notifications?.email ?? true,
-              push: newUser.preferences?.notifications?.push ?? true,
-              marketing: newUser.preferences?.notifications?.marketing ?? false
+              email: notifs.email !== undefined ? notifs.email : true,
+              push: notifs.push !== undefined ? notifs.push : true,
+              marketing: notifs.marketing !== undefined ? notifs.marketing : false
             },
-            socialLinks: newUser.socialLinks ? [...newUser.socialLinks] : []
+            socialLinks: (newUser.socialLinks || []).length > 0 
+              ? [...newUser.socialLinks] 
+              : []
           }
         }
       }
