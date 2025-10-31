@@ -131,7 +131,10 @@ export default {
     this.loadProfileData()
   },
   methods: {
-    async loadProfileData() {
+    async loadProfileData(preserveScroll = false) {
+      // Store scroll position if we want to preserve it
+      const scrollY = preserveScroll ? (window.scrollY || window.pageYOffset || document.documentElement.scrollTop) : null
+      
       this.isLoading = true
       this.error = null
       try {
