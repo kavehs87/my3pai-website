@@ -244,28 +244,31 @@ export default {
       const prefs = user.preferences || {}
       const notifications = prefs.notifications || {}
       
-      const newFormData = {
-        firstName: user.firstName || user.first_name || '',
-        lastName: user.lastName || user.last_name || '',
-        email: user.email || '',
-        username: user.username || '',
-        bio: user.bio || '',
-        location: user.location || '',
-        currency: prefs.currency || 'USD',
-        language: prefs.language || 'en',
-        timezone: prefs.timezone || 'America/Los_Angeles',
-        notifications: {
-          email: notifications.email ?? prefs.notifications_email ?? true,
-          push: notifications.push ?? prefs.notifications_push ?? true,
-          marketing: notifications.marketing ?? prefs.notifications_marketing ?? false
-        },
-        socialLinks: user.socialLinks ? [...user.socialLinks] : (user.social_links ? [...user.social_links] : [])
+      // Update form fields directly to ensure Vue reactivity
+      this.form.firstName = user.firstName || user.first_name || ''
+      this.form.lastName = user.lastName || user.last_name || ''
+      this.form.email = user.email || ''
+      this.form.username = user.username || ''
+      this.form.bio = user.bio || ''
+      this.form.location = user.location || ''
+      this.form.currency = prefs.currency || 'USD'
+      this.form.language = prefs.language || 'en'
+      this.form.timezone = prefs.timezone || 'America/Los_Angeles'
+      this.form.notifications = {
+        email: notifications.email ?? prefs.notifications_email ?? true,
+        push: notifications.push ?? prefs.notifications_push ?? true,
+        marketing: notifications.marketing ?? prefs.notifications_marketing ?? false
       }
+      this.form.socialLinks = user.socialLinks ? [...user.socialLinks] : (user.social_links ? [...user.social_links] : [])
       
-      console.log('ProfileSettings: Form data initialized', newFormData)
-      
-      // Update form data
-      this.form = { ...newFormData }
+      console.log('ProfileSettings: Form data initialized', {
+        firstName: this.form.firstName,
+        lastName: this.form.lastName,
+        username: this.form.username,
+        bio: this.form.bio,
+        location: this.form.location,
+        email: this.form.email
+      })
     },
     saveProfile() {
       this.$emit('save-profile', this.form)
