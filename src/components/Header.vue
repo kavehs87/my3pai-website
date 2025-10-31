@@ -42,9 +42,9 @@
                 </div>
               </div>
               <div class="dropdown-divider"></div>
-              <a href="#" class="dropdown-item">Profile</a>
-              <a href="#" class="dropdown-item">Settings</a>
-              <a href="#" class="dropdown-item">My Trips</a>
+              <router-link to="/profile" class="dropdown-item" @click="showProfileDropdown = false">Profile</router-link>
+              <router-link to="/profile?tab=settings" class="dropdown-item" @click="showProfileDropdown = false">Settings</router-link>
+              <router-link to="/profile?tab=trips" class="dropdown-item" @click="showProfileDropdown = false">My Trips</router-link>
               <div class="dropdown-divider"></div>
               <button class="dropdown-item logout-btn" @click="logout" :disabled="isLoggingOut">
                 <span v-if="isLoggingOut" class="loading-spinner"></span>

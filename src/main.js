@@ -4,6 +4,7 @@ import App from './App.vue'
 import Home from './components/Home.vue'
 import Studio from './components/studio/Studio.vue'
 import CreatorProfile from './components/CreatorProfile.vue'
+import Profile from './components/profile/Profile.vue'
 import OAuthCallback from './components/OAuthCallback.vue'
 import './style.css'
 
@@ -11,6 +12,7 @@ const routes = [
   { path: '/', component: Home },
   { path: '/studio', component: Studio, name: 'studio' },
   { path: '/creator/:id', component: CreatorProfile, name: 'creator-profile' },
+  { path: '/profile', component: Profile, name: 'profile' },
   { 
     path: '/auth/callback', 
     component: OAuthCallback, 
