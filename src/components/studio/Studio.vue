@@ -30,12 +30,13 @@
           </div>
         </div>
         <div class="studio-grid" style="min-height: 0;">
-          <div class="sidebar-col">
+          <div class="sidebar-col" :style="{ width: sidebarWidth + 'px', minWidth: '200px', maxWidth: '600px' }">
             <Sidebar />
             <div class="calendar-wrap">
               <MiniCalendar :tripDays="days" />
             </div>
           </div>
+          <ResizableSplitter @drag="handleSplitterDrag" @drag-start="handleSplitterDragStart" @drag-end="handleSplitterDragEnd" />
           <div class="main">
             <MapPanel ref="mapPanel" :layers="currentDay.layers" />
             <div class="prompt-row">
@@ -93,19 +94,25 @@ import InlinePromptBar from './components/InlinePromptBar.vue'
 import Timeline from './components/Timeline.vue'
 import LayerRow from './components/LayerRow.vue'
 import EventOptionsOverlay from './components/EventOptionsOverlay.vue'
+import ResizableSplitter from './components/ResizableSplitter.vue'
 import toast from '../../utils/toast.js'
 // import AIHints from './components/AIHints.vue'
 
 export default {
   name: 'Studio',
-  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, MiniCalendar, InlinePromptBar, EventOptionsOverlay },
+  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, MiniCalendar, InlinePromptBar, EventOptionsOverlay, ResizableSplitter },
   data() {
+    const defaultWidth = 260
+    const savedWidth = localStorage.getItem('studio-sidebar-width')
     return {
       days: data.days || [data.day].filter(Boolean),
       selectedDayIndex: 0,
       aiHints: data.aiHints,
       selected: null,
-      options: { visible: false, layerId: null, event: null }
+      options: { visible: false, layerId: null, event: null },
+      sidebarWidth: savedWidth ? parseInt(savedWidth, 10) : defaultWidth,
+      dragStartX: 0,
+      dragStartWidth: 0
     }
   },
   computed: {
@@ -291,6 +298,32 @@ export default {
       this.options = { visible: true, layerId, event: ev, prevEvent }
     },
     closeOptions() { this.options.visible = false },
+    handleSplitterDrag(e) {
+      if (this.dragStartX === 0) {
+        // First drag event - initialize
+        this.dragStartX = e.clientX
+        this.dragStartWidth = this.sidebarWidth
+        return
+      }
+      // Continue dragging
+      const deltaX = e.clientX - this.dragStartX
+      const newWidth = this.dragStartWidth + deltaX
+      const minWidth = 200
+      const maxWidth = 600
+      this.sidebarWidth = Math.max(minWidth, Math.min(maxWidth, newWidth))
+      localStorage.setItem('studio-sidebar-width', this.sidebarWidth.toString())
+    },
+    handleSplitterDragStart() {
+      this.dragStartX = 0
+      this.dragStartWidth = this.sidebarWidth
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+    },
+    handleSplitterDragEnd() {
+      this.dragStartX = 0
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    },
     handleDeleteEvent({ layerId, eventId }) {
       const layer = this.currentDay.layers.find(l => l.id === layerId)
       if (!layer || !layer.events) return
@@ -321,7 +354,7 @@ export default {
 /* Make studio full-width like a desktop app */
 .container { max-width: 100%; width: 100%; padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
 .studio-body { padding: var(--spacing-lg) 0; flex: 1; display: flex; min-height: 0; }
-.studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); min-height: 0; height: 100%; align-items: stretch; margin-bottom: var(--spacing-sm); }
+.studio-grid { display: flex; gap: 0; min-height: 0; height: 100%; align-items: stretch; margin-bottom: var(--spacing-sm); }
 .studio-grid .sidebar { align-self: start; }
 .sidebar-col { position: relative; flex-direction: column; }
 .sidebar-col > .calendar-wrap { position: absolute; left: 0; right: 0; bottom: 0; padding-top: var(--spacing-sm); z-index: 0; }
@@ -355,11 +388,12 @@ export default {
 .timeline-row > div:first-child { color: transparent; }
 
 @media (max-width: 1024px) {
-  .studio-grid { grid-template-columns: 1fr; }
+  .studio-grid { flex-direction: column; }
+  .sidebar-col { width: 100% !important; max-width: 100% !important; }
 }
 
 @media (max-width: 768px) {
-  .studio-grid { grid-template-columns: 1fr; gap: var(--spacing-sm); }
+  .studio-grid { flex-direction: column; gap: var(--spacing-sm); }
   .studio-grid .sidebar { order: 2; margin-top: var(--spacing-sm); }
   .studio-grid .main { order: 1; }
 }
