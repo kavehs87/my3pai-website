@@ -137,16 +137,12 @@ export default {
           // API service returns { success: true, data: <laravel_response> }
           // Laravel returns { success: true, data: { user: ..., stats: ... } }
           const apiResponse = result.data
-          console.log('API service result:', result)
-          console.log('API response data:', apiResponse)
           
           // The actual data is nested: result.data.data
           const data = apiResponse.data || apiResponse
-          console.log('Extracted data:', data)
           
           // Normalize user data (handle both camelCase and snake_case)
           const user = data.user || {}
-          console.log('Raw user data from API:', user)
           
           const prefs = user.preferences || {}
           
@@ -179,8 +175,6 @@ export default {
             socialLinks: user.socialLinks || user.social_links || []
           }
           
-          console.log('Normalized user data:', normalizedUser)
-          
           // Normalize trips (handle date field names)
           const normalizeTrips = (trips) => {
             return (trips || []).map(trip => ({
@@ -203,9 +197,6 @@ export default {
             itineraries: data.itineraries || [],
             savedPlans: data.savedPlans || data.saved_plans || []
           }
-          
-          // Debug: log the normalized user data
-          console.log('Profile loaded - normalized user:', this.profileData.user)
           
           // Update trip count in tabs
           this.tabs[1].count = this.profileData.recentTrips?.length || 0

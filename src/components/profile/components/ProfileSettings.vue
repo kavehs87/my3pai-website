@@ -222,7 +222,6 @@ export default {
       immediate: true,
       deep: true,
       handler(newUser) {
-        console.log('ProfileSettings: user prop changed', newUser)
         if (newUser && newUser.id) {
           this.initializeForm()
         }
@@ -233,11 +232,8 @@ export default {
     initializeForm() {
       const user = this.user
       if (!user || !user.id) {
-        console.log('ProfileSettings: No user data available', user)
         return
       }
-      
-      console.log('ProfileSettings: Initializing form with user data', user)
       
       // Extract preferences - handle both nested and flat structures
       const prefs = user.preferences || {}
@@ -259,19 +255,9 @@ export default {
         marketing: notifications.marketing ?? prefs.notifications_marketing ?? false
       }
       this.form.socialLinks = user.socialLinks ? [...user.socialLinks] : (user.social_links ? [...user.social_links] : [])
-      
-      console.log('ProfileSettings: Form data initialized', {
-        firstName: this.form.firstName,
-        lastName: this.form.lastName,
-        username: this.form.username,
-        bio: this.form.bio,
-        location: this.form.location,
-        email: this.form.email
-      })
     },
     saveProfile() {
       this.$emit('save-profile', this.form)
-      console.log('Saving profile:', this.form)
     },
     savePreferences() {
       this.$emit('save-preferences', {
