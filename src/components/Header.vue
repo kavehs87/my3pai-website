@@ -191,7 +191,18 @@ export default {
         const result = await apiService.getCurrentUser()
         if (result.success) {
           this.isLoggedIn = true
-          this.user = result.data
+          const userData = result.data || {}
+          // Normalize user data format (handle different response structures)
+          this.user = {
+            name: userData.name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.display_name || '',
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+            display_name: userData.display_name,
+            email: userData.email || '',
+            avatar: userData.avatar || userData.picture || userData.photo_url || '',
+            picture: userData.picture || userData.avatar,
+            photo_url: userData.photo_url || userData.avatar
+          }
         } else {
           this.isLoggedIn = false
           this.user = { name: '', email: '', avatar: '' }
