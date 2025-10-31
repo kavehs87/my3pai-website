@@ -493,18 +493,39 @@ export default {
             return
           }
           
-          // Format URL - ensure it has a protocol
+          // Format URL - handle both full URLs and usernames
           let formattedUrl = link.url.trim()
-          // If URL doesn't start with http:// or https://, prepend https://
-          if (!/^https?:\/\//i.test(formattedUrl)) {
-            formattedUrl = `https://${formattedUrl}`
+          
+          // Check if it's just a username (no dots/slashes/http) - alphanumeric with underscores/dots/dashes
+          const isUsername = /^[\w.\-]+$/.test(formattedUrl) && !formattedUrl.includes('/') && !formattedUrl.includes('.')
+          
+          if (isUsername) {
+            // Construct platform-specific URL from username
+            const platformUrls = {
+              'Instagram': `https://instagram.com/${formattedUrl}`,
+              'Twitter': `https://twitter.com/${formattedUrl}`,
+              'Facebook': `https://facebook.com/${formattedUrl}`,
+              'YouTube': `https://youtube.com/@${formattedUrl}`,
+              'TikTok': `https://tiktok.com/@${formattedUrl}`,
+              'LinkedIn': `https://linkedin.com/in/${formattedUrl}`,
+              'Pinterest': `https://pinterest.com/${formattedUrl}`,
+              'Snapchat': `https://snapchat.com/add/${formattedUrl}`,
+              'Website': `https://${formattedUrl}`,
+              'Other': `https://${formattedUrl}`
+            }
+            formattedUrl = platformUrls[link.platform] || `https://${formattedUrl}`
+          } else {
+            // It's a URL - ensure it has a protocol
+            if (!/^https?:\/\//i.test(formattedUrl)) {
+              formattedUrl = `https://${formattedUrl}`
+            }
           }
           
           // Basic URL validation
           try {
             new URL(formattedUrl)
           } catch (e) {
-            toast.error(`Please enter a valid URL for ${link.platform}`)
+            toast.error(`Please enter a valid URL or username for ${link.platform}`)
             if (settingsComponent) settingsComponent.isSavingSocialLinks = false
             return
           }
@@ -532,18 +553,39 @@ export default {
             return
           }
           
-          // Format URL - ensure it has a protocol
+          // Format URL - handle both full URLs and usernames
           let formattedUrl = link.url.trim()
-          // If URL doesn't start with http:// or https://, prepend https://
-          if (!/^https?:\/\//i.test(formattedUrl)) {
-            formattedUrl = `https://${formattedUrl}`
+          
+          // Check if it's just a username (no dots/slashes/http) - alphanumeric with underscores/dots/dashes
+          const isUsername = /^[\w.\-]+$/.test(formattedUrl) && !formattedUrl.includes('/') && !formattedUrl.includes('.')
+          
+          if (isUsername) {
+            // Construct platform-specific URL from username
+            const platformUrls = {
+              'Instagram': `https://instagram.com/${formattedUrl}`,
+              'Twitter': `https://twitter.com/${formattedUrl}`,
+              'Facebook': `https://facebook.com/${formattedUrl}`,
+              'YouTube': `https://youtube.com/@${formattedUrl}`,
+              'TikTok': `https://tiktok.com/@${formattedUrl}`,
+              'LinkedIn': `https://linkedin.com/in/${formattedUrl}`,
+              'Pinterest': `https://pinterest.com/${formattedUrl}`,
+              'Snapchat': `https://snapchat.com/add/${formattedUrl}`,
+              'Website': `https://${formattedUrl}`,
+              'Other': `https://${formattedUrl}`
+            }
+            formattedUrl = platformUrls[link.platform] || `https://${formattedUrl}`
+          } else {
+            // It's a URL - ensure it has a protocol
+            if (!/^https?:\/\//i.test(formattedUrl)) {
+              formattedUrl = `https://${formattedUrl}`
+            }
           }
           
           // Basic URL validation
           try {
             new URL(formattedUrl)
           } catch (e) {
-            toast.error(`Please enter a valid URL for ${link.platform}`)
+            toast.error(`Please enter a valid URL or username for ${link.platform}`)
             if (settingsComponent) settingsComponent.isSavingSocialLinks = false
             return
           }
