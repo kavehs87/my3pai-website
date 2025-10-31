@@ -77,6 +77,19 @@ export default {
       ]
     }
   },
+  watch: {
+    '$route.query.tab': {
+      immediate: true,
+      handler(tab) {
+        if (tab && ['overview', 'trips', 'settings'].includes(tab)) {
+          this.activeTab = tab
+        } else if (!tab) {
+          // Default to overview if no tab specified
+          this.activeTab = 'overview'
+        }
+      }
+    }
+  },
   mounted() {
     // Check if there's a tab query parameter
     const tab = this.$route.query.tab

@@ -42,9 +42,9 @@
                 </div>
               </div>
               <div class="dropdown-divider"></div>
-              <router-link to="/profile" class="dropdown-item" @click="showProfileDropdown = false">Profile</router-link>
-              <router-link to="/profile?tab=settings" class="dropdown-item" @click="showProfileDropdown = false">Settings</router-link>
-              <router-link to="/profile?tab=trips" class="dropdown-item" @click="showProfileDropdown = false">My Trips</router-link>
+              <a href="#" class="dropdown-item" @click.prevent="navigateToProfile('overview')">Profile</a>
+              <a href="#" class="dropdown-item" @click.prevent="navigateToProfile('settings')">Settings</a>
+              <a href="#" class="dropdown-item" @click.prevent="navigateToProfile('trips')">My Trips</a>
               <div class="dropdown-divider"></div>
               <button class="dropdown-item logout-btn" @click="logout" :disabled="isLoggingOut">
                 <span v-if="isLoggingOut" class="loading-spinner"></span>
@@ -230,6 +230,14 @@ export default {
       if (this.showProfileDropdown && !this.$el.querySelector('.profile-dropdown').contains(event.target)) {
         this.showProfileDropdown = false
       }
+    },
+    navigateToProfile(tab = 'overview') {
+      this.showProfileDropdown = false
+      // Use push to ensure navigation even if already on profile page
+      this.$router.push({ 
+        path: '/profile',
+        query: { tab }
+      })
     }
   }
 }
