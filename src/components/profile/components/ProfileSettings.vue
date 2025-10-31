@@ -220,13 +220,14 @@ export default {
     user: {
       immediate: true,
       deep: true,
-      handler(newUser) {
+      handler(newUser, oldUser) {
         if (newUser && newUser.id) {
           // Extract preferences - handle both nested and flat structures
           const prefs = newUser.preferences || {}
           const notifications = prefs.notifications || {}
           
-          this.form = {
+          // Only update if data actually changed to avoid unnecessary updates
+          const newFormData = {
             firstName: newUser.firstName || newUser.first_name || '',
             lastName: newUser.lastName || newUser.last_name || '',
             email: newUser.email || '',
@@ -243,6 +244,14 @@ export default {
             },
             socialLinks: newUser.socialLinks ? [...newUser.socialLinks] : (newUser.social_links ? [...newUser.social_links] : [])
           }
+          
+          // Always update the form - Vue will handle reactivity
+          this.form = { ...newFormData }
+          
+          // Force update to ensure form fields reflect changes
+          this.$nextTick(() => {
+            this.$forceUpdate()
+          })
         }
       }
     }

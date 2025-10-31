@@ -346,12 +346,48 @@ export default {
         }
         
         const result = await apiService.updateProfile(apiData)
-        if (result.success) {
+        if (result.success && result.data && result.data.user) {
+          // Immediately update the user data from response
+          const updatedUser = result.data.user
+          const prefs = updatedUser.preferences || {}
+          
+          // Normalize preferences structure
+          const normalizedPreferences = {
+            currency: prefs.currency || 'USD',
+            language: prefs.language || 'en',
+            timezone: prefs.timezone || 'America/Los_Angeles',
+            notifications: {
+              email: prefs.notifications?.email ?? prefs.notifications_email ?? true,
+              push: prefs.notifications?.push ?? prefs.notifications_push ?? true,
+              marketing: prefs.notifications?.marketing ?? prefs.notifications_marketing ?? false
+            }
+          }
+          
+          // Update user object with normalized data - use Object.assign to ensure reactivity
+          Object.assign(this.profileData.user, {
+            id: updatedUser.id,
+            firstName: updatedUser.firstName || updatedUser.first_name,
+            lastName: updatedUser.lastName || updatedUser.last_name,
+            email: updatedUser.email,
+            username: updatedUser.username,
+            avatar: updatedUser.avatar,
+            coverImage: updatedUser.coverImage || updatedUser.cover_image,
+            bio: updatedUser.bio,
+            location: updatedUser.location,
+            joinedDate: updatedUser.joinedDate || updatedUser.created_at || updatedUser.joinedDate,
+            verified: updatedUser.verified || false,
+            preferences: normalizedPreferences,
+            socialLinks: updatedUser.socialLinks || updatedUser.social_links || []
+          })
+          
+          // Force Vue to recognize the change
+          this.$forceUpdate()
+          
           alert('Profile updated successfully!')
-          // Reload profile data
+          // Also reload to get stats and other data fresh
           await this.loadProfileData()
         } else {
-          alert(`Failed to update profile: ${result.error}`)
+          alert(`Failed to update profile: ${result.error || 'Unknown error'}`)
         }
       } catch (error) {
         alert(`Error updating profile: ${error.message}`)
