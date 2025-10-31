@@ -14,7 +14,7 @@
         <i class="fas fa-image"></i>
         <span v-if="selectedImage" class="image-badge">1</span>
       </button>
-      <input ref="imageInput" class="hidden-file" type="file" @change="onImageSelected" accept="image/*,.jpg,.jpeg,.png,.webp,.gif" />
+      <input ref="imageInput" class="hidden-file" type="file" @change="onImageSelected" accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.pdf,application/pdf" />
       <button class="send-btn" type="button" @click="emitSubmit" title="Send">
         <i class="fas fa-paper-plane"></i>
       </button>

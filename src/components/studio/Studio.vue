@@ -86,6 +86,7 @@ import InlinePromptBar from './components/InlinePromptBar.vue'
 import Timeline from './components/Timeline.vue'
 import LayerRow from './components/LayerRow.vue'
 import EventOptionsOverlay from './components/EventOptionsOverlay.vue'
+import toast from '../../utils/toast.js'
 // import AIHints from './components/AIHints.vue'
 
 export default {
@@ -149,7 +150,87 @@ export default {
     handlePrompt({ query, image }) {
       if (!query && !image) return
       console.log('Studio prompt submit:', { query, image: image ? { name: image.name, size: image.size, type: image.type } : null })
-      // TODO: Process prompt with optional image
+      // Mock: if a ticket file was uploaded, map by filename to create events automatically
+      if (image && image.file) {
+        this.processTicketFile(image.file)
+        return
+      }
+      // Future: process query text here
+    },
+    processTicketFile(file) {
+      const name = (file.name || '').toLowerCase()
+      const mapping = this.ticketMapping()
+      const match = Object.keys(mapping).find(key => name.includes(key))
+      if (!match) {
+        toast.info('File uploaded. No matching mock rule found; skipped.')
+        return
+      }
+      const mock = mapping[match]
+      const event = {
+        title: mock.title,
+        start: mock.start,
+        end: mock.end,
+        coords: mock.coords,
+        type: mock.type,
+        notes: `Auto-created from ${file.name}`
+      }
+      const layer = this.currentDay.layers.find(l => l.id === mock.layerId)
+      if (!layer) {
+        toast.error(`Layer '${mock.layerId}' not found`)
+        return
+      }
+      this.handleAddEvent({ layerId: mock.layerId, event })
+      toast.success(`${mock.successMsg}`)
+    },
+    ticketMapping() {
+      // POC rules: match by filename substrings
+      return {
+        'ticket001.pdf': {
+          layerId: 'transport',
+          title: 'Flight: CDG → BCN',
+          start: '09:20',
+          end: '11:35',
+          coords: [48.8566, 2.3522],
+          type: 'transport',
+          successMsg: 'Flight added to timeline'
+        },
+        'ticket002.pdf': {
+          layerId: 'activities',
+          title: 'Louvre Museum Entry',
+          start: '14:00',
+          end: '16:00',
+          coords: [48.8606, 2.3376],
+          type: 'activity',
+          successMsg: 'Museum ticket added'
+        },
+        'ticket003.pdf': {
+          layerId: 'transport',
+          title: 'Train: Paris → Versailles',
+          start: '08:45',
+          end: '09:35',
+          coords: [48.8049, 2.1204],
+          type: 'transport',
+          successMsg: 'Train ticket added'
+        },
+        'ticket004.pdf': {
+          layerId: 'accommodation',
+          title: 'Hotel Booking: Check-in',
+          start: '15:00',
+          end: '15:30',
+          coords: [48.8738, 2.2950],
+          type: 'accommodation',
+          successMsg: 'Hotel check-in added'
+        },
+        'ticket005.pdf': {
+          layerId: 'food',
+          title: 'Restaurant Reservation',
+          start: '19:00',
+          end: '20:30',
+          coords: [48.8566, 2.3522],
+          type: 'meal',
+          successMsg: 'Dinner reservation added'
+        }
+      }
     },
     handlePickImage() { console.log('Studio pick image') },
     handleMic() { console.log('Studio mic') },
