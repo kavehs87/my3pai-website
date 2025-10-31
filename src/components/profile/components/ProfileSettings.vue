@@ -216,47 +216,57 @@ export default {
       }
     }
   },
+  mounted() {
+    // Initialize form when component mounts
+    this.initializeForm()
+  },
   watch: {
     user: {
       immediate: true,
       deep: true,
-      handler(newUser, oldUser) {
-        if (newUser && newUser.id) {
-          // Extract preferences - handle both nested and flat structures
-          const prefs = newUser.preferences || {}
-          const notifications = prefs.notifications || {}
-          
-          // Only update if data actually changed to avoid unnecessary updates
-          const newFormData = {
-            firstName: newUser.firstName || newUser.first_name || '',
-            lastName: newUser.lastName || newUser.last_name || '',
-            email: newUser.email || '',
-            username: newUser.username || '',
-            bio: newUser.bio || '',
-            location: newUser.location || '',
-            currency: prefs.currency || 'USD',
-            language: prefs.language || 'en',
-            timezone: prefs.timezone || 'America/Los_Angeles',
-            notifications: {
-              email: notifications.email ?? prefs.notifications_email ?? true,
-              push: notifications.push ?? prefs.notifications_push ?? true,
-              marketing: notifications.marketing ?? prefs.notifications_marketing ?? false
-            },
-            socialLinks: newUser.socialLinks ? [...newUser.socialLinks] : (newUser.social_links ? [...newUser.social_links] : [])
-          }
-          
-          // Always update the form - Vue will handle reactivity
-          this.form = { ...newFormData }
-          
-          // Force update to ensure form fields reflect changes
-          this.$nextTick(() => {
-            this.$forceUpdate()
-          })
-        }
+      handler(newUser) {
+        console.log('ProfileSettings: user prop changed', newUser)
+        this.initializeForm()
       }
     }
   },
   methods: {
+    initializeForm() {
+      const user = this.user
+      if (!user || !user.id) {
+        console.log('ProfileSettings: No user data available', user)
+        return
+      }
+      
+      console.log('ProfileSettings: Initializing form with user data', user)
+      
+      // Extract preferences - handle both nested and flat structures
+      const prefs = user.preferences || {}
+      const notifications = prefs.notifications || {}
+      
+      const newFormData = {
+        firstName: user.firstName || user.first_name || '',
+        lastName: user.lastName || user.last_name || '',
+        email: user.email || '',
+        username: user.username || '',
+        bio: user.bio || '',
+        location: user.location || '',
+        currency: prefs.currency || 'USD',
+        language: prefs.language || 'en',
+        timezone: prefs.timezone || 'America/Los_Angeles',
+        notifications: {
+          email: notifications.email ?? prefs.notifications_email ?? true,
+          push: notifications.push ?? prefs.notifications_push ?? true,
+          marketing: notifications.marketing ?? prefs.notifications_marketing ?? false
+        },
+        socialLinks: user.socialLinks ? [...user.socialLinks] : (user.social_links ? [...user.social_links] : [])
+      }
+      
+      console.log('ProfileSettings: Form data initialized', newFormData)
+      
+      // Update form data
+      this.form = { ...newFormData }
+    },
     saveProfile() {
       this.$emit('save-profile', this.form)
       console.log('Saving profile:', this.form)
