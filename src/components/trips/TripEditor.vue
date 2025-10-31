@@ -234,8 +234,18 @@ export default {
           ? await apiService.updateTrip(this.$route.params.id, payload)
           : await apiService.createTrip(payload)
         if (result.success) {
-          const trip = (result.data && (result.data.data || result.data)) || {}
-          this.savedTripId = trip.id || this.savedTripId
+          // Robustly extract created/updated trip id from various possible shapes
+          // result.data -> API service wrapper
+          // could be { data: { id } }, { data: { data: { id } } }, { data: { trip: { id } } }
+          const apiResponse = result.data || {}
+          const body = apiResponse.data !== undefined ? apiResponse.data : apiResponse
+          const tripObj = (body && (body.trip || body)) || {}
+          this.savedTripId = tripObj.id || this.savedTripId
+          
+          if (!this.savedTripId) {
+            toast.error('Could not determine trip id after save. Please try again.')
+            return
+          }
           // If a thumbnail file is selected, upload it now
           if (this.thumbnailFile && this.savedTripId) {
             const up = await apiService.uploadTripThumbnail(this.savedTripId, this.thumbnailFile)

@@ -364,8 +364,16 @@ export default {
         const result = await apiService.deleteTrip(tripId)
         if (result.success) {
           toast.success('Trip deleted successfully!')
-          // Reload profile data
-          await this.loadProfileData()
+          // Optimistically update the UI without full page refresh
+          this.allTrips = (this.allTrips || []).filter(t => t.id !== tripId)
+          // Also update recentTrips in the overview if present
+          if (this.profileData && Array.isArray(this.profileData.recentTrips)) {
+            this.profileData.recentTrips = this.profileData.recentTrips.filter(t => t.id !== tripId)
+          }
+          // Update Trips tab count
+          this.tabs[1].count = this.allTrips.length
+          // Optionally re-fetch trips in the background to stay in sync
+          this.loadTrips()
         } else {
           toast.error(`Failed to delete trip: ${result.error}`)
         }
