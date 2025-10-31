@@ -165,6 +165,11 @@
               <i class="fas fa-plus"></i>
               Add Social Link
             </button>
+            <button class="save-btn" @click="saveSocialLinks" :disabled="isSavingSocialLinks">
+              <i class="fas fa-save"></i>
+              <span v-if="isSavingSocialLinks">Saving...</span>
+              <span v-else>Save Social Links</span>
+            </button>
           </div>
         </div>
 
@@ -214,7 +219,9 @@ export default {
           marketing: false
         },
         socialLinks: []
-      }
+      },
+      originalSocialLinks: [], // Store original links to compare changes
+      isSavingSocialLinks: false
     }
   },
   watch: {
@@ -254,7 +261,10 @@ export default {
         push: notifications.push ?? prefs.notifications_push ?? true,
         marketing: notifications.marketing ?? prefs.notifications_marketing ?? false
       }
-      this.form.socialLinks = user.socialLinks ? [...user.socialLinks] : (user.social_links ? [...user.social_links] : [])
+      // Deep copy social links to track original state
+      const links = user.socialLinks ? [...user.socialLinks] : (user.social_links ? [...user.social_links] : [])
+      this.form.socialLinks = links.map(link => ({ ...link }))
+      this.originalSocialLinks = links.map(link => ({ ...link })) // Store deep copy of original
     },
     saveProfile() {
       this.$emit('save-profile', this.form)
@@ -277,6 +287,12 @@ export default {
     },
     removeSocialLink(index) {
       this.form.socialLinks.splice(index, 1)
+    },
+    async saveSocialLinks() {
+      this.$emit('save-social-links', {
+        current: this.form.socialLinks,
+        original: this.originalSocialLinks
+      })
     },
     changePassword() {
       this.$emit('change-password')

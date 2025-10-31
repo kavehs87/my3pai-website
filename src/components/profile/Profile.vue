@@ -51,6 +51,7 @@
         :user="profileData.user || {}"
         @save-profile="handleSaveProfile"
         @save-preferences="handleSavePreferences"
+        @save-social-links="handleSaveSocialLinks"
         @change-password="handleChangePassword"
         @delete-account="handleDeleteAccount"
       />
@@ -437,6 +438,81 @@ export default {
         }
       } catch (error) {
         toast.error(`Error saving preferences: ${error.message}`)
+      }
+    },
+    async handleSaveSocialLinks({ current, original }) {
+      try {
+        // Identify changes:
+        // 1. Links to delete (in original but not in current)
+        // 2. Links to update (in both but changed)
+        // 3. Links to create (in current but not in original)
+        
+        const originalMap = new Map(original.map(link => [link.id, link]))
+        const currentMap = new Map(current.map((link, index) => [link.id || `new-${index}`, link]))
+        
+        // Find links to delete (have ID but not in current)
+        const toDelete = original.filter(link => 
+          link.id && !current.some(cl => cl.id === link.id)
+        )
+        
+        // Find links to create (no ID)
+        const toCreate = current.filter(link => !link.id)
+        
+        // Find links to update (have ID and exist in both, but changed)
+        const toUpdate = current.filter(link => {
+          if (!link.id) return false
+          const origLink = originalMap.get(link.id)
+          if (!origLink) return false
+          return origLink.platform !== link.platform || 
+                 origLink.url !== link.url || 
+                 origLink.public !== link.public
+        })
+        
+        // Execute deletions
+        for (const link of toDelete) {
+          const result = await apiService.deleteSocialLink(link.id)
+          if (!result.success) {
+            toast.error(`Failed to delete ${link.platform} link`)
+            return
+          }
+        }
+        
+        // Execute updates
+        for (const link of toUpdate) {
+          const result = await apiService.updateSocialLink(link.id, {
+            platform: link.platform,
+            url: link.url,
+            public: link.public !== undefined ? link.public : true
+          })
+          if (!result.success) {
+            toast.error(`Failed to update ${link.platform} link`)
+            return
+          }
+        }
+        
+        // Execute creations
+        for (const link of toCreate) {
+          const result = await apiService.createSocialLink({
+            platform: link.platform,
+            url: link.url,
+            public: link.public !== undefined ? link.public : true
+          })
+          if (!result.success) {
+            toast.error(`Failed to create ${link.platform} link`)
+            return
+          }
+        }
+        
+        // Success!
+        if (toDelete.length > 0 || toUpdate.length > 0 || toCreate.length > 0) {
+          toast.success('Social links saved successfully!')
+          // Reload profile data to get updated social links with IDs
+          await this.loadProfileData()
+        } else {
+          toast.info('No changes to save')
+        }
+      } catch (error) {
+        toast.error(`Error saving social links: ${error.message}`)
       }
     },
     async handleChangePassword() {
