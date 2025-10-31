@@ -215,14 +215,14 @@ class ApiService {
   async createSocialLink(linkData) {
     return this.request('/profile/social-links', {
       method: 'POST',
-      body: JSON.stringify(linkData)
+      body: linkData
     })
   }
 
   async updateSocialLink(id, linkData) {
     return this.request(`/profile/social-links/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(linkData)
+      body: linkData
     })
   }
 

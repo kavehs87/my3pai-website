@@ -486,13 +486,15 @@ export default {
         
         // Execute updates
         for (const link of toUpdate) {
+          // Convert to snake_case for Laravel backend
           const result = await apiService.updateSocialLink(link.id, {
             platform: link.platform,
             url: link.url,
-            public: link.public !== undefined ? link.public : true
+            is_public: link.public !== undefined ? link.public : true
           })
           if (!result.success) {
-            toast.error(`Failed to update ${link.platform} link`)
+            const errorMsg = result.error || `Failed to update ${link.platform} link`
+            toast.error(errorMsg)
             if (settingsComponent) settingsComponent.isSavingSocialLinks = false
             return
           }
@@ -500,13 +502,23 @@ export default {
         
         // Execute creations
         for (const link of toCreate) {
+          // Validate URL is not empty
+          if (!link.url || !link.url.trim()) {
+            toast.error(`Please enter a URL for ${link.platform}`)
+            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
+            return
+          }
+          
+          // Convert to snake_case for Laravel backend
           const result = await apiService.createSocialLink({
             platform: link.platform,
-            url: link.url,
-            public: link.public !== undefined ? link.public : true
+            url: link.url.trim(),
+            is_public: link.public !== undefined ? link.public : true
           })
           if (!result.success) {
-            toast.error(`Failed to create ${link.platform} link`)
+            const errorMsg = result.error || `Failed to create ${link.platform} link`
+            toast.error(errorMsg)
+            console.error('Social link creation error:', result)
             if (settingsComponent) settingsComponent.isSavingSocialLinks = false
             return
           }
