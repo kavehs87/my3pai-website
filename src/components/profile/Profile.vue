@@ -382,9 +382,18 @@ export default {
         }
         
         const result = await apiService.updateProfile(apiData)
-        if (result.success && result.data && result.data.user) {
-          // Immediately update the user data from response
-          const updatedUser = result.data.user
+        if (result.success) {
+          // Handle nested response structure (API service wraps Laravel response)
+          // API service returns { success: true, data: <laravel_response> }
+          // Laravel returns { success: true, data: { user: ... } }
+          const apiResponse = result.data
+          const data = apiResponse.data || apiResponse
+          const updatedUser = data.user || apiResponse.user
+          
+          if (!updatedUser) {
+            toast.error('Failed to update profile: Invalid response format')
+            return
+          }
           const prefs = updatedUser.preferences || {}
           
           // Normalize preferences structure
