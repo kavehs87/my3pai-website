@@ -42,6 +42,11 @@ class ApiService {
       ...options
     }
 
+    // Handle body - if it's an object and not already a string, stringify it
+    if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
+      config.body = JSON.stringify(config.body)
+    }
+
     try {
       const response = await fetch(url, config)
       
@@ -57,7 +62,15 @@ class ApiService {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`)
+        // Extract validation errors from Laravel response
+        let errorMessage = data.message || `HTTP ${response.status}: ${response.statusText}`
+        if (data.errors && typeof data.errors === 'object') {
+          const validationErrors = Object.values(data.errors).flat()
+          if (validationErrors.length > 0) {
+            errorMessage = validationErrors.join(', ')
+          }
+        }
+        throw new Error(errorMessage)
       }
 
       return { success: true, data }
