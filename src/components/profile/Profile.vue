@@ -134,9 +134,15 @@ export default {
         const result = await apiService.getProfile()
         if (result.success) {
           // Normalize API response to match frontend expectations
-          const data = result.data
+          // API service returns { success: true, data: <laravel_response> }
+          // Laravel returns { success: true, data: { user: ..., stats: ... } }
+          const apiResponse = result.data
+          console.log('API service result:', result)
+          console.log('API response data:', apiResponse)
           
-          console.log('Profile API response:', data)
+          // The actual data is nested: result.data.data
+          const data = apiResponse.data || apiResponse
+          console.log('Extracted data:', data)
           
           // Normalize user data (handle both camelCase and snake_case)
           const user = data.user || {}
