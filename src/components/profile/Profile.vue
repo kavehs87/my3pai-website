@@ -136,8 +136,12 @@ export default {
           // Normalize API response to match frontend expectations
           const data = result.data
           
+          console.log('Profile API response:', data)
+          
           // Normalize user data (handle both camelCase and snake_case)
           const user = data.user || {}
+          console.log('Raw user data from API:', user)
+          
           const prefs = user.preferences || {}
           
           // Normalize preferences structure (handle both nested and flat)
@@ -152,21 +156,24 @@ export default {
             }
           }
           
+          // Try both camelCase and snake_case variants
           const normalizedUser = {
             id: user.id,
-            firstName: user.firstName || user.first_name,
-            lastName: user.lastName || user.last_name,
-            email: user.email,
-            username: user.username,
-            avatar: user.avatar,
-            coverImage: user.coverImage || user.cover_image,
-            bio: user.bio,
-            location: user.location,
-            joinedDate: user.joinedDate || user.created_at,
+            firstName: user.firstName || user.first_name || '',
+            lastName: user.lastName || user.last_name || '',
+            email: user.email || '',
+            username: user.username || '',
+            avatar: user.avatar || user.avatar_url || '',
+            coverImage: user.coverImage || user.cover_image || user.coverImage || '',
+            bio: user.bio || '',
+            location: user.location || '',
+            joinedDate: user.joinedDate || user.created_at || user.joined_date || '',
             verified: user.verified || false,
             preferences: normalizedPreferences,
             socialLinks: user.socialLinks || user.social_links || []
           }
+          
+          console.log('Normalized user data:', normalizedUser)
           
           // Normalize trips (handle date field names)
           const normalizeTrips = (trips) => {
