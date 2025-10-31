@@ -191,6 +191,9 @@ export default {
             savedPlans: data.savedPlans || data.saved_plans || []
           }
           
+          // Debug: log the normalized user data
+          console.log('Profile loaded - normalized user:', this.profileData.user)
+          
           // Update trip count in tabs
           this.tabs[1].count = this.profileData.recentTrips?.length || 0
         } else {
