@@ -30,7 +30,12 @@
           </div>
         </div>
         <div class="studio-grid" style="min-height: 0;">
-          <Sidebar />
+          <div class="sidebar-col">
+            <Sidebar />
+            <div class="calendar-wrap">
+              <MiniCalendar :tripDays="days" />
+            </div>
+          </div>
           <div class="main">
             <MapPanel ref="mapPanel" :layers="currentDay.layers" />
             <div class="prompt-row">
@@ -83,6 +88,7 @@ import Header from '../Header.vue'
 import data from '../../data/studioSample.json'
 import MapPanel from './components/MapPanel.vue'
 import Sidebar from './components/Sidebar.vue'
+import MiniCalendar from './components/MiniCalendar.vue'
 import InlinePromptBar from './components/InlinePromptBar.vue'
 import Timeline from './components/Timeline.vue'
 import LayerRow from './components/LayerRow.vue'
@@ -92,7 +98,7 @@ import toast from '../../utils/toast.js'
 
 export default {
   name: 'Studio',
-  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, InlinePromptBar, EventOptionsOverlay },
+  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, MiniCalendar, InlinePromptBar, EventOptionsOverlay },
   data() {
     return {
       days: data.days || [data.day].filter(Boolean),
@@ -317,6 +323,9 @@ export default {
 .studio-body { padding: var(--spacing-lg) 0; flex: 1; display: flex; min-height: 0; }
 .studio-grid { display: grid; grid-template-columns: 260px 1fr; gap: var(--spacing-lg); min-height: 0; height: 100%; align-items: stretch; margin-bottom: var(--spacing-sm); }
 .studio-grid .sidebar { align-self: start; }
+.sidebar-col { position: relative; flex-direction: column; }
+.sidebar-col > .calendar-wrap { position: absolute; left: 0; right: 0; bottom: 0; padding-top: var(--spacing-sm); z-index: 0; }
+.sidebar-col > .sidebar { position: relative; z-index: 1; }
 .main { display: flex; flex-direction: column; gap: var(--spacing-sm); flex: 1; }
 .main { position: relative; }
 .editor { background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); }
