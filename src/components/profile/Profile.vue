@@ -616,6 +616,15 @@ export default {
             settingsComponent.originalSocialLinks = links.map(link => ({ ...link }))
             settingsComponent.form.socialLinks = links.map(link => ({ ...link }))
           }
+          
+          // Scroll back to Social Links section after save
+          await this.$nextTick()
+          const socialLinksSection = document.getElementById('social-links-section')
+          if (socialLinksSection) {
+            socialLinksSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            // Add small offset for header
+            window.scrollBy(0, -80)
+          }
         } else {
           toast.info('No changes to save')
         }

@@ -139,7 +139,7 @@
           </div>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" id="social-links-section">
           <h2>Social Links</h2>
           <div class="settings-form">
             <div class="form-group" v-for="(link, index) in form.socialLinks" :key="index">
