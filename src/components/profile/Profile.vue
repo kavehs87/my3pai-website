@@ -204,6 +204,14 @@ export default {
           
           // Update trip count in tabs
           this.tabs[1].count = this.profileData.recentTrips?.length || 0
+          
+          // Restore scroll position if requested
+          if (preserveScroll && scrollY !== null) {
+            await this.$nextTick()
+            requestAnimationFrame(() => {
+              window.scrollTo(0, scrollY)
+            })
+          }
         } else {
           this.error = result.error || 'Failed to load profile'
           console.error('Profile load error:', result.error)
@@ -608,8 +616,12 @@ export default {
         // Success!
         if (toDelete.length > 0 || toUpdate.length > 0 || toCreate.length > 0) {
           toast.success('Social links saved successfully!')
-          // Reload profile data to get updated social links with IDs
-          await this.loadProfileData()
+          
+          // Store scroll position before reload
+          const scrollYBefore = window.scrollY || window.pageYOffset || document.documentElement.scrollTop
+          
+          // Reload profile data to get updated social links with IDs (don't preserve scroll, we'll scroll to section instead)
+          await this.loadProfileData(false)
           // Update originalSocialLinks in ProfileSettings to match new state
           if (settingsComponent && this.profileData.user) {
             const links = this.profileData.user.socialLinks || this.profileData.user.social_links || []
@@ -617,14 +629,32 @@ export default {
             settingsComponent.form.socialLinks = links.map(link => ({ ...link }))
           }
           
-          // Scroll back to Social Links section after save
+          // Wait for DOM to fully update and then restore scroll position
           await this.$nextTick()
-          const socialLinksSection = document.getElementById('social-links-section')
-          if (socialLinksSection) {
-            socialLinksSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            // Add small offset for header
-            window.scrollBy(0, -80)
-          }
+          // Use requestAnimationFrame to ensure DOM is ready
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const socialLinksSection = document.getElementById('social-links-section')
+              if (socialLinksSection) {
+                // Calculate element position
+                const rect = socialLinksSection.getBoundingClientRect()
+                const elementTop = rect.top + window.scrollY || window.pageYOffset || document.documentElement.scrollTop
+                const offset = 100 // Header offset
+                
+                // Scroll to the section
+                window.scrollTo({
+                  top: Math.max(0, elementTop - offset),
+                  behavior: 'smooth'
+                })
+              } else {
+                // Fallback: restore to previous position
+                window.scrollTo({
+                  top: scrollYBefore,
+                  behavior: 'smooth'
+                })
+              }
+            })
+          })
         } else {
           toast.info('No changes to save')
         }
