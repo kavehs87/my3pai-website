@@ -47,6 +47,7 @@
       
       <ProfileSettings
         v-if="activeTab === 'settings'"
+        :key="profileData.user?.id || 'settings'"
         :user="profileData.user"
         @save-profile="handleSaveProfile"
         @save-preferences="handleSavePreferences"
