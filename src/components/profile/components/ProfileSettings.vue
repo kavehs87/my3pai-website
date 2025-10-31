@@ -216,17 +216,15 @@ export default {
       }
     }
   },
-  mounted() {
-    // Initialize form when component mounts
-    this.initializeForm()
-  },
   watch: {
     user: {
       immediate: true,
       deep: true,
       handler(newUser) {
         console.log('ProfileSettings: user prop changed', newUser)
-        this.initializeForm()
+        if (newUser && newUser.id) {
+          this.initializeForm()
+        }
       }
     }
   },
