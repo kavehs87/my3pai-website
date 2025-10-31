@@ -419,8 +419,19 @@ export default {
   gap: var(--spacing-xs);
 }
 
+.preferences-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
 @media (max-width: 768px) {
   .social-link-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .preferences-row {
     grid-template-columns: 1fr;
   }
 }

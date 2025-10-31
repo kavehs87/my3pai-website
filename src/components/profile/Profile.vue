@@ -483,10 +483,10 @@ export default {
           // Use double requestAnimationFrame to ensure DOM is ready
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              const notificationsSection = document.getElementById('notifications-section')
-              if (notificationsSection) {
+              const preferencesSection = document.getElementById('preferences-section')
+              if (preferencesSection) {
                 // Calculate element position
-                const rect = notificationsSection.getBoundingClientRect()
+                const rect = preferencesSection.getBoundingClientRect()
                 const elementTop = rect.top + window.scrollY || window.pageYOffset || document.documentElement.scrollTop
                 const offset = 100 // Header offset
                 
