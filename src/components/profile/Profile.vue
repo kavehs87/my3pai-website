@@ -443,8 +443,61 @@ export default {
         const result = await apiService.updatePreferences(preferences)
         if (result.success) {
           toast.success('Preferences saved successfully!')
-          // Reload profile data
-          await this.loadProfileData()
+          
+          // Store scroll position before reload
+          const scrollYBefore = window.scrollY || window.pageYOffset || document.documentElement.scrollTop
+          
+          // Reload profile data to get updated preferences
+          // Skip loading overlay to prevent scroll jump
+          const wasLoading = this.isLoading
+          this.isLoading = false // Prevent overlay from showing
+          try {
+            const result = await apiService.getProfile()
+            if (result.success) {
+              const apiResponse = result.data
+              const data = apiResponse.data || apiResponse
+              const user = data.user || {}
+              const prefs = user.preferences || {}
+              const notifications = prefs.notifications || {}
+              const normalizedPreferences = {
+                currency: prefs.currency || 'USD',
+                language: prefs.language || 'en',
+                timezone: prefs.timezone || 'America/Los_Angeles',
+                notifications: {
+                  email: notifications.email ?? prefs.notifications_email ?? true,
+                  push: notifications.push ?? prefs.notifications_push ?? true,
+                  marketing: notifications.marketing ?? prefs.notifications_marketing ?? false
+                }
+              }
+              this.profileData.user.preferences = normalizedPreferences
+            }
+          } catch (error) {
+            console.error('Error reloading profile:', error)
+          }
+          
+          // Restore scroll position immediately to prevent jump
+          window.scrollTo(0, scrollYBefore)
+          
+          // Wait for DOM to fully update and then scroll to Notifications section
+          await this.$nextTick()
+          // Use double requestAnimationFrame to ensure DOM is ready
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const notificationsSection = document.getElementById('notifications-section')
+              if (notificationsSection) {
+                // Calculate element position
+                const rect = notificationsSection.getBoundingClientRect()
+                const elementTop = rect.top + window.scrollY || window.pageYOffset || document.documentElement.scrollTop
+                const offset = 100 // Header offset
+                
+                // Scroll to the section smoothly
+                window.scrollTo({
+                  top: Math.max(0, elementTop - offset),
+                  behavior: 'smooth'
+                })
+              }
+            })
+          })
         } else {
           toast.error(`Failed to save preferences: ${result.error}`)
         }

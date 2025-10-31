@@ -99,7 +99,7 @@
           </div>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" id="notifications-section">
           <h2>Notifications</h2>
           <div class="settings-form">
             <div class="checkbox-group">
