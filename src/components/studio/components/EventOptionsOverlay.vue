@@ -4,6 +4,15 @@
       <div class="title">{{ event && event.title ? event.title : 'Event options' }}</div>
       <button class="close-btn" type="button" @click="$emit('close')"><i class="fas fa-times"></i></button>
     </div>
+    <div v-if="event" class="options-section">
+      <div class="section-title">Event Insights</div>
+      <ul class="metrics">
+        <li><span>Duration</span><strong>{{ durationLabel }}</strong></li>
+        <li><span>Distance from previous</span><strong>{{ distanceLabel }}</strong></li>
+        <li><span>Location</span><strong>{{ locationLabel }}</strong></li>
+        <li><span>Estimated cost</span><strong>{{ costLabel }}</strong></li>
+      </ul>
+    </div>
     <div class="options-section">
       <div class="section-title">Attachments</div>
       <div v-if="!event || !event.attachments || !event.attachments.length" class="muted">No attachments</div>
@@ -38,12 +47,67 @@
 <script>
 export default {
   name: 'EventOptionsOverlay',
-  props: { visible: Boolean, event: Object, layerId: String },
+  props: { visible: Boolean, event: Object, layerId: String, prevEvent: Object },
   emits: ['close', 'attach-file', 'delete-event'],
   data() {
     return { showConfirm: false }
   },
+  computed: {
+    durationLabel() {
+      if (!this.event || !this.event.start || !this.event.end) return '—'
+      const mins = this.diffMinutes(this.event.start, this.event.end)
+      if (mins <= 0 || isNaN(mins)) return '—'
+      const h = Math.floor(mins / 60)
+      const m = mins % 60
+      return h ? `${h}h ${m}m` : `${m}m`
+    },
+    distanceLabel() {
+      const a = this.prevEvent && Array.isArray(this.prevEvent.coords) ? this.prevEvent.coords : null
+      const b = this.event && Array.isArray(this.event.coords) ? this.event.coords : null
+      if (!a || !b) return '—'
+      const km = this.haversineKm(a, b)
+      if (!isFinite(km)) return '—'
+      return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`
+    },
+    locationLabel() {
+      if (!this.event || !Array.isArray(this.event.coords)) return '—'
+      const [lat, lng] = this.event.coords
+      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
+    },
+    costLabel() {
+      if (!this.event) return '—'
+      const type = this.event.type || 'other'
+      const table = {
+        accommodation: 120,
+        meal: 25,
+        activity: 30,
+        transport: 35,
+        other: 15
+      }
+      const usd = table[type] != null ? table[type] : table.other
+      return `~ $${usd}`
+    }
+  },
   methods: {
+    diffMinutes(startHHMM, endHHMM) {
+      const [sh, sm] = (startHHMM || '').split(':').map(n => parseInt(n, 10))
+      const [eh, em] = (endHHMM || '').split(':').map(n => parseInt(n, 10))
+      if ([sh, sm, eh, em].some(n => isNaN(n))) return NaN
+      return (eh * 60 + em) - (sh * 60 + sm)
+    },
+    haversineKm(a, b) {
+      const toRad = d => d * Math.PI / 180
+      const [lat1, lon1] = a
+      const [lat2, lon2] = b
+      const R = 6371
+      const dLat = toRad(lat2 - lat1)
+      const dLon = toRad(lon2 - lon1)
+      const s1 = Math.sin(dLat/2)
+      const s2 = Math.sin(dLon/2)
+      const h = s1*s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2*s2
+      const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h))
+      return R * c
+    },
     triggerFile() { const el = this.$refs.fileInput; if (el) el.click() },
     onFileSelected(e) {
       const file = e.target.files && e.target.files[0]
@@ -84,13 +148,17 @@ export default {
 </script>
 
 <style scoped>
-.options-overlay { position: absolute; top: 10px; right: 10px; width: 320px; max-width: calc(100% - 20px); background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); padding: 12px; z-index: 20000; }
+.options-overlay { position: absolute; top: 10px; right: 10px; width: 420px; max-width: calc(100% - 20px); background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-light); padding: 12px; z-index: 20000; }
 .options-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .options-header .title { font-weight: 600; color: var(--text-primary); }
 .close-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; }
 .close-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
 .options-section { margin-top: 8px; }
 .section-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .02em; }
+.metrics { list-style: none; padding: 0; margin: 0 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; color: var(--text-primary); }
+.metrics li { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding: 4px 0; }
+.metrics li span { color: var(--text-secondary); font-size: 12px; }
+.metrics li strong { font-weight: 600; font-size: 13px; }
 .attachments { margin: 0; padding-left: 16px; color: var(--text-primary); }
 .muted { color: var(--text-tertiary); }
 .attach-row { margin-top: 8px; }

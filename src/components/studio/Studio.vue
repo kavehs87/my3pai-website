@@ -40,6 +40,7 @@
               :visible="options.visible"
               :event="options.event"
               :layerId="options.layerId"
+              :prevEvent="options.prevEvent"
               @close="closeOptions"
               @attach-file="handleAttachFile"
               @delete-event="handleDeleteEvent"
@@ -275,7 +276,13 @@ export default {
     openEventOptions({ layerId, eventId }) {
       const layer = this.currentDay.layers.find(l => l.id === layerId)
       const ev = layer?.events?.find(e => e.id === eventId) || null
-      this.options = { visible: true, layerId, event: ev }
+      let prevEvent = null
+      if (layer && Array.isArray(layer.events)) {
+        const sorted = [...layer.events].sort((a,b) => (a.start||'').localeCompare(b.start||''))
+        const idx = sorted.findIndex(e => e.id === eventId)
+        if (idx > 0) prevEvent = sorted[idx - 1]
+      }
+      this.options = { visible: true, layerId, event: ev, prevEvent }
     },
     closeOptions() { this.options.visible = false },
     handleDeleteEvent({ layerId, eventId }) {
