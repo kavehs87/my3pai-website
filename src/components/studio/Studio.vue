@@ -226,12 +226,12 @@ export default {
           type: 'transport',
           successMsg: 'Train ticket added'
         },
-        'ticket004.pdf': {
+        'hotel.pdf': {
           layerId: 'accommodation',
-          title: 'Hotel Booking: Check-in',
-          start: '15:00',
-          end: '15:30',
-          coords: [48.8738, 2.2950],
+          title: 'Maison Proust, Hotel & Spa La Mer',
+          start: '8:00',
+          end: '20:00',
+          coords: [48.8584, 2.2945],
           type: 'accommodation',
           successMsg: 'Hotel check-in added'
         },
