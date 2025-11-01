@@ -38,7 +38,7 @@
           </div>
           <ResizableSplitter @drag="handleSplitterDrag" @drag-start="handleSplitterDragStart" @drag-end="handleSplitterDragEnd" />
           <div class="main">
-            <MapPanel ref="mapPanel" :layers="currentDay.layers" />
+            <MapPanel ref="mapPanel" :layers="visibleLayers" />
             <div class="prompt-row">
               <InlinePromptBar :dense="true" @submit="handlePrompt" @pick-image="handlePickImage" @mic="handleMic" />
             </div>
@@ -66,6 +66,7 @@
               :key="layer.id"
               :layer="layer"
               :hours="currentDay.hours"
+              :isVisible="isLayerVisible(layer.id)"
               @select="selectEvent"
               @attach-file="handleAttachFile"
               @hover-event="handleHoverEvent"
@@ -74,6 +75,7 @@
               @export-event="handleExportEvent"
               @open-options="openEventOptions"
               @add-event="handleAddEvent"
+              @toggle-visibility="toggleLayerVisibility"
             />
           </div>
           <!-- AIHints hidden per request -->
@@ -112,12 +114,61 @@ export default {
       options: { visible: false, layerId: null, event: null },
       sidebarWidth: savedWidth ? parseInt(savedWidth, 10) : defaultWidth,
       dragStartX: 0,
-      dragStartWidth: 0
+      dragStartWidth: 0,
+      layerVisibility: {} // Map of layerId -> boolean, defaults to true if not set
+    }
+  },
+  mounted() {
+    // Initialize all layers as visible
+    this.initializeLayerVisibility()
+    // Expose console command to clear map polylines
+    this.$nextTick(() => {
+      window.clearMapLines = () => {
+        if (this.$refs.mapPanel && typeof this.$refs.mapPanel.clearPolylines === 'function') {
+          this.$refs.mapPanel.clearPolylines()
+        } else {
+          console.warn('MapPanel not available or clearPolylines method not found')
+        }
+      }
+      window.enableMapLines = () => {
+        if (this.$refs.mapPanel && typeof this.$refs.mapPanel.enablePolylines === 'function') {
+          this.$refs.mapPanel.enablePolylines()
+        } else {
+          console.warn('MapPanel not available or enablePolylines method not found')
+        }
+      }
+      window.listPolylines = () => {
+        if (this.$refs.mapPanel && typeof this.$refs.mapPanel.listPolylines === 'function') {
+          return this.$refs.mapPanel.listPolylines()
+        } else {
+          console.warn('MapPanel not available or listPolylines method not found')
+          return null
+        }
+      }
+      console.log('%cMap Commands Available:', 'color: #48c4c8; font-weight: bold;', 'Type clearMapLines() to hide polylines, enableMapLines() to show them again, listPolylines() to see all polylines')
+    })
+  },
+  beforeUnmount() {
+    // Clean up global commands
+    if (window.clearMapLines) {
+      delete window.clearMapLines
+    }
+    if (window.enableMapLines) {
+      delete window.enableMapLines
+    }
+    if (window.listPolylines) {
+      delete window.listPolylines
     }
   },
   computed: {
     currentDay() {
       return this.days[this.selectedDayIndex]
+    },
+    visibleLayers() {
+      if (!this.currentDay || !this.currentDay.layers) return []
+      return this.currentDay.layers.filter(layer => {
+        return this.isLayerVisible(layer.id)
+      })
     }
   },
   methods: {
@@ -153,6 +204,10 @@ export default {
         }
       }
       this.days.push(deepCopy)
+      // Initialize visibility for new day's layers
+      this.$nextTick(() => {
+        this.initializeLayerVisibility()
+      })
       this.switchDay(this.days.length - 1)
     },
     generateAI() {
@@ -323,6 +378,33 @@ export default {
       this.dragStartX = 0
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+    },
+    initializeLayerVisibility() {
+      // Set all layers to visible by default
+      this.days.forEach(day => {
+        if (day.layers && Array.isArray(day.layers)) {
+          day.layers.forEach(layer => {
+            if (this.layerVisibility[layer.id] === undefined) {
+              this.layerVisibility[layer.id] = true
+            }
+          })
+        }
+      })
+    },
+    isLayerVisible(layerId) {
+      return this.layerVisibility[layerId] !== false
+    },
+    toggleLayerVisibility(layerId) {
+      const current = this.isLayerVisible(layerId)
+      this.layerVisibility[layerId] = !current
+      console.log(`[Studio] 🔀 TOGGLE LAYER VISIBILITY: ${layerId} -> ${!current ? 'VISIBLE' : 'HIDDEN'}`)
+      console.log(`[Studio] Layer visibility state:`, this.layerVisibility)
+      
+      // Log current map state
+      if (this.$refs.mapPanel && this.$refs.mapPanel.listPolylines) {
+        console.log(`[Studio] Current polylines on map:`)
+        this.$refs.mapPanel.listPolylines()
+      }
     },
     handleDeleteEvent({ layerId, eventId }) {
       const layer = this.currentDay.layers.find(l => l.id === layerId)

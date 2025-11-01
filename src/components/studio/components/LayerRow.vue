@@ -1,7 +1,12 @@
 <template>
   <div class="layer-row">
-    <div class="label">{{ layer.name }}</div>
-    <div class="track" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop" :class="{ 'drag-allowed': isDragAllowed, 'drag-disallowed': isDragDisallowed }">
+    <div class="label">
+      <button class="visibility-toggle" type="button" @click="$emit('toggle-visibility', layer.id)" :title="isVisible ? 'Hide layer' : 'Show layer'">
+        <i class="fas" :class="isVisible ? 'fa-eye' : 'fa-eye-slash'"></i>
+      </button>
+      <span :class="{ 'text-muted': !isVisible }">{{ layer.name }}</span>
+    </div>
+    <div v-show="isVisible" class="track" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop" :class="{ 'drag-allowed': isDragAllowed, 'drag-disallowed': isDragDisallowed }">
       <EventBlock
         v-for="ev in layer.events"
         :key="ev.id"
@@ -35,7 +40,12 @@ import { currentDragLayerId, clearDragLayerId } from './dragState.js'
 export default {
   name: 'LayerRow',
   components: { EventBlock },
-  props: { layer: Object, hours: Object },
+  props: {
+    layer: Object,
+    hours: Object,
+    isVisible: { type: Boolean, default: true }
+  },
+  emits: ['select', 'attach-file', 'hover-event', 'unhover-event', 'focus-event', 'export-event', 'open-options', 'add-event', 'toggle-visibility'],
   computed: {
     currentDragLayerId() { return currentDragLayerId },
     isDragDisallowed() { return this.hasActiveDrag && !this.isDragAllowed && currentDragLayerId !== null && currentDragLayerId !== this.layer.id }
@@ -147,7 +157,11 @@ export default {
 
 <style scoped>
 .layer-row { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: center; }
-.label { color: var(--text-secondary); font-weight: 600; }
+.label { color: var(--text-secondary); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.visibility-toggle { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s; }
+.visibility-toggle:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.visibility-toggle i { font-size: 14px; }
+.text-muted { opacity: 0.5; color: var(--text-tertiary); }
 .track { position: relative; height: 52px; background: var(--bg-secondary); border: 1px dashed var(--border-light); border-radius: var(--radius-sm); overflow: visible; transition: background-color 0.15s, border-color 0.15s; }
 .track.drag-allowed { background: rgba(16,185,129,0.1); border-color: #10b981; border-style: solid; }
 .track.drag-disallowed { background: rgba(239,68,68,0.1); border-color: #ef4444; border-style: solid; position: relative; }
