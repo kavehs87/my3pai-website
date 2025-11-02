@@ -3,13 +3,16 @@
     class="event"
     :class="eventClass"
     :style="styleObject"
-    @mousedown.prevent="onMouseDown"
+    @mousedown.prevent="handleMouseDown"
     @mouseenter.stop="emitHover(true)"
     @mouseleave.stop="emitHover(false)"
     @click.stop="emitFocus()"
-    :title="issue && issue.message ? issue.message : ''"
+    :title="getEventTitle()"
   >
-    <span class="handle handle-left" @mousedown.stop.prevent="onResizeStart('left', $event)"></span>
+    <!-- Fixed time lock icon -->
+    <i v-if="isFixedTime" class="fas fa-lock fixed-time-icon" title="Fixed time - cannot be moved or resized"></i>
+    
+    <span v-if="!isFixedTime" class="handle handle-left" @mousedown.stop.prevent="onResizeStart('left', $event)"></span>
     <span class="title">{{ event.title }}</span>
     <span class="time">{{ event.start }}–{{ event.end }}</span>
 
@@ -21,7 +24,7 @@
       </button>
     </div>
 
-    <span class="handle handle-right" @mousedown.stop.prevent="onResizeStart('right', $event)"></span>
+    <span v-if="!isFixedTime" class="handle handle-right" @mousedown.stop.prevent="onResizeStart('right', $event)"></span>
   </div>
   
 </template>
@@ -55,14 +58,23 @@ export default {
       return {
         dragging: this.isDragging || this.isResizing,
         warning: this.issue && this.issue.type === 'too-close',
-        danger: this.issue && this.issue.type === 'overlap'
+        danger: this.issue && this.issue.type === 'overlap',
+        'fixed-time': this.isFixedTime
       }
+    },
+    isFixedTime() {
+      // Check if event has fixed time property
+      // Fixed time events cannot be moved or resized (e.g., booked tours with specific departure times)
+      return this.event.fixedTime === true || this.event.timeType === 'fixed'
     }
   },
   methods: {
     timeToMinutes(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m },
     minutesToTime(min) { const h = Math.floor(min / 60); const m = min % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}` },
     onMouseDown(e) {
+      // Prevent dragging if time is fixed
+      if (this.isFixedTime) return
+      
       // track element is offsetParent
       const track = this.$el.offsetParent
       if (!track) return
@@ -123,6 +135,9 @@ export default {
     }
     ,
     onResizeStart(side, e) {
+      // Prevent resizing if time is fixed
+      if (this.isFixedTime) return
+      
       this.isResizing = true
       this.resizeSide = side
       const track = this.$el.offsetParent
@@ -143,7 +158,23 @@ export default {
     emitFocus() {
       this.$emit('focus-event', { eventId: this.event.id })
     },
-    emitOptions() { this.$emit('open-options', { layerId: this.layerId, eventId: this.event.id }) }
+    emitOptions() { this.$emit('open-options', { layerId: this.layerId, eventId: this.event.id }) },
+    getEventTitle() {
+      let title = ''
+      if (this.issue && this.issue.message) {
+        title = this.issue.message
+      }
+      if (this.isFixedTime) {
+        title = (title ? title + '. ' : '') + 'Fixed time - cannot be moved or resized'
+      }
+      return title || undefined
+    },
+    handleMouseDown(e) {
+      // Only allow dragging if time is not fixed
+      if (!this.isFixedTime) {
+        this.onMouseDown(e)
+      }
+    }
   }
 }
 </script>
@@ -153,6 +184,22 @@ export default {
 .event.dragging { opacity: .9; cursor: grabbing; }
 .event.warning { box-shadow: 0 0 0 2px rgba(245,158,11,0.4) inset; }
 .event.danger { box-shadow: 0 0 0 2px rgba(239,68,68,0.5) inset; }
+
+/* Fixed time event styling */
+.event.fixed-time {
+  cursor: default;
+  border-left: 3px solid var(--warning-color, #f59e0b);
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.1) 0%, var(--bg-secondary) 10%);
+}
+.event.fixed-time:hover {
+  cursor: default;
+}
+.fixed-time-icon {
+  color: var(--warning-color, #f59e0b);
+  font-size: 10px;
+  margin-right: -4px;
+  flex-shrink: 0;
+}
 .handle { position: absolute; top: 0; width: 8px; height: 100%; background: rgba(0,0,0,0.06); cursor: ew-resize; }
 .handle-left { left: 0; border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
 .handle-right { right: 0; border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
