@@ -145,7 +145,15 @@ export default {
           return null
         }
       }
-      console.log('%cMap Commands Available:', 'color: #48c4c8; font-weight: bold;', 'Type clearMapLines() to hide polylines, enableMapLines() to show them again, listPolylines() to see all polylines')
+      window.getPersistentPolylines = () => {
+        if (this.$refs.mapPanel && typeof this.$refs.mapPanel.getPersistentPolylines === 'function') {
+          return this.$refs.mapPanel.getPersistentPolylines()
+        } else {
+          console.warn('MapPanel not available or getPersistentPolylines method not found')
+          return null
+        }
+      }
+      console.log('%cMap Commands Available:', 'color: #48c4c8; font-weight: bold;', 'Type clearMapLines() to hide polylines, enableMapLines() to show them again, listPolylines() to see current polylines, getPersistentPolylines() to see ALL polylines ever created')
     })
   },
   beforeUnmount() {
@@ -158,6 +166,9 @@ export default {
     }
     if (window.listPolylines) {
       delete window.listPolylines
+    }
+    if (window.getPersistentPolylines) {
+      delete window.getPersistentPolylines
     }
   },
   computed: {

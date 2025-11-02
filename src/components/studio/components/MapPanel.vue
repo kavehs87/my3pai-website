@@ -15,11 +15,13 @@ import { isProxy } from 'vue'
 let _map = null // google.maps.Map|null
 // Module-level polyline registry to track ALL polylines ever created
 let _allPolylines = [] // Keep all polyline references
+// PERSISTENT tracking array - NEVER cleared, tracks ALL polylines ever created
+let _persistentPolylines = [] // This array is NEVER cleared - for debugging
 export default {
   name: 'MapPanel',
   props: { layers: Array },
   data() {
-    return { map: null, markers: [], circles: [], polyline: null, polylines: [], loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, isRebuilding: false, clearPolylinesLock: false, polylinesDisabled: false }
+    return { map: null, markers: [], circles: [], polyline: null, polylines: [], loadError: false, mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null, useAdvanced: (import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'), idToShape: {}, pulseTimers: {}, isRebuilding: false, clearPolylinesLock: false, polylinesDisabled: false, waitingForIdle: false }
   },
   computed: {
     points() {
@@ -41,7 +43,12 @@ export default {
   watch: {
     points: {
       handler() {
-        if (this.isRebuilding || this.clearPolylinesLock) return
+        if (this.isRebuilding || this.clearPolylinesLock || this.waitingForIdle) {
+          if (this.waitingForIdle) {
+            console.log('[MapPanel] points watcher: Skipping renderRoute - already waiting for map idle')
+          }
+          return
+        }
         this.renderRoute()
       },
       deep: true
@@ -82,20 +89,49 @@ export default {
       this.circles?.forEach(c => c.setMap && c.setMap(null))
       this.circles = []
       // Remove all polylines - use aggressive clearing if lock is active
+      if (this.polylines && this.polylines.length > 0) {
+        console.log(`[MapPanel] clearAll: Found ${this.polylines.length} polylines in array to clear`)
+      }
       if (this.clearPolylinesLock) {
         // When lock is active, clear more aggressively to ensure they're gone
-        ;(this.polylines || []).forEach(pl => {
+        ;(this.polylines || []).forEach((pl, idx) => {
           try {
+            console.log(`[MapPanel] clearAll: Clearing polyline ${idx} from array`)
+            // Clear path and hide visually first
+            try {
+              if (pl.getPath && typeof pl.setPath === 'function') {
+                const emptyPath = new window.google.maps.MVCArray([])
+                pl.setPath(emptyPath)
+              }
+              if (pl.setOptions && typeof pl.setOptions === 'function') {
+                pl.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+              }
+            } catch (e) {}
             if (pl && typeof pl.setMap === 'function') pl.setMap(null)
             if (pl && 'map' in pl) pl.map = null
             if (pl && pl.getMap && typeof pl.getMap === 'function') {
               const attachedMap = pl.getMap()
               if (attachedMap) pl.setMap(null)
             }
-          } catch (e) {}
+          } catch (e) {
+            console.warn(`[MapPanel] clearAll: Error clearing polyline ${idx}:`, e)
+          }
         })
       } else {
-        ;(this.polylines || []).forEach(pl => { try { pl && pl.setMap && pl.setMap(null) } catch (e) {} })
+        ;(this.polylines || []).forEach((pl, idx) => { 
+          console.log(`[MapPanel] clearAll: Clearing polyline ${idx} with setMap(null)`)
+          try {
+            // Clear path and hide visually first
+            if (pl.getPath && typeof pl.setPath === 'function') {
+              const emptyPath = new window.google.maps.MVCArray([])
+              pl.setPath(emptyPath)
+            }
+            if (pl.setOptions && typeof pl.setOptions === 'function') {
+              pl.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+            }
+            if (pl && pl.setMap) pl.setMap(null)
+          } catch (e) {} 
+        })
       }
       this.polylines = []
       // CRITICAL: Always clear module-level registry in clearAll()
@@ -116,20 +152,125 @@ export default {
       // Remove route polyline - aggressive if lock is active
       if (this.polyline) {
         console.log(`[MapPanel] clearAll: Removing this.polyline`)
+        const beforeMap = this.polyline.getMap ? this.polyline.getMap() : null
+        console.log(`[MapPanel] clearAll: this.polyline.getMap() before removal =`, beforeMap ? 'ATTACHED' : 'NULL')
+        
+        // CRITICAL: Try to clear the path FIRST before removing from map
+        // This might help force Google Maps to clear the visual representation
+        try {
+          if (this.polyline.getPath && typeof this.polyline.setPath === 'function') {
+            const emptyPath = new window.google.maps.MVCArray([])
+            this.polyline.setPath(emptyPath)
+            console.log(`[MapPanel] clearAll: Cleared polyline path to empty array`)
+          }
+        } catch (e) {
+          console.warn(`[MapPanel] clearAll: Could not clear path:`, e)
+        }
+        
+        // Also try to set opacity to 0 to hide it visually
+        try {
+          if (this.polyline.setOptions && typeof this.polyline.setOptions === 'function') {
+            this.polyline.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+          }
+        } catch (e) {}
+        
         if (this.clearPolylinesLock) {
           try {
             if (typeof this.polyline.setMap === 'function') this.polyline.setMap(null)
             if ('map' in this.polyline) this.polyline.map = null
             if (this.polyline.getMap && typeof this.polyline.getMap === 'function') {
               const attachedMap = this.polyline.getMap()
-              if (attachedMap) this.polyline.setMap(null)
+              if (attachedMap) {
+                console.warn(`[MapPanel] clearAll: Polyline STILL attached after first setMap(null)!`)
+                this.polyline.setMap(null)
+              }
             }
-          } catch (e) {}
+          } catch (e) {
+            console.warn(`[MapPanel] clearAll: Error removing polyline:`, e)
+          }
         } else {
           this.polyline.setMap(null)
         }
+        
+        // Verify it's actually removed
+        const afterMap = this.polyline.getMap ? this.polyline.getMap() : null
+        console.log(`[MapPanel] clearAll: this.polyline.getMap() after removal =`, afterMap ? 'STILL ATTACHED!' : 'NULL (removed)')
+        
+        if (afterMap !== null) {
+          console.error(`[MapPanel] clearAll: FAILED TO REMOVE POLYLINE! Still attached to map!`)
+          // Try one more aggressive removal
+          try {
+            this.polyline.setMap(null)
+            if ('map' in this.polyline) {
+              this.polyline.map = null
+            }
+          } catch (e) {}
+        }
+        
         this.polyline = null
       }
+      
+      // CRITICAL: Also check persistent array and force-remove ANY polylines that might still be visible
+      // Even if getMap() says they're detached, Google Maps canvas might still show them
+      if (_persistentPolylines && _persistentPolylines.length > 0) {
+        console.log(`[MapPanel] clearAll: Checking ${_persistentPolylines.length} polylines in persistent array`)
+        _persistentPolylines.forEach((pl, idx) => {
+          if (!pl) return
+          try {
+            // Force clear path regardless of attachment status
+            if (pl.getPath && typeof pl.setPath === 'function') {
+              try {
+                const emptyPath = new window.google.maps.MVCArray([])
+                pl.setPath(emptyPath)
+                console.log(`[MapPanel] clearAll: Cleared path for persistent polyline ${idx}`)
+              } catch (e) {
+                console.warn(`[MapPanel] clearAll: Could not clear path for persistent polyline ${idx}:`, e)
+              }
+            }
+            // Force hide visually
+            if (pl.setOptions && typeof pl.setOptions === 'function') {
+              try {
+                pl.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+              } catch (e) {}
+            }
+            // Force remove from map
+            const currentMap = pl.getMap ? pl.getMap() : null
+            if (currentMap !== null) {
+              console.warn(`[MapPanel] clearAll: Persistent polyline ${idx} is STILL ATTACHED! Force removing...`)
+              pl.setMap(null)
+              if ('map' in pl) pl.map = null
+            }
+            // Try removing even if getMap() says null - sometimes canvas cache shows old visuals
+            try {
+              pl.setMap(null)
+              if ('map' in pl) pl.map = null
+            } catch (e) {}
+          } catch (e) {
+            console.warn(`[MapPanel] clearAll: Error processing persistent polyline ${idx}:`, e)
+          }
+        })
+        
+        // Force a map refresh after clearing all persistent polylines
+        // This ensures the canvas is redrawn without cached visuals
+        if (_map) {
+          try {
+            const center = _map.getCenter()
+            const zoom = _map.getZoom()
+            if (center && zoom) {
+              // Trigger a refresh by slightly changing and restoring zoom
+              _map.setZoom(zoom + 0.0001)
+              setTimeout(() => {
+                _map.setZoom(zoom)
+                window.google.maps.event.trigger(_map, 'resize')
+              }, 10)
+              console.log(`[MapPanel] clearAll: Forced map refresh after clearing persistent polylines`)
+            }
+          } catch (e) {
+            console.warn(`[MapPanel] clearAll: Could not force map refresh:`, e)
+          }
+        }
+      }
+      
       console.log(`[MapPanel] clearAll: Finished`)
     },
     initGoogleMaps() {
@@ -337,44 +478,280 @@ export default {
           this.idToShape[p.id] = { marker, circle, color: this.layerColors[p.layer]?.fill || '#10b981', position: pos }
         }
       })
-      if (path.length && !this.clearPolylinesLock && !this.polylinesDisabled) {
-        console.log(`[MapPanel] 🟢 CREATING POLYLINE: path points=${path.length}, clearPolylinesLock=${this.clearPolylinesLock}, polylinesDisabled=${this.polylinesDisabled}`)
-        this.polyline = new window.google.maps.Polyline({
-          path,
-          geodesic: true,
-          strokeColor: '#10b981',
-          strokeOpacity: 0.9,
-          strokeWeight: 3
-        })
-        this.polyline.setMap(_map)
-        this.polylines.push(this.polyline)
-        // Register in module-level array for persistent tracking
-        if (!_allPolylines.includes(this.polyline)) {
-          _allPolylines.push(this.polyline)
+      // CRITICAL: A polyline needs at least 2 points to be drawn
+      // If there's only 1 point, just show the marker/circle but no polyline
+      if (path.length >= 2) {
+        // Re-enable polylines if they were disabled for single point scenario
+        if (this.polylinesDisabled) {
+          console.log(`[MapPanel] Re-enabling polylines (had ${path.length} points, was disabled)`)
+          this.polylinesDisabled = false
         }
         
-        // Log polyline details
-        const polylineInfo = {
-          created: new Date().toISOString(),
-          pathPoints: path.length,
-          isAttached: this.polyline.getMap() !== null,
-          strokeColor: this.polyline.get('strokeColor'),
-          strokeOpacity: this.polyline.get('strokeOpacity'),
-          strokeWeight: this.polyline.get('strokeWeight'),
-          polyline: this.polyline,
-          path: path.map(p => ({ lat: p.lat, lng: p.lng }))
+        if (!this.clearPolylinesLock && !this.polylinesDisabled) {
+          console.log(`[MapPanel] 🟢 CREATING POLYLINE: path points=${path.length}, clearPolylinesLock=${this.clearPolylinesLock}, polylinesDisabled=${this.polylinesDisabled}`)
+          // CRITICAL: Before creating a new polyline, double-check the old one is REALLY gone
+          if (this.polyline) {
+            console.warn('[MapPanel] WARNING: this.polyline exists before creating new one! Clearing it first...')
+            try {
+              const oldMap = this.polyline.getMap()
+              if (oldMap !== null) {
+                console.warn(`[MapPanel] OLD POLYLINE STILL ATTACHED! Removing...`)
+                this.polyline.setMap(null)
+              }
+            } catch (e) {
+              console.warn('[MapPanel] Error checking old polyline:', e)
+            }
+            this.polyline = null
+          }
+          
+          // CRITICAL: Set bounds FIRST, then wait for map to finish animation before creating polyline
+          // This prevents old polyline visuals from reappearing during fitBounds animation
+          const bounds = new window.google.maps.LatLngBounds()
+          path.forEach(pt => bounds.extend(pt))
+          _map.fitBounds(bounds, 50)
+          
+          // Set flag to prevent multiple renderRoute calls during map animation
+          this.waitingForIdle = true
+          console.log('[MapPanel] Waiting for map idle event - blocking further renderRoute calls')
+          
+          // Safety timeout - if idle doesn't fire within 2 seconds, proceed anyway
+          const timeoutId = setTimeout(() => {
+            if (this.waitingForIdle) {
+              console.warn('[MapPanel] Timeout waiting for idle event - proceeding with polyline creation')
+              this.waitingForIdle = false
+              this.createPolylineAfterIdle(path)
+            }
+          }, 2000)
+          
+          // Wait for map animation to complete before adding polyline
+          // This ensures old visuals are fully cleared before new ones are drawn
+          const idleListener = window.google.maps.event.addListenerOnce(_map, 'idle', () => {
+            clearTimeout(timeoutId)
+            console.log('[MapPanel] Map idle after fitBounds - now creating polyline')
+            this.waitingForIdle = false
+            this.createPolylineAfterIdle(path)
+          })
         }
-        console.log(`[MapPanel] 🟢 POLYLINE CREATED:`, polylineInfo)
-        console.log(`[MapPanel] Current polyline refs: this.polyline=${!!this.polyline}, this.polylines.length=${this.polylines.length}, _allPolylines.length=${_allPolylines.length}`)
+      } else if (path.length < 2) {
+        // Not enough points for a polyline (need at least 2)
+        console.log(`[MapPanel] ⛔ SKIPPING POLYLINE: Only ${path.length} point(s) - polylines need at least 2 points`)
         
-        const bounds = new window.google.maps.LatLngBounds()
-        path.forEach(pt => bounds.extend(pt))
-        _map.fitBounds(bounds, 50)
+        // CRITICAL: Temporarily disable polylines to prevent any from appearing
+        this.polylinesDisabled = true
+        
+        // CRITICAL: Aggressively clear ALL persistent polylines
+        const clearPersistentPolylines = () => {
+          if (_persistentPolylines && _persistentPolylines.length > 0) {
+            console.log(`[MapPanel] Aggressively clearing ${_persistentPolylines.length} persistent polylines`)
+            _persistentPolylines.forEach((pl, idx) => {
+              if (!pl) return
+              try {
+                // Clear path first
+                if (pl.getPath && typeof pl.setPath === 'function') {
+                  const emptyPath = new window.google.maps.MVCArray([])
+                  pl.setPath(emptyPath)
+                }
+                // Hide visually with multiple attempts
+                if (pl.setOptions && typeof pl.setOptions === 'function') {
+                  pl.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+                  // Try multiple times
+                  setTimeout(() => {
+                    try {
+                      pl.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+                    } catch (e) {}
+                  }, 0)
+                  setTimeout(() => {
+                    try {
+                      pl.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+                    } catch (e) {}
+                  }, 10)
+                }
+                // Remove from map multiple times
+                pl.setMap(null)
+                if ('map' in pl) pl.map = null
+                // Try again after micro-delays
+                setTimeout(() => {
+                  try {
+                    pl.setMap(null)
+                    if ('map' in pl) pl.map = null
+                  } catch (e) {}
+                }, 0)
+                setTimeout(() => {
+                  try {
+                    pl.setMap(null)
+                    if ('map' in pl) pl.map = null
+                  } catch (e) {}
+                }, 10)
+              } catch (e) {
+                console.warn(`[MapPanel] Error clearing persistent polyline ${idx}:`, e)
+              }
+            })
+          }
+        }
+        
+        // Clear immediately multiple times
+        clearPersistentPolylines()
+        setTimeout(() => clearPersistentPolylines(), 0)
+        setTimeout(() => clearPersistentPolylines(), 10)
+        setTimeout(() => clearPersistentPolylines(), 50)
+        
+        // Still center on the single point, but use setCenter/setZoom instead of fitBounds
+        // fitBounds() can trigger canvas caching issues, so avoid it for single points
+        if (path.length === 1 && _map) {
+          this.waitingForIdle = true
+          
+          // Clear and force canvas refresh BEFORE moving map
+          setTimeout(() => {
+            clearPersistentPolylines()
+            
+            // Force immediate canvas refresh by triggering resize
+            window.google.maps.event.trigger(_map, 'resize')
+            
+            // Wait for next frame to ensure canvas refresh
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                clearPersistentPolylines()
+                
+                // CRITICAL: For single point, avoid ANY zoom changes or animations
+                // Zoom changes trigger aggressive canvas redraws that restore cached polylines
+                const center = new window.google.maps.LatLng(path[0].lat, path[0].lng)
+                
+                // Add continuous clearing during map movement/animation
+                // This prevents cached polylines from appearing during setCenter animations
+                let animationClearingActive = true
+                const clearDuringAnimation = () => {
+                  if (animationClearingActive) {
+                    clearPersistentPolylines()
+                  }
+                }
+                
+                // Clear continuously during bounds changes (map is moving/zooming)
+                const boundsChangedListener = window.google.maps.event.addListener(_map, 'bounds_changed', clearDuringAnimation)
+                
+                // Also clear using requestAnimationFrame during animation - very aggressive
+                let rafId = null
+                const continuousClear = () => {
+                  if (animationClearingActive) {
+                    clearPersistentPolylines()
+                    rafId = requestAnimationFrame(continuousClear)
+                  }
+                }
+                rafId = requestAnimationFrame(continuousClear)
+                
+                // CRITICAL: Do NOT move the map at all when there's only 1 point
+                // Map movement triggers canvas redraws that restore cached polylines
+                // Just clear polylines and leave map where it is
+                // Optionally, gently pan ONLY if center is very far away (but this might cause issues)
+                
+                // Stop continuous clearing immediately since we're not moving
+                animationClearingActive = false
+                if (rafId) {
+                  cancelAnimationFrame(rafId)
+                }
+                window.google.maps.event.removeListener(boundsChangedListener)
+                this.waitingForIdle = false
+                
+                // Clear one final time
+                clearPersistentPolylines()
+                
+                // Force map refresh WITHOUT any movement to clear canvas cache
+                window.google.maps.event.trigger(_map, 'resize')
+                
+                // Clear continuously for a bit after refresh
+                setTimeout(() => {
+                  clearPersistentPolylines()
+                  setTimeout(() => clearPersistentPolylines(), 50)
+                  setTimeout(() => clearPersistentPolylines(), 100)
+                  setTimeout(() => clearPersistentPolylines(), 200)
+                  setTimeout(() => clearPersistentPolylines(), 500)
+                  // Keep polylines disabled for single point scenarios
+                  console.log(`[MapPanel] Polylines remain disabled for single point scenario - map not moved to prevent canvas redraws`)
+                }, 50)
+              })
+            })
+          }, 100)
+        }
+        // Ensure any existing polyline is cleared immediately
+        if (this.polyline) {
+          try {
+            if (this.polyline.getPath && typeof this.polyline.setPath === 'function') {
+              const emptyPath = new window.google.maps.MVCArray([])
+              this.polyline.setPath(emptyPath)
+            }
+            if (this.polyline.setOptions && typeof this.polyline.setOptions === 'function') {
+              this.polyline.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+            }
+            this.polyline.setMap(null)
+            this.polyline = null
+          } catch (e) {}
+        }
+        this.polylines = []
+        _allPolylines = []
       } else if (this.clearPolylinesLock || this.polylinesDisabled) {
         // Don't create polyline if we're clearing or polylines are disabled
         console.log(`[MapPanel] ⛔ POLYLINE CREATION BLOCKED: clearPolylinesLock=${this.clearPolylinesLock}, polylinesDisabled=${this.polylinesDisabled}, path.length=${path.length}`)
       }
       
+    },
+    createPolylineAfterIdle(path) {
+      // Final safety check - ensure old polyline is really gone
+      if (this.polyline) {
+        console.warn('[MapPanel] Final check: Old polyline still exists, clearing...')
+        try {
+          if (this.polyline.getPath && typeof this.polyline.setPath === 'function') {
+            const emptyPath = new window.google.maps.MVCArray([])
+            this.polyline.setPath(emptyPath)
+          }
+          if (this.polyline.setOptions && typeof this.polyline.setOptions === 'function') {
+            this.polyline.setOptions({ strokeOpacity: 0, strokeWeight: 0, visible: false })
+          }
+          this.polyline.setMap(null)
+        } catch (e) {}
+        this.polyline = null
+      }
+      
+      // Now create the new polyline
+      this.polyline = new window.google.maps.Polyline({
+        path,
+        geodesic: true,
+        strokeColor: '#10b981',
+        strokeOpacity: 0.9,
+        strokeWeight: 3
+      })
+      this.polyline.setMap(_map)
+      
+      // IMMEDIATELY verify it's attached
+      const verifyMap = this.polyline.getMap()
+      if (verifyMap === null) {
+        console.error('[MapPanel] CRITICAL: New polyline is NOT attached to map immediately after setMap!')
+      } else {
+        console.log('[MapPanel] New polyline verified as attached to map')
+      }
+      this.polylines.push(this.polyline)
+      // Register in module-level array for persistent tracking
+      if (!_allPolylines.includes(this.polyline)) {
+        _allPolylines.push(this.polyline)
+      }
+      // CRITICAL: Add to PERSISTENT tracking array - NEVER cleared
+      if (!_persistentPolylines.includes(this.polyline)) {
+        _persistentPolylines.push(this.polyline)
+        console.log(`[MapPanel] Added to persistent array. Total polylines ever created: ${_persistentPolylines.length}`)
+      }
+      
+      // Log polyline details
+      const polylineInfo = {
+        created: new Date().toISOString(),
+        pathPoints: path.length,
+        isAttached: this.polyline.getMap() !== null,
+        strokeColor: this.polyline.get('strokeColor'),
+        strokeOpacity: this.polyline.get('strokeOpacity'),
+        strokeWeight: this.polyline.get('strokeWeight'),
+        polyline: this.polyline,
+        path: path.map(p => ({ lat: p.lat, lng: p.lng }))
+      }
+      console.log(`[MapPanel] 🟢 POLYLINE CREATED:`, polylineInfo)
+      console.log(`[MapPanel] Current polyline refs: this.polyline=${!!this.polyline}, this.polylines.length=${this.polylines.length}, _allPolylines.length=${_allPolylines.length}`)
+      console.log(`[MapPanel] FULL PATH:`, JSON.stringify(path, null, 2))
     },
 
     highlightEvent(eventId, opts = {}) {
@@ -512,6 +889,64 @@ export default {
       console.log(`[MapPanel] Full polyline objects:`, Array.from(allPolylines))
       
       return polylineDetails
+    },
+    getPersistentPolylines() {
+      console.log(`[MapPanel] 🔍 PERSISTENT POLYLINES TRACKER:`)
+      console.log(`[MapPanel] Total polylines EVER created (never cleared): ${_persistentPolylines.length}`)
+      
+      const persistentDetails = _persistentPolylines.map((pl, idx) => {
+        try {
+          const map = pl.getMap ? pl.getMap() : null
+          const path = pl.getPath ? pl.getPath() : null
+          const pathArray = path && path.getArray ? path.getArray() : []
+          
+          return {
+            index: idx,
+            isAttached: map !== null && map !== undefined,
+            map: map ? 'ATTACHED (should be removed!)' : 'null (detached)',
+            pathPoints: pathArray.length,
+            strokeColor: pl.get && pl.get('strokeColor') ? pl.get('strokeColor') : 'unknown',
+            strokeOpacity: pl.get && pl.get('strokeOpacity') ? pl.get('strokeOpacity') : 'unknown',
+            strokeWeight: pl.get && pl.get('strokeWeight') ? pl.get('strokeWeight') : 'unknown',
+            visible: pl.get && pl.get('visible') !== undefined ? pl.get('visible') : 'unknown',
+            path: pathArray.length > 0 ? pathArray.slice(0, 3).map(p => ({ lat: p.lat(), lng: p.lng() })) : [],
+            polyline: pl,
+            inThisPolyline: pl === this.polyline,
+            inThisPolylines: this.polylines?.includes(pl) || false,
+            inModuleArray: _allPolylines.includes(pl)
+          }
+        } catch (e) {
+          return {
+            index: idx,
+            error: e.message,
+            polyline: pl
+          }
+        }
+      })
+      
+      console.table(persistentDetails)
+      console.log(`[MapPanel] Full persistent polyline objects (NEVER cleared):`, _persistentPolylines)
+      
+      // Check for any that are still attached
+      const stillAttached = _persistentPolylines.filter(pl => {
+        try {
+          return pl.getMap && pl.getMap() !== null
+        } catch (e) {
+          return false
+        }
+      })
+      
+      if (stillAttached.length > 0) {
+        console.error(`[MapPanel] ⚠️ WARNING: ${stillAttached.length} polylines in persistent array are STILL ATTACHED to map!`)
+        console.error(`[MapPanel] These should have been removed but weren't:`, stillAttached)
+      }
+      
+      return {
+        total: _persistentPolylines.length,
+        stillAttached: stillAttached.length,
+        details: persistentDetails,
+        polylines: _persistentPolylines
+      }
     },
     clearPolylines() {
       if (!_map || !window.google?.maps) {
