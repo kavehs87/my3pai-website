@@ -265,14 +265,14 @@ export default {
     ticketMapping() {
       // POC rules: match by filename substrings
       return {
-        'ticket001.pdf': {
-          layerId: 'transport',
-          title: 'Flight: CDG → BCN',
-          start: '09:20',
-          end: '11:35',
-          coords: [48.8566, 2.3522],
-          type: 'transport',
-          successMsg: 'Flight added to timeline'
+        'Eiffel-tower.pdf': {
+          layerId: 'activity',
+          title: 'Paris: Eiffel Tower Stairs Climb to Level 2',
+          start: '14:00',
+          end: '16:00',
+          coords: [48.85836, 2.29778],
+          type: 'activity',
+          successMsg: ' Eiffel tower ticket added'
         },
         'ticket002.pdf': {
           layerId: 'activities',
@@ -283,21 +283,21 @@ export default {
           type: 'activity',
           successMsg: 'Museum ticket added'
         },
-        'ticket003.pdf': {
-          layerId: 'transport',
-          title: 'Train: Paris → Versailles',
-          start: '08:45',
-          end: '09:35',
-          coords: [48.8049, 2.1204],
-          type: 'transport',
-          successMsg: 'Train ticket added'
+        'Paris-Crazy-Horse-Cabaret-Show.jpg': {
+          layerId: 'activity',
+          title: 'Paris: Crazy Horse Cabaret Show',
+          start: '18:00',
+          end: '20:00',
+          coords: [48.86819, 2.30146],
+          type: 'activity',
+          successMsg: 'Show ticket added'
         },
-        'ticket004.pdf': {
+        'hotel.pdf': {
           layerId: 'accommodation',
-          title: 'Hotel Booking: Check-in',
-          start: '15:00',
-          end: '15:30',
-          coords: [48.8738, 2.2950],
+          title: 'Maison Proust, Hotel and Spa La Mer',
+          start: '8:00',
+          end: '20:00',
+          coords: [48.8584, 2.2945],
           type: 'accommodation',
           successMsg: 'Hotel check-in added'
         },
