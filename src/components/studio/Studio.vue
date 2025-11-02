@@ -9,7 +9,7 @@
           <div class="days-actions">
             <div class="toolbar-buttons">
               <button class="btn secondary" type="button">Itinerary Timeline</button>
-              <button class="btn secondary" type="button">Export to Calendar</button>
+              <button class="btn secondary" type="button" @click="openCalendarExport">Export to Calendar</button>
               <button class="btn secondary" type="button">Statistics</button>
               <button class="btn secondary" type="button">Export as File</button>
             </div>
@@ -44,6 +44,11 @@
               @close="closeOptions"
               @attach-file="handleAttachFile"
               @delete-event="handleDeleteEvent"
+            />
+            <CalendarExportModal
+              :visible="showCalendarExportModal"
+              :days="days"
+              @close="closeCalendarExport"
             />
           </div>
         </div>
@@ -91,12 +96,13 @@ import Timeline from './components/Timeline.vue'
 import LayerRow from './components/LayerRow.vue'
 import EventOptionsOverlay from './components/EventOptionsOverlay.vue'
 import ResizableSplitter from './components/ResizableSplitter.vue'
+import CalendarExportModal from './components/CalendarExportModal.vue'
 import toast from '../../utils/toast.js'
 // import AIHints from './components/AIHints.vue'
 
 export default {
   name: 'Studio',
-  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, MiniCalendar, InlinePromptBar, EventOptionsOverlay, ResizableSplitter },
+  components: { Header, MapPanel, Timeline, LayerRow, Sidebar, MiniCalendar, InlinePromptBar, EventOptionsOverlay, ResizableSplitter, CalendarExportModal },
   data() {
     const defaultWidth = 260
     const savedWidth = localStorage.getItem('studio-sidebar-width')
@@ -110,7 +116,8 @@ export default {
       dragStartX: 0,
       dragStartWidth: 0,
       layerVisibility: {}, // Map of layerId -> boolean, defaults to true if not set
-      dateRange: { start: null, end: null } // Date range selection from calendar
+      dateRange: { start: null, end: null }, // Date range selection from calendar
+      showCalendarExportModal: false
     }
   },
   mounted() {
@@ -483,6 +490,12 @@ export default {
       this.options = { visible: true, layerId, event: ev, prevEvent }
     },
     closeOptions() { this.options.visible = false },
+    openCalendarExport() {
+      this.showCalendarExportModal = true
+    },
+    closeCalendarExport() {
+      this.showCalendarExportModal = false
+    },
     handleSplitterDrag(e) {
       if (this.dragStartX === 0) {
         // First drag event - initialize
