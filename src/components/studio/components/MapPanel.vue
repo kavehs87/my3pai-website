@@ -405,7 +405,10 @@ export default {
       
       this.points.forEach((p, idx) => {
         const pos = { lat: p.coords[0], lng: p.coords[1] }
-        path.push(pos)
+        // Exclude transport layer events from polyline path (but still show markers/circles)
+        if (p.layer !== 'transport') {
+          path.push(pos)
+        }
         // Advanced markers if available; otherwise fall back to classic Marker
         const canUseAdvanced = !!this.AdvancedMarkerElement
         if (canUseAdvanced) {
@@ -506,8 +509,9 @@ export default {
           
           // CRITICAL: Set bounds FIRST, then wait for map to finish animation before creating polyline
           // This prevents old polyline visuals from reappearing during fitBounds animation
+          // Calculate bounds from ALL points (including transport) so all markers are visible
           const bounds = new window.google.maps.LatLngBounds()
-          path.forEach(pt => bounds.extend(pt))
+          this.points.forEach(p => bounds.extend({ lat: p.coords[0], lng: p.coords[1] }))
           _map.fitBounds(bounds, 50)
           
           // Set flag to prevent multiple renderRoute calls during map animation
