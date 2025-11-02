@@ -227,8 +227,13 @@ export default {
           travelers: this.form.travelers,
           notes: this.form.notes,
           tags: this.form.tags,
-          thumbnail: this.form.thumbnail,
           videos: this.form.videos
+        }
+        
+        // Only include thumbnail in payload if it's an existing URL (from editing)
+        // For new file uploads, we upload separately after trip creation/update
+        if (this.form.thumbnail && !this.thumbnailFile) {
+          payload.thumbnail = this.form.thumbnail
         }
         const result = this.isEdit
           ? await apiService.updateTrip(this.$route.params.id, payload)
