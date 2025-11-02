@@ -4,21 +4,8 @@
 
     <div class="studio-body">
       <div class="container">
-        <!-- Day switcher -->
+        <!-- Toolbar actions (day switcher removed - now in calendar) -->
         <div class="days-toolbar">
-          <div class="days-tabs">
-            <button
-              v-for="(d, idx) in days"
-              :key="d.id || idx"
-              class="day-tab"
-              :class="{ active: idx === selectedDayIndex }"
-              type="button"
-              @click="switchDay(idx)"
-              :title="d.date"
-            >
-              Day {{ idx + 1 }}<span class="muted" v-if="d.city"> — {{ d.city }}</span>
-            </button>
-          </div>
           <div class="days-actions">
             <div class="toolbar-buttons">
               <button class="btn secondary" type="button">Itinerary Timeline</button>
@@ -33,7 +20,14 @@
           <div class="sidebar-col" :style="{ width: sidebarWidth + 'px', minWidth: '200px', maxWidth: '600px' }">
             <Sidebar />
             <div class="calendar-wrap">
-              <MiniCalendar :tripDays="days" />
+              <MiniCalendar 
+                :tripDays="days" 
+                :selectedStartDate="dateRange.start"
+                :selectedEndDate="dateRange.end"
+                :currentDayDate="currentDay?.date"
+                @date-range-change="handleDateRangeChange"
+                @date-select="handleDateSelect"
+              />
             </div>
           </div>
           <ResizableSplitter @drag="handleSplitterDrag" @drag-start="handleSplitterDragStart" @drag-end="handleSplitterDragEnd" />
@@ -115,12 +109,27 @@ export default {
       sidebarWidth: savedWidth ? parseInt(savedWidth, 10) : defaultWidth,
       dragStartX: 0,
       dragStartWidth: 0,
-      layerVisibility: {} // Map of layerId -> boolean, defaults to true if not set
+      layerVisibility: {}, // Map of layerId -> boolean, defaults to true if not set
+      dateRange: { start: null, end: null } // Date range selection from calendar
     }
   },
   mounted() {
     // Initialize all layers as visible
     this.initializeLayerVisibility()
+    // Initialize date range from existing days if available
+    if (this.days && this.days.length > 0) {
+      const dates = this.days
+        .map(d => d.date ? new Date(d.date) : null)
+        .filter(Boolean)
+        .sort((a, b) => a - b)
+      
+      if (dates.length > 0) {
+        this.dateRange = {
+          start: dates[0].toISOString().split('T')[0],
+          end: dates[dates.length - 1].toISOString().split('T')[0]
+        }
+      }
+    }
     // Expose console command to clear map polylines
     this.$nextTick(() => {
       window.clearMapLines = () => {
@@ -194,6 +203,116 @@ export default {
       // Rebuild the map to guarantee full cleanup of previous overlays
       this.$nextTick(() => {
         this.$refs.mapPanel && this.$refs.mapPanel.rebuildMap && this.$refs.mapPanel.rebuildMap()
+      })
+    },
+    handleDateRangeChange({ start, end }) {
+      this.dateRange = { start, end }
+      
+      // If both start and end are selected, generate days for the range
+      if (start && end) {
+        this.generateDaysFromRange(start, end)
+      }
+    },
+    handleDateSelect(dateStr) {
+      console.log('[Studio] handleDateSelect called with dateStr:', dateStr)
+      // Use the date string directly for comparison (YYYY-MM-DD format)
+      // Don't convert to Date object to avoid timezone issues
+      const targetDateStr = dateStr
+      
+      console.log('[Studio] Looking for day with date:', targetDateStr, 'Days available:', this.days.map(d => ({ date: d.date, id: d.id })))
+      
+      const dayIndex = this.days.findIndex(d => {
+        if (!d.date) return false
+        // Extract date string from day's date - handle both ISO strings and date objects
+        let dayDateStr
+        if (typeof d.date === 'string') {
+          // If it's already a string, check if it's in YYYY-MM-DD format
+          if (d.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            dayDateStr = d.date
+          } else {
+            // Parse as local date (not UTC) to avoid timezone shifts
+            const parts = d.date.split('T')[0].split('-')
+            const dayDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+            const yyyy = dayDate.getFullYear()
+            const mm = String(dayDate.getMonth() + 1).padStart(2, '0')
+            const dd = String(dayDate.getDate()).padStart(2, '0')
+            dayDateStr = `${yyyy}-${mm}-${dd}`
+          }
+        } else {
+          // If it's a Date object, format it in local timezone
+          const dayDate = new Date(d.date)
+          const yyyy = dayDate.getFullYear()
+          const mm = String(dayDate.getMonth() + 1).padStart(2, '0')
+          const dd = String(dayDate.getDate()).padStart(2, '0')
+          dayDateStr = `${yyyy}-${mm}-${dd}`
+        }
+        const matches = dayDateStr === targetDateStr
+        if (matches) {
+          console.log('[Studio] Found matching day at index:', this.days.indexOf(d), 'Date:', dayDateStr)
+        }
+        return matches
+      })
+      
+      if (dayIndex >= 0) {
+        console.log('[Studio] Switching to day index:', dayIndex)
+        this.switchDay(dayIndex)
+      } else {
+        // Debug: log when day is not found
+        console.warn('[Studio] handleDateSelect: Day not found for date:', dateStr, 'Target date string:', targetDateStr, 'Available days:', this.days.map(d => ({ date: d.date, dateType: typeof d.date })))
+      }
+    },
+    generateDaysFromRange(startStr, endStr) {
+      const start = new Date(startStr)
+      const end = new Date(endStr)
+      const days = []
+      
+      // Generate a day for each date in the range
+      let current = new Date(start)
+      let dayIndex = 0
+      
+      while (current <= end) {
+        const dateStr = current.toISOString().split('T')[0]
+        
+        // Check if we already have a day for this date
+        let existingDay = this.days.find(d => {
+          if (!d.date) return false
+          return new Date(d.date).toISOString().split('T')[0] === dateStr
+        })
+        
+        if (existingDay) {
+          // Use existing day data
+          days.push(existingDay)
+        } else {
+          // Create new day with default structure
+          const baseDay = this.days[0] || {
+            city: '',
+            date: '',
+            hours: { start: '08:00', end: '20:00' },
+            layers: []
+          }
+          const newDay = JSON.parse(JSON.stringify(baseDay))
+          newDay.id = `day-${dayIndex + 1}`
+          newDay.date = dateStr
+          // Clear events for new days
+          newDay.layers = (newDay.layers || []).map(l => ({ ...l, events: [] }))
+          days.push(newDay)
+        }
+        
+        current.setDate(current.getDate() + 1)
+        dayIndex++
+      }
+      
+      // Update days array
+      this.days = days
+      this.selectedDayIndex = 0
+      
+      // Initialize visibility for all days
+      this.$nextTick(() => {
+        this.initializeLayerVisibility()
+        // Rebuild map for the first day
+        if (this.$refs.mapPanel && this.$refs.mapPanel.rebuildMap) {
+          this.$refs.mapPanel.rebuildMap()
+        }
       })
     },
     addDay() {
@@ -469,9 +588,9 @@ export default {
 .day-tab { padding: 6px 10px; border: 1px solid var(--border-light); background: var(--bg-primary); color: var(--text-secondary); border-radius: 8px; cursor: pointer; }
 .day-tab.active { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-light); }
 .day-tab .muted { color: var(--text-tertiary); font-weight: 400; }
-.days-actions { display: flex; align-items: center; gap: var(--spacing-sm); flex-wrap: wrap; }
+.days-actions { display: flex; align-items: center; gap: var(--spacing-sm); flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
 .days-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
-.toolbar-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-right: auto; }
+.toolbar-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* Ensure container stretches and allows editor to push to bottom */
 .studio-body > .container { display: flex; flex-direction: column; flex: 1; }
