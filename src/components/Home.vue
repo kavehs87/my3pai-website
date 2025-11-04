@@ -2,22 +2,26 @@
   <div class="home">
     <!-- Header -->
     <Header />
-    
+
     <!-- Hero Section -->
     <AIHeroSection />
-    
-    <!-- Your Trips (API) -->
-    <TripsSection />
-    
+
+    <!-- Video Plans Section -->
+    <VideoPlans />
+
+
+    <!-- Trips Plans (API) -->
+    <TripPlans />
+
     <!-- Video Shorts Section -->
     <VideoShorts />
-    
+
     <!-- Popular Creators Section -->
     <PopularCreators />
-    
+
     <!-- CTA Section -->
     <CTA />
-    
+
     <!-- Footer -->
     <Footer />
   </div>
@@ -28,6 +32,7 @@ import Header from './Header.vue'
 import AIHeroSection from './AIHeroSection.vue'
 import HeroSection from './HeroSection.vue'
 import VideoPlans from './VideoPlans.vue'
+import TripPlans from './TripPlans.vue'
 import VideoShorts from './VideoShorts.vue'
 import PopularCreators from './PopularCreators.vue'
 import CTA from './CTA.vue'
@@ -43,7 +48,7 @@ export default {
     AIHeroSection,
     HeroSection,
     VideoPlans,
-    TripsSection,
+    TripPlans,
     VideoShorts,
     PopularCreators,
     CTA,
@@ -221,20 +226,21 @@ export default {
 
 
 @media (max-width: 768px) {
+
   .featured-destinations,
   .featured-hotels {
     padding: 60px 0;
   }
-  
+
   .section-header h2 {
     font-size: 28px;
   }
-  
+
   .section-header p {
     font-size: 16px;
   }
-  
-  
+
+
   .hotel-footer {
     flex-direction: column;
     gap: 12px;
