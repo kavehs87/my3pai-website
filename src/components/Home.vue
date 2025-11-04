@@ -6,8 +6,8 @@
     <!-- Hero Section -->
     <AIHeroSection />
     
-    <!-- Video Plans Section -->
-    <VideoPlans />
+    <!-- Your Trips (API) -->
+    <TripsSection />
     
     <!-- Video Shorts Section -->
     <VideoShorts />
@@ -34,7 +34,7 @@ import CTA from './CTA.vue'
 import DestinationCard from './DestinationCard.vue'
 import CategoriesSection from './CategoriesSection.vue'
 import Footer from './Footer.vue'
-import { destinations, hotels } from '../data/dummyData.js'
+import TripsSection from './TripsSection.vue'
 
 export default {
   name: 'Home',
@@ -43,6 +43,7 @@ export default {
     AIHeroSection,
     HeroSection,
     VideoPlans,
+    TripsSection,
     VideoShorts,
     PopularCreators,
     CTA,
@@ -51,10 +52,7 @@ export default {
     Footer
   },
   data() {
-    return {
-      destinations: destinations.slice(0, 6),
-      hotels: hotels
-    }
+    return {}
   }
 }
 </script>
