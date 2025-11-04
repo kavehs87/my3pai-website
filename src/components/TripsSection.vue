@@ -11,7 +11,7 @@
       <div v-else>
         <div v-if="trips.length === 0" class="empty-state">
           <p>No trips yet. Create your first trip!</p>
-          <router-link class="btn" :to="{ name: 'trip-create' }">
+          <router-link class="btn" :to="{ name: 'trip-new' }">
             <i class="fas fa-plus"></i>
             Create Trip
           </router-link>
