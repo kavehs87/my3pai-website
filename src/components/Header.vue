@@ -10,12 +10,11 @@
 
         <!-- Navigation -->
         <nav class="nav">
-          <a href="#" class="nav-link">Discover</a>
-          <a href="#" class="nav-link">Map</a>
-          <a href="#" class="nav-link">My Trips</a>
-          <a href="#" class="nav-link">Create</a>
-          <a href="#" class="nav-link">Saved</a>
-          <a href="#" class="nav-link">My Itineraries</a>
+          <a href="#" class="nav-link">POIs</a>
+          <a href="#" class="nav-link">Itinerary</a>
+          <a href="#" class="nav-link">Consult</a>
+          <a href="#" class="nav-link">Media</a>
+          <a href="#" class="nav-link">Plan</a>
           <router-link to="/studio" class="nav-link">Studio</router-link>
         </nav>
 
@@ -67,12 +66,11 @@
       <!-- Mobile Menu -->
       <div class="mobile-menu" :class="{ active: mobileMenuOpen }">
         <nav class="mobile-nav">
-          <a href="#" class="mobile-nav-link">Discover</a>
-          <a href="#" class="mobile-nav-link">Map</a>
-          <a href="#" class="mobile-nav-link">My Trips</a>
-          <a href="#" class="mobile-nav-link">Create</a>
-          <a href="#" class="mobile-nav-link">Saved</a>
-          <a href="#" class="mobile-nav-link">My Itineraries</a>
+          <a href="#" class="mobile-nav-link">POIs</a>
+          <a href="#" class="mobile-nav-link">Itinerary</a>
+          <a href="#" class="mobile-nav-link">Consult</a>
+          <a href="#" class="mobile-nav-link">Media</a>
+          <a href="#" class="mobile-nav-link">Plan</a>
           <router-link to="/studio" class="mobile-nav-link">Studio</router-link>
         </nav>
         <div class="mobile-user-actions">
