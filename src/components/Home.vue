@@ -7,17 +7,19 @@
     <AIHeroSection />
 
     <!-- Video Plans Section -->
-    <VideoPlans />
-
+    <!-- <VideoPlans /> -->
 
     <!-- Trips Plans (API) -->
-    <TripPlans />
+    <!-- <TripPlans /> -->
 
     <!-- Video Shorts Section -->
-    <VideoShorts />
+    <!-- <VideoShorts /> -->
+
+    <!-- Trip Shorts Section -->
+    <TripShorts />
 
     <!-- Popular Creators Section -->
-    <PopularCreators />
+    <!-- <PopularCreators /> -->
 
     <!-- CTA Section -->
     <CTA />
@@ -34,6 +36,7 @@ import HeroSection from './HeroSection.vue'
 import VideoPlans from './VideoPlans.vue'
 import TripPlans from './TripPlans.vue'
 import VideoShorts from './VideoShorts.vue'
+import TripShorts from './TripShorts.vue'
 import PopularCreators from './PopularCreators.vue'
 import CTA from './CTA.vue'
 import DestinationCard from './DestinationCard.vue'
@@ -50,6 +53,7 @@ export default {
     VideoPlans,
     TripPlans,
     VideoShorts,
+    TripShorts,
     PopularCreators,
     CTA,
     DestinationCard,
