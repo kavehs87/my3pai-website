@@ -9,7 +9,7 @@
       <div v-if="loading" class="loading">Loading trips...</div>
       <div v-else>
         <div v-if="error" class="error">{{ error }}</div>
-        <div v-else class="video-grid">
+        <div v-else class="video-grid" v-if="trips.length">
           <div 
             v-for="trip in trips" 
             :key="trip.id" 
@@ -19,7 +19,7 @@
             <div class="video-thumbnail">
               <img :src="trip.thumbnail || placeholder" :alt="trip.title" />
               <div class="video-overlay">
-                <div class="platform-badge" :class="trip.status">
+                <div class="platform-badge" :class="trip.statusClass">
                   <i class="fas fa-map"></i>
                 </div>
                 <div class="video-duration">{{ daysCount(trip) }} days</div>
@@ -36,18 +36,18 @@
               </div>
 
               <h3 class="video-title">{{ trip.title }}</h3>
-              <p class="video-description">{{ formatRange(trip.startDate || trip.start_date, trip.endDate || trip.end_date) }}</p>
+              <p class="video-description">{{ formatRange(trip.startDate, trip.endDate) }}</p>
 
               <div class="plan-meta">
                 <div class="meta-item">
                   <i class="fas fa-signal"></i>
-                  <span class="difficulty">{{ (trip.budget || 'medium') }}</span>
+                  <span class="difficulty">{{ trip.difficulty }}</span>
                 </div>
                 <div class="meta-item">
                   <i class="fas fa-calendar"></i>
-                  <span>{{ formatDate(trip.createdAt || trip.created_at) }}</span>
+                  <span>{{ formatDate(trip.createdAt) }}</span>
                 </div>
-                <div class="meta-item" v-if="typeof trip.travelers === 'number' && trip.travelers > 0">
+                <div class="meta-item" v-if="trip.travelers !== null">
                   <i class="fas fa-user-friends"></i>
                   <span>{{ trip.travelers }}</span>
                 </div>
@@ -98,13 +98,62 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const res = await apiService.getTrips('all')
-        const payload = res.data || {}
-        this.trips = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload) ? payload : [])
+        const res = await apiService.getTrips()
+        const trips = this.extractTripsArray(res)
+        this.trips = trips.map(trip => this.transformTrip(trip))
+        if (!this.trips.length) {
+          console.warn('[TripPlans] No trips returned from API response:', res)
+        }
       } catch (e) {
         this.error = e.message || 'Failed to load trips'
       } finally {
         this.loading = false
+      }
+    },
+    extractTripsArray(response) {
+      if (!response) return []
+      const payload = response.data ?? response
+
+      if (Array.isArray(payload)) return payload
+      if (Array.isArray(payload?.data)) return payload.data
+      if (Array.isArray(payload?.data?.data)) return payload.data.data
+      if (Array.isArray(payload?.trips)) return payload.trips
+      if (Array.isArray(payload?.data?.trips)) return payload.data.trips
+      if (Array.isArray(payload?.data?.data?.trips)) return payload.data.data.trips
+
+      return []
+    },
+    transformTrip(trip) {
+      const startDate = trip.startDate || trip.start_date || null
+      const endDate = trip.endDate || trip.end_date || null
+      const createdAt = trip.createdAt || trip.created_at || trip.updatedAt || null
+      const difficulty = trip.difficulty || trip.budget || 'medium'
+      const status = trip.status || 'planning'
+      const statusClass = status.toString().toLowerCase()
+      const tagsArray = Array.isArray(trip.tags)
+        ? trip.tags.filter(Boolean)
+        : (typeof trip.tags === 'string' ? trip.tags.split(',').map(t => t.trim()).filter(Boolean) : [])
+      const thumbnail = trip.shortThumbnail || trip.short_thumbnail || trip.thumbnail
+      const travelerNumber = typeof trip.travelers === 'number'
+        ? trip.travelers
+        : (trip.travelers !== undefined && trip.travelers !== null
+            ? parseInt(trip.travelers, 10)
+            : null)
+      const travelers = Number.isFinite(travelerNumber) && travelerNumber > 0 ? travelerNumber : null
+
+      return {
+        id: trip.id || Math.random().toString(36).slice(2),
+        title: trip.title || 'Untitled Trip',
+        destination: trip.destination || 'Unknown destination',
+        thumbnail,
+        startDate,
+        endDate,
+        createdAt,
+        difficulty,
+        status: status,
+        statusClass,
+        travelers: (typeof travelers === 'number' && travelers > 0) ? travelers : null,
+        tags: tagsArray
       }
     },
     formatDate(dateString) {

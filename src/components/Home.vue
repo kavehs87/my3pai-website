@@ -10,10 +10,10 @@
     <!-- <VideoPlans /> -->
 
     <!-- Trips Plans (API) -->
-    <!-- <TripPlans /> -->
+    <TripPlans />
 
     <!-- Video Shorts Section -->
-    <VideoShorts />
+    <!-- <VideoShorts /> -->
 
     <!-- Trip Shorts Section -->
     <TripShorts />
