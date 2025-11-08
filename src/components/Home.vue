@@ -13,7 +13,7 @@
     <!-- <TripPlans /> -->
 
     <!-- Video Shorts Section -->
-    <!-- <VideoShorts /> -->
+    <VideoShorts />
 
     <!-- Trip Shorts Section -->
     <TripShorts />

@@ -27,6 +27,9 @@
                     <div class="platform-badge" :class="plan.platform">
                       <i :class="getPlatformIcon(plan.platform)"></i>
                     </div>
+                    <div class="video-duration" v-if="plan.durationSeconds !== null">
+                      {{ formatDuration(plan.durationSeconds) }}
+                    </div>
                     <div class="play-button" @click.stop="playVideo(plan.id)">
                       <i class="fas fa-play"></i>
                     </div>
@@ -46,7 +49,7 @@
                     <router-link :to="{ name: 'creator-profile', params: { id: plan.creator.id } }" class="creator-name">
                       {{ plan.creator.name }}
                     </router-link>
-                    <span class="creator-followers">{{ plan.creator.followers }}</span>
+                    <span class="creator-followers">{{ formatFollowers(plan.creator.followers) }}</span>
                   </div>
                   <button class="clone-btn" @click.stop="clonePlan(plan)">
                     <i class="fas fa-copy"></i>
@@ -162,6 +165,8 @@ export default {
       if (Array.isArray(payload?.data)) return payload.data
       if (Array.isArray(payload?.data?.data)) return payload.data.data
       if (Array.isArray(payload?.trips)) return payload.trips
+      if (Array.isArray(payload?.data?.trips)) return payload.data.trips
+      if (Array.isArray(payload?.data?.data?.trips)) return payload.data.data.trips
 
       return []
     },
@@ -170,23 +175,35 @@ export default {
         ? trip.tags.filter(Boolean)
         : (typeof trip.tags === 'string' ? trip.tags.split(',').map(t => t.trim()).filter(Boolean) : [])
 
+      const platform = (trip.platform || trip.status || 'trip').toString().toLowerCase()
+      const difficulty = (trip.difficulty || trip.budget || 'medium').toString().toLowerCase()
+      const budgetLabel = trip.budgetLabel || trip.budget || trip.status || 'Planning'
+      const shortThumb = trip.shortThumbnail || trip.short_thumbnail || trip.thumbnail || PLACEHOLDER_THUMB
+      const duration = trip.shortDuration ?? trip.short_duration ?? null
+      const views = trip.views ?? 0
+      const likes = trip.likes ?? 0
+      const comments = trip.comments ?? 0
+      const owner = trip.owner || trip.user || {}
+      const followers = owner.followers ?? owner.followers_count ?? null
+
       return {
         id: trip.id || Math.random().toString(36).slice(2),
         title: trip.title || 'Untitled Trip',
         description: trip.notes || 'No description available yet.',
-        thumbnail: trip.thumbnail || PLACEHOLDER_THUMB,
-        platform: (trip.status || 'trip').toLowerCase(),
-        views: trip.views || '—',
-        likes: trip.likes || '—',
-        comments: trip.comments || '—',
-        difficulty: (trip.budget || 'medium').toString(),
-        budget: (trip.status || 'planning').toString(),
+        thumbnail: shortThumb,
+        platform,
+        durationSeconds: typeof duration === 'number' ? duration : null,
+        views,
+        likes,
+        comments,
+        difficulty,
+        budget: budgetLabel,
         tags: tagsArray.length ? tagsArray : ['trip'],
         creator: {
-          id: trip.owner?.id || 'me',
-          name: trip.owner?.name || 'My3PAI Traveler',
-          avatar: trip.owner?.avatar || PLACEHOLDER_AVATAR,
-          followers: trip.owner?.followers || 'Followers unavailable'
+          id: owner.id || 'me',
+          name: owner.name || 'My3PAI Traveler',
+          avatar: owner.avatar || PLACEHOLDER_AVATAR,
+          followers
         }
       }
     },
@@ -214,6 +231,16 @@ export default {
       if (numeric >= 1_000_000) return (numeric / 1_000_000).toFixed(1) + 'M'
       if (numeric >= 1_000) return (numeric / 1_000).toFixed(1) + 'K'
       return numeric.toString()
+    },
+    formatFollowers(count) {
+      if (count === null || count === undefined) return 'Followers unavailable'
+      return `${this.formatNumber(count)} followers`
+    },
+    formatDuration(seconds) {
+      if (typeof seconds !== 'number' || Number.isNaN(seconds)) return ''
+      const mins = Math.floor(seconds / 60)
+      const secs = seconds % 60
+      return `${mins}:${secs.toString().padStart(2, '0')}`
     },
     playVideo(planId) {
       this.playingVideo = planId
@@ -403,6 +430,18 @@ export default {
   background: var(--secondary-color);
 }
 
+.video-duration {
+  position: absolute;
+  bottom: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
 .play-button {
   width: 50px;
   height: 50px;
@@ -519,6 +558,7 @@ export default {
   color: var(--bg-primary);
   margin: 0 0 var(--spacing-sm) 0;
   line-height: 1.4;
+  line-clamp: 2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -530,6 +570,7 @@ export default {
   color: #a1a1aa;
   line-height: 1.4;
   margin: 0;
+  line-clamp: 2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
