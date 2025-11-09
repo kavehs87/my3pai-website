@@ -30,37 +30,54 @@
             </div>
 
             <div class="video-content">
-              <div class="trip-topline">
-                <span class="destination"><i class="fas fa-location-dot"></i> {{ trip.destination }}</span>
-                <button class="clone-btn" @click.stop="openTrip(trip)">Open</button>
+              <div class="creator-badge" v-if="trip.owner?.name">
+                <img :src="trip.owner.avatar || placeholderAvatar" :alt="trip.owner.name" />
+                <div class="creator-meta">
+                  <span class="creator-name">{{ trip.owner.name }}</span>
+                  <span v-if="trip.createdAt" class="plan-updated">{{ formatDate(trip.createdAt) }}</span>
+                </div>
+              </div>
+
+              <div class="plan-header">
+                <span class="destination" v-if="trip.destination">
+                  <i class="fas fa-location-dot"></i>
+                  {{ trip.destination }}
+                </span>
+                <span class="plan-duration" v-if="trip.startDate && trip.endDate">
+                  <i class="fas fa-route"></i>
+                  {{ formatRange(trip.startDate, trip.endDate) }}
+                </span>
               </div>
 
               <h3 class="video-title">{{ trip.title }}</h3>
-              <p class="video-description">{{ formatRange(trip.startDate, trip.endDate) }}</p>
 
-              <div class="plan-meta">
-                <div class="meta-item">
+              <div class="badges">
+                <span class="badge difficulty" :class="trip.difficulty">
                   <i class="fas fa-signal"></i>
-                  <span class="difficulty">{{ trip.difficulty }}</span>
-                </div>
-                <div class="meta-item">
-                  <i class="fas fa-calendar"></i>
-                  <span>{{ formatDate(trip.createdAt) }}</span>
-                </div>
-                <div class="meta-item" v-if="trip.travelers !== null">
-                  <i class="fas fa-user-friends"></i>
-                  <span>{{ trip.travelers }}</span>
-                </div>
+                  {{ trip.difficulty }}
+                </span>
+                <span class="badge status" :class="trip.statusClass">
+                  <i class="fas fa-map-marked-alt"></i>
+                  {{ trip.status }}
+                </span>
               </div>
 
-              <div class="video-tags" v-if="Array.isArray(trip.tags) && trip.tags.length">
-                <span 
-                  v-for="tag in trip.tags.slice(0, 3)" 
-                  :key="tag" 
-                  class="tag"
-                >
-                  #{{ tag }}
-                </span>
+              <div class="action-bar">
+                <button class="cta-btn" @click.stop="openTrip(trip)">
+                  <i class="fas fa-arrow-right"></i>
+                  Open in Studio
+                </button>
+
+                <div class="tag-group" v-if="Array.isArray(trip.tags) && trip.tags.length">
+                  <span 
+                    v-for="tag in trip.tags.slice(0, 2)" 
+                    :key="`${trip.id}-${tag}`" 
+                    class="chip"
+                  >
+                    #{{ tag }}
+                  </span>
+                  <span v-if="trip.tags.length > 2" class="chip more">+{{ trip.tags.length - 2 }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -87,7 +104,8 @@ export default {
       trips: [],
       loading: false,
       error: '',
-      placeholder: 'https://via.placeholder.com/800x450?text=Trip+Thumbnail'
+      placeholder: 'https://via.placeholder.com/800x450?text=Trip+Thumbnail',
+      placeholderAvatar: 'https://via.placeholder.com/48?text=A'
     }
   },
   async mounted() {
@@ -124,7 +142,7 @@ export default {
     transformTrip(trip) {
       const startDate = trip.startDate || trip.start_date || null
       const endDate = trip.endDate || trip.end_date || null
-      const createdAt = trip.createdAt || trip.created_at || trip.updatedAt || null
+      const createdAtRaw = trip.createdAt || trip.created_at || trip.updatedAt || null
       const difficulty = trip.difficulty || 'medium'
       const status = trip.status || 'planning'
       const statusClass = status.toString().toLowerCase()
@@ -142,7 +160,7 @@ export default {
         thumbnail,
         startDate,
         endDate,
-        createdAt,
+        createdAt: createdAtRaw || startDate || null,
         difficulty,
         status: status,
         statusClass,
@@ -208,13 +226,129 @@ export default {
 .platform-badge { position: absolute; top: var(--spacing-sm); left: var(--spacing-sm); width: 32px; height: 32px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--bg-primary); font-size: var(--font-size-sm); background: var(--secondary-color); text-transform: capitalize; }
 .video-duration { position: absolute; bottom: var(--spacing-sm); right: var(--spacing-sm); background: rgba(0, 0, 0, 0.8); color: var(--bg-primary); padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--radius-sm); }
 .video-content { padding: var(--spacing-lg); }
-.trip-topline { display: flex; align-items: center; gap: var(--spacing-md); }
-.destination { color: var(--text-secondary); font-size: var(--font-size-sm); }
-.clone-btn { margin-left: auto; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 6px 10px; font-weight: 600; cursor: pointer; }
-.video-title { margin-top: var(--spacing-sm); margin-bottom: var(--spacing-xs); }
-.video-description { color: var(--text-secondary); }
-.plan-meta { display: flex; gap: var(--spacing-md); margin-top: var(--spacing-sm); color: var(--text-secondary); font-size: var(--font-size-sm); }
-.video-tags { margin-top: var(--spacing-md); }
-.tag { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 4px 8px; margin-right: 8px; }
+.creator-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+.creator-badge img {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 2px solid var(--bg-primary);
+  box-shadow: var(--shadow-light);
+}
+.creator-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.creator-name {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+.plan-updated {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+.plan-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+.plan-header i {
+  color: var(--secondary-color);
+}
+.video-title {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.badges {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.badge i {
+  font-size: 0.8rem;
+}
+.badge.difficulty {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+.badge.difficulty.medium { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+.badge.difficulty.easy { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.badge.difficulty.hard { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+.badge.status {
+  background: #111827;
+  color: #f9fafb;
+}
+.badge.status.planning { background: #f97316; }
+.badge.status.upcoming { background: #3b82f6; }
+.badge.status.completed { background: #10b981; }
+.badge.status.cancelled { background: #ef4444; }
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+.cta-btn {
+  background: var(--secondary-color);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+.cta-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-light);
+}
+.tag-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+.chip {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.chip.more {
+  background: rgba(15, 118, 110, 0.1);
+  color: var(--secondary-color);
+  border-color: rgba(15, 118, 110, 0.3);
+}
 </style>
 
