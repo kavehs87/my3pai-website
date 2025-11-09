@@ -158,7 +158,17 @@
             
             <!-- Right column: recent plans -->
             <aside class="recent-plans-sidebar">
-              <h3>Recent Plans</h3>
+              <div class="recent-plans-header">
+                <h3>Recent Plans</h3>
+                <router-link
+                  v-if="creator?.stats?.totalPlans"
+                  class="view-all-link"
+                  :to="{ name: 'profile', query: { tab: 'trips', owner: creator.id } }"
+                >
+                  View all
+                  <i class="fas fa-arrow-right"></i>
+                </router-link>
+              </div>
               <div v-if="hasRecentPlans" class="plans-grid sidebar-grid">
                 <div 
                   v-for="plan in creator.recentPlans" 
@@ -166,11 +176,30 @@
                   class="plan-card"
                   @click="viewPlan(plan.id)"
                 >
-                  <img :src="plan.thumbnail" :alt="plan.title" @error="handleImageError" />
+                  <div class="plan-thumb">
+                    <img :src="plan.thumbnail" :alt="plan.title" @error="handleImageError" />
+                    <span class="plan-status" v-if="plan.status">
+                      <i class="fas fa-route"></i>
+                      {{ plan.status }}
+                    </span>
+                  </div>
                   <div class="plan-info">
                     <h4>{{ plan.title }}</h4>
+                    <p class="plan-destination" v-if="plan.destination">
+                      <i class="fas fa-location-dot"></i>
+                      {{ plan.destination }}
+                    </p>
+                    <p class="plan-dates">
+                      <i class="fas fa-calendar"></i>
+                      {{ formatRange(plan.startDate, plan.endDate) }}
+                    </p>
                     <div class="plan-stats">
-                      <span><i class="fas fa-eye"></i> {{ formatCount(plan.views) }}</span>
+                      <span v-if="plan.views !== undefined"><i class="fas fa-eye"></i> {{ formatCount(plan.views) }}</span>
+                      <span v-if="plan.likes !== undefined"><i class="fas fa-heart"></i> {{ formatCount(plan.likes) }}</span>
+                    </div>
+                    <div class="plan-owner" v-if="plan.owner">
+                      <img :src="plan.owner.avatar" :alt="plan.owner.name" />
+                      <span>{{ plan.owner.name }}</span>
                     </div>
                   </div>
                 </div>
@@ -294,6 +323,16 @@ export default {
         month: 'long'
       })
     },
+    formatRange(start, end) {
+      if (!start || !end) return 'Dates TBD'
+      const s = new Date(start)
+      const e = new Date(end)
+      if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return 'Dates TBD'
+      const sameYear = s.getFullYear() === e.getFullYear()
+      const optsStart = { month: 'short', day: 'numeric', year: sameYear ? undefined : 'numeric' }
+      const optsEnd = { month: 'short', day: 'numeric', year: 'numeric' }
+      return `${s.toLocaleDateString(undefined, optsStart)} - ${e.toLocaleDateString(undefined, optsEnd)}`
+    },
     toggleFollow() {
       if (!this.creator) return
       this.isFollowing = !this.isFollowing
@@ -406,8 +445,135 @@ export default {
 
 .profile-details { flex: 1; }
 .main-info { display: flex; align-items: flex-start; gap: var(--spacing-2xl); }
-.recent-plans-sidebar { position: sticky; top: 120px; height: fit-content; }
-.sidebar-grid { grid-template-columns: 1fr; }
+.recent-plans-sidebar {
+  position: sticky;
+  top: 120px;
+  height: fit-content;
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  padding: var(--spacing-xl);
+  box-shadow: 0 20px 40px -24px rgba(15, 23, 42, 0.35);
+}
+.recent-plans-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+.recent-plans-header h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.view-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-sm);
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: gap var(--transition-normal);
+}
+.view-all-link:hover {
+  gap: 10px;
+}
+.sidebar-grid { grid-template-columns: 1fr; gap: var(--spacing-lg); }
+.plan-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  cursor: pointer;
+}
+.plan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+.plan-thumb {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+}
+.plan-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-normal);
+}
+.plan-card:hover .plan-thumb img {
+  transform: scale(1.04);
+}
+.plan-status {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--bg-primary);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: capitalize;
+}
+.plan-info {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+.plan-info h4 {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+.plan-destination,
+.plan-dates {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.plan-stats {
+  display: flex;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+}
+.plan-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.plan-stats i {
+  color: var(--secondary-color);
+}
+.plan-owner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+.plan-owner img {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 2px solid var(--bg-primary);
+}
 
 .creator-name {
   font-size: var(--font-size-4xl);
@@ -726,42 +892,6 @@ export default {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--spacing-md);
-}
-
-.plan-card {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-light);
-}
-
-.plan-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-medium);
-}
-
-.plan-card img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-}
-
-.plan-card .plan-info {
-  padding: var(--spacing-md);
-}
-
-.plan-card h4 {
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-  margin: 0 0 var(--spacing-sm) 0;
-  font-weight: 600;
-}
-
-.plan-card .plan-stats {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
 }
 
 @media (max-width: 768px) {
