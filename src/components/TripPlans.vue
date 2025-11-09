@@ -6,7 +6,7 @@
         <p>Discover and continue planning your trips</p>
       </div>
 
-      <div v-if="loading" class="loading">Loading trips...</div>
+      <div v-if="loading" class="loading">Loading featured trips...</div>
       <div v-else>
         <div v-if="error" class="error">{{ error }}</div>
         <div v-else class="video-grid" v-if="trips.length">
@@ -66,7 +66,7 @@
           </div>
         </div>
         <div v-if="!trips.length && !error" class="empty-state">
-          <p>No trips yet. Create your first trip!</p>
+          <p>No discovery trips available right now.</p>
           <router-link class="btn" :to="{ name: 'trip-new' }">
             <i class="fas fa-plus"></i>
             Create Trip
@@ -98,8 +98,11 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const res = await apiService.getTrips()
-        const trips = this.extractTripsArray(res)
+        const res = await apiService.getDiscoverTrips({ perPage: 9 })
+        if (!res.success) {
+          throw new Error(res.error || 'Failed to load trips')
+        }
+        const trips = this.extractTripsArray(res.data)
         this.trips = trips.map(trip => this.transformTrip(trip))
         if (!this.trips.length) {
           console.warn('[TripPlans] No trips returned from API response:', res)
@@ -110,36 +113,27 @@ export default {
         this.loading = false
       }
     },
-    extractTripsArray(response) {
-      if (!response) return []
-      const payload = response.data ?? response
-
+    extractTripsArray(payload) {
+      if (!payload) return []
       if (Array.isArray(payload)) return payload
-      if (Array.isArray(payload?.data)) return payload.data
-      if (Array.isArray(payload?.data?.data)) return payload.data.data
-      if (Array.isArray(payload?.trips)) return payload.trips
-      if (Array.isArray(payload?.data?.trips)) return payload.data.trips
-      if (Array.isArray(payload?.data?.data?.trips)) return payload.data.data.trips
-
+      if (Array.isArray(payload.trips)) return payload.trips
+      if (Array.isArray(payload.data)) return payload.data
+      if (Array.isArray(payload.data?.trips)) return payload.data.trips
       return []
     },
     transformTrip(trip) {
       const startDate = trip.startDate || trip.start_date || null
       const endDate = trip.endDate || trip.end_date || null
       const createdAt = trip.createdAt || trip.created_at || trip.updatedAt || null
-      const difficulty = trip.difficulty || trip.budget || 'medium'
+      const difficulty = trip.difficulty || 'medium'
       const status = trip.status || 'planning'
       const statusClass = status.toString().toLowerCase()
       const tagsArray = Array.isArray(trip.tags)
         ? trip.tags.filter(Boolean)
-        : (typeof trip.tags === 'string' ? trip.tags.split(',').map(t => t.trim()).filter(Boolean) : [])
+        : []
       const thumbnail = trip.shortThumbnail || trip.short_thumbnail || trip.thumbnail
-      const travelerNumber = typeof trip.travelers === 'number'
-        ? trip.travelers
-        : (trip.travelers !== undefined && trip.travelers !== null
-            ? parseInt(trip.travelers, 10)
-            : null)
-      const travelers = Number.isFinite(travelerNumber) && travelerNumber > 0 ? travelerNumber : null
+      const travelers = null
+      const owner = trip.owner || {}
 
       return {
         id: trip.id || Math.random().toString(36).slice(2),
@@ -152,8 +146,15 @@ export default {
         difficulty,
         status: status,
         statusClass,
-        travelers: (typeof travelers === 'number' && travelers > 0) ? travelers : null,
-        tags: tagsArray
+        travelers: travelers,
+        tags: tagsArray,
+        owner: {
+          id: owner.id,
+          name: owner.name,
+          avatar: owner.avatar
+        },
+        views: trip.views ?? null,
+        likes: trip.likes ?? null
       }
     },
     formatDate(dateString) {

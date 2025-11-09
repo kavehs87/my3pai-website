@@ -6,7 +6,7 @@
         <p>Discover amazing travel itineraries from our community creators</p>
       </div>
 
-      <div v-if="loading" class="loading">Loading trips...</div>
+      <div v-if="loading" class="loading">Loading creator trips...</div>
       <div v-else>
         <div v-if="error" class="error">{{ error }}</div>
 
@@ -100,7 +100,7 @@
         </div>
 
         <div v-else class="empty-state">
-          <p>No trips yet. Create your first trip!</p>
+          <p>No discovery trips available right now.</p>
           <router-link class="btn" :to="{ name: 'trip-new' }">
             <i class="fas fa-plus"></i>
             Create Trip
@@ -130,9 +130,6 @@ export default {
   },
   async mounted() {
     await this.loadTrips()
-    if (!this.error) {
-      this.setupIntersectionObserver()
-    }
   },
   beforeUnmount() {
     if (this.observer) {
@@ -144,12 +141,17 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const res = await apiService.getTrips()
-        const trips = this.extractTripsArray(res)
+        const res = await apiService.getDiscoverTrips({ perPage: 12 })
+        if (!res.success) {
+          throw new Error(res.error || 'Failed to load trips')
+        }
+        const trips = this.extractTripsArray(res.data)
         this.plans = trips.map(trip => this.transformTrip(trip))
+        await this.$nextTick()
         if (!this.plans.length) {
           console.warn('[TripShorts] No trips returned from API response:', res)
         }
+        this.setupIntersectionObserver()
       } catch (e) {
         this.error = e.message || 'Failed to load trips'
         this.plans = []
@@ -157,27 +159,22 @@ export default {
         this.loading = false
       }
     },
-    extractTripsArray(response) {
-      if (!response) return []
-      const payload = response.data ?? response
-
+    extractTripsArray(payload) {
+      if (!payload) return []
       if (Array.isArray(payload)) return payload
-      if (Array.isArray(payload?.data)) return payload.data
-      if (Array.isArray(payload?.data?.data)) return payload.data.data
-      if (Array.isArray(payload?.trips)) return payload.trips
-      if (Array.isArray(payload?.data?.trips)) return payload.data.trips
-      if (Array.isArray(payload?.data?.data?.trips)) return payload.data.data.trips
-
+      if (Array.isArray(payload.trips)) return payload.trips
+      if (Array.isArray(payload.data)) return payload.data
+      if (Array.isArray(payload.data?.trips)) return payload.data.trips
       return []
     },
     transformTrip(trip) {
       const tagsArray = Array.isArray(trip.tags)
         ? trip.tags.filter(Boolean)
-        : (typeof trip.tags === 'string' ? trip.tags.split(',').map(t => t.trim()).filter(Boolean) : [])
+        : []
 
       const platform = (trip.platform || trip.status || 'trip').toString().toLowerCase()
-      const difficulty = (trip.difficulty || trip.budget || 'medium').toString().toLowerCase()
-      const budgetLabel = trip.budgetLabel || trip.budget || trip.status || 'Planning'
+      const difficulty = (trip.difficulty || 'medium').toString().toLowerCase()
+      const budgetLabel = trip.status || 'Planning'
       const shortThumb = trip.shortThumbnail || trip.short_thumbnail || trip.thumbnail || PLACEHOLDER_THUMB
       const duration = trip.shortDuration ?? trip.short_duration ?? null
       const views = trip.views ?? 0
@@ -189,7 +186,7 @@ export default {
       return {
         id: trip.id || Math.random().toString(36).slice(2),
         title: trip.title || 'Untitled Trip',
-        description: trip.notes || 'No description available yet.',
+        description: trip.destination || 'No description available yet.',
         thumbnail: shortThumb,
         platform,
         durationSeconds: typeof duration === 'number' ? duration : null,
@@ -198,7 +195,7 @@ export default {
         comments,
         difficulty,
         budget: budgetLabel,
-        tags: tagsArray.length ? tagsArray : ['trip'],
+        tags: tagsArray.length ? tagsArray : [trip.destination || 'trip'],
         creator: {
           id: owner.id || 'me',
           name: owner.name || 'My3PAI Traveler',
@@ -251,6 +248,10 @@ export default {
       console.log('Paused video')
     },
     setupIntersectionObserver() {
+      if (this.observer) {
+        this.observer.disconnect()
+        this.observer = null
+      }
       if (!this.$refs.shortCards || !this.$refs.shortCards.length) return
 
       this.observer = new IntersectionObserver((entries) => {
@@ -266,10 +267,8 @@ export default {
         threshold: 0.5
       })
 
-      this.$nextTick(() => {
-        this.$refs.shortCards?.forEach(card => {
-          this.observer.observe(card)
-        })
+      this.$refs.shortCards?.forEach(card => {
+        this.observer.observe(card)
       })
     },
     selectPlan(plan) {

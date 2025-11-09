@@ -22,11 +22,11 @@ Complete API documentation for trip management endpoints in the My3PAI applicati
 
 ---
 
-## 1. List User's Trips
+## 1. List Trips
 
 **GET** `/api/profile/trips`
 
-Get all trips belonging to the authenticated user with optional filtering.
+Get the latest trips across the platform (not only the authenticated user's). Useful for profile dashboards and shared feeds. Results are ordered by `created_at` descending.
 
 ### Query Parameters
 
@@ -207,6 +207,7 @@ const response = await axios.post('/api/profile/trips', {
 
 ### Notes
 
+- Endpoint returns trips from all creators. Use `owner.id` to determine ownership and handle UI affordances.
 - **Field Normalization:**
   - `startDate` / `endDate` can be sent as `startDate`/`endDate` (camelCase) or `start_date`/`end_date` (snake_case)
   - `shortThumbnail` / `short_thumbnail` automatically fall back to the main `thumbnail` when omitted
@@ -217,7 +218,8 @@ const response = await axios.post('/api/profile/trips', {
 - `videos` objects can include optional `duration` (seconds) and `platform` hints which are preserved in responses
 - `shortDuration` falls back to the first video duration when not provided
 - `views`, `likes`, and `comments` are optional integers that default to `0` when omitted
-  - Each trip response includes an `owner` object with creator metadata (id, name, avatar, followers)
+- Each trip response includes an `owner` object with creator metadata (id, name, avatar, followers)
+- Only the trip owner (`owner.id === currentUser.id`) can update or delete a trip. The API returns `403` if you attempt to modify someone else’s trip.
 
 ---
 
@@ -225,7 +227,7 @@ const response = await axios.post('/api/profile/trips', {
 
 **GET** `/api/profile/trips/{id}`
 
-Get details of a specific trip. Only accessible by the trip owner.
+Get details of a specific trip. Only the trip owner can access this endpoint; other users receive a 404.
 
 ### URL Parameters
 
@@ -291,22 +293,74 @@ Authorization: Bearer YOUR_TOKEN
   "error": "Trip not found"
 }
 ```
-
-**403 Forbidden (not trip owner):**
-```json
-{
-  "success": false,
-  "error": "Unauthorized access"
-}
-```
+> The API also returns 404 when you try to access a trip you do not own.
 
 ---
 
-## 4. Update Trip
+## 4. Public Trip Discovery
+
+**GET** `/api/trips`
+
+Browse trips across the platform (for discovery feeds, homepage carousels, etc.). Requires authentication but does not expose private notes.
+
+### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number (default `1`) |
+| `perPage` | integer | No | Page size (default `12`, max `50`) |
+| `status` | string | No | Filter by trip status (`planning`, `upcoming`, `completed`, `cancelled`) |
+| `destination` | string | No | Case-insensitive partial match |
+| `owner` | integer | No | Filter by owner user ID |
+| `dateRange[start]` | date | No | Only trips starting on/after this date (`YYYY-MM-DD`) |
+| `dateRange[end]` | date | No | Only trips ending on/before this date (`YYYY-MM-DD`) |
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "trips": [
+      {
+        "id": 42,
+        "title": "Tokyo Cherry Blossom Tour",
+        "destination": "Tokyo, Japan",
+        "startDate": "2025-03-25",
+        "endDate": "2025-03-30",
+        "thumbnail": "https://cdn.my3pai.com/trips/42.jpg",
+        "status": "upcoming",
+        "owner": {
+          "id": 7,
+          "name": "TravelWithAlex",
+          "avatar": "https://cdn.my3pai.com/avatars/7.jpg"
+        },
+        "views": 2310000,
+        "likes": 89000
+      }
+    ],
+    "meta": {
+      "currentPage": 1,
+      "perPage": 12,
+      "total": 87,
+      "hasMorePages": true
+    }
+  }
+}
+```
+
+### Notes
+- Payload intentionally omits editor-only fields (notes, budgets, tags, travelers, etc.).
+- Sorted by `created_at desc` by default.
+- Combines `views`/`likes` counters so the frontend can display engagement badges.
+
+---
+
+## 5. Update Trip
 
 **PUT** `/api/profile/trips/{id}`
 
-Update an existing trip. Only accessible by the trip owner.
+Update an existing trip. Only the trip owner can modify their trip; non-owners receive a `403` response.
 
 ### URL Parameters
 
@@ -363,11 +417,11 @@ const response = await axios.put('/api/profile/trips/5', {
 
 ---
 
-## 5. Delete Trip
+## 6. Delete Trip
 
 **DELETE** `/api/profile/trips/{id}`
 
-Delete a trip. Only accessible by the trip owner.
+Delete a trip. Only the trip owner can delete their trip; non-owners receive a `403` response.
 
 ### URL Parameters
 
@@ -411,7 +465,7 @@ Authorization: Bearer YOUR_TOKEN
 
 ---
 
-## 6. Upload Trip Thumbnail
+## 7. Upload Trip Thumbnail
 
 **POST** `/api/profile/trips/{id}/thumbnail`
 

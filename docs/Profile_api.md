@@ -286,7 +286,72 @@ Returns a paginated list of creator summaries for discovery surfaces (homepage c
 
 ---
 
-## 6. Existing Endpoints (unchanged)
+## 6. Get Creator By ID
+
+**GET** `/api/creators/{id}`
+
+Returns the public-facing profile for a specific creator. Uses the same payload shape as `/api/profile`, minus sensitive fields (no email/preferences). Requires authentication.
+
+### Example
+
+```json
+{
+  "success": true,
+  "data": {
+    "creator": {
+      "id": 7,
+      "firstName": "Alex",
+      "lastName": "Johnson",
+      "displayName": "TravelWithAlex",
+      "username": "travelalex",
+      "avatar": "https://cdn.my3pai.com/avatars/7.jpg",
+      "coverImage": "https://cdn.my3pai.com/covers/7.jpg",
+      "bio": "Adventure seeker & travel content creator.",
+      "location": "New York, USA",
+      "verified": true,
+      "tier": "Gold",
+      "specialties": ["Adventure Travel", "Food Tours"],
+      "rating": { "value": 4.8, "count": 1240 },
+      "countriesVisited": ["US", "JP", "FR"],
+      "languages": [
+        { "id": 14, "name": "English", "proficiency": "Native" }
+      ],
+      "partnerships": [
+        { "id": 3, "label": "GetYourGuide Tours", "url": "https://www.getyourguide.com/", "position": 0 }
+      ],
+      "featuredPlan": {
+        "id": 21,
+        "title": "Tokyo 3-Day Adventure",
+        "thumbnail": "https://cdn.my3pai.com/plans/tokyo.jpg",
+        "views": 2300000,
+        "likes": 89000
+      },
+      "recentPlans": [
+        { "id": 24, "title": "Kyoto Temples Guide", "thumbnail": "https://cdn.my3pai.com/plans/kyoto.jpg", "views": 1800000 }
+      ],
+      "stats": {
+        "followers": 125000,
+        "following": 1200,
+        "totalPlans": 32,
+        "totalViews": 4318000,
+        "totalLikes": 140800
+      },
+      "socialLinks": [
+        { "id": 11, "platform": "YouTube", "url": "https://youtube.com/@travelwithemma", "public": true }
+      ]
+    }
+  }
+}
+```
+
+### Notes
+- Returns `404` if the creator does not exist or is not discoverable.
+- The authenticated user may request their own profile through this endpoint; the response matches `/api/profile` minus private fields.
+- `recentPlans` contains up to six of the creator’s latest public trips (same visibility rules as `/api/trips`).
+
+---
+
+## 7. Existing Endpoints (unchanged)
 
 - Avatar upload: `POST /api/profile/avatar`
 - Cover upload: `POST /api/profile/cover`
@@ -299,7 +364,7 @@ All previous behavior remains backwards compatible; new fields appear in additio
 
 ---
 
-## 7. Data & Serialization Rules
+## 8. Data & Serialization Rules
 
 - JSON responses use camelCase.
 - Empty relationships => empty arrays; optional objects => `{}`.
@@ -309,13 +374,14 @@ All previous behavior remains backwards compatible; new fields appear in additio
 
 ---
 
-## 8. Testing
+## 9. Testing
 
 Feature tests cover:
 - `GET /api/profile` structure & counters
 - `PUT /api/profile/languages` happy path
 - Partnership create/update/delete flow
 - `GET /api/creators` pagination, sorting, filters, and search
+- `GET /api/creators/{id}` show endpoint
 
 Run with:
 
@@ -328,5 +394,5 @@ php artisan test --filter=CreatorIndexTest
 
 ## Changelog
 
-- **2025-11-09** — Added creator metadata (displayName, tier, specialties, rating, languages, partnerships, plans), languages & partnership endpoints, and the `/api/creators` discovery endpoint.
+- **2025-11-09** — Added creator metadata (displayName, tier, specialties, rating, languages, partnerships, plans), languages & partnership endpoints, `/api/creators` discovery index, and `/api/creators/{id}` show endpoint.
 

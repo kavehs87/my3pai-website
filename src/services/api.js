@@ -265,6 +265,23 @@ class ApiService {
     return this.request(`/creators${queryString}`)
   }
 
+  async getCreator(id) {
+    return this.request(`/creators/${id}`)
+  }
+
+  async getDiscoverTrips(params = {}) {
+    const searchParams = new URLSearchParams()
+    if (params.page) searchParams.append('page', params.page)
+    if (params.perPage) searchParams.append('perPage', params.perPage)
+    if (params.status) searchParams.append('status', params.status)
+    if (params.destination) searchParams.append('destination', params.destination)
+    if (params.owner) searchParams.append('owner', params.owner)
+    if (params?.dateRange?.start) searchParams.append('dateRange[start]', params.dateRange.start)
+    if (params?.dateRange?.end) searchParams.append('dateRange[end]', params.dateRange.end)
+    const queryString = searchParams.toString() ? `?${searchParams.toString()}` : ''
+    return this.request(`/trips${queryString}`)
+  }
+
   async createTrip(tripData) {
     return this.request('/profile/trips', {
       method: 'POST',

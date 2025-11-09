@@ -229,22 +229,37 @@ export default {
       this.isLoading = true
       this.error = ''
       try {
-        const result = await apiService.getProfile()
-        if (result.success) {
-          const payload = result.data?.data || result.data || {}
-          const creator = mapProfileToCreator(payload)
-          if (creator) {
-            this.creator = creator
-            // Reset follow state when reloading creator
-            this.isFollowing = false
-          } else {
-            this.error = 'Creator data is unavailable.'
+        const routeId = this.$route.params.id
+        let creatorPayload = null
+
+        if (routeId) {
+          const result = await apiService.getCreator(routeId)
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to load creator profile.')
           }
+          creatorPayload =
+            result.data?.creator ||
+            result.data?.data?.creator ||
+            result.data ||
+            {}
         } else {
-          this.error = result.error || 'Failed to load creator profile.'
+          const result = await apiService.getProfile()
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to load creator profile.')
+          }
+          creatorPayload = result.data?.data || result.data || {}
         }
+
+        const creator = mapProfileToCreator(creatorPayload)
+        if (!creator) {
+          throw new Error('Creator data is unavailable.')
+        }
+
+        this.creator = creator
+        this.isFollowing = false
       } catch (error) {
         this.error = error.message || 'Failed to load creator profile.'
+        this.creator = null
       } finally {
         this.isLoading = false
       }
@@ -308,6 +323,11 @@ export default {
     handleAvatarError(event) {
       event.target.src =
         'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iNDAiIGZpbGw9IiM2NjdFRUEiLz4KPHRleHQgeD0iNDAiIHk9IjQ1IiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QTwvdGV4dD4KPC9zdmc+'
+    }
+  },
+  watch: {
+    '$route.params.id'() {
+      this.loadCreator()
     }
   }
 }
