@@ -3,8 +3,18 @@
     <!-- Main Website Header -->
     <Header />
     
+    <div v-if="isLoading" class="status-block loading">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Loading creator profile...</span>
+    </div>
+
+    <div v-else-if="error" class="status-block error">
+      <i class="fas fa-triangle-exclamation"></i>
+      <span>{{ error }}</span>
+    </div>
+
     <!-- Header Section -->
-    <div class="profile-header">
+    <div v-else-if="creator" class="profile-header">
       <div class="cover-image">
         <img :src="creator.featuredPlan?.thumbnail || creator.coverImage" :alt="creator.featuredPlan?.title || (creator.name + ' cover')" @error="handleImageError" />
         <div class="cover-overlay"></div>
@@ -28,19 +38,19 @@
               
               <div class="profile-stats">
                 <div class="stat-item">
-                  <span class="stat-number">{{ creator.followers }}</span>
+                  <span class="stat-number">{{ formatCount(creator.stats.followers) }}</span>
                   <span class="stat-label">Followers</span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-number">{{ creator.following }}</span>
+                  <span class="stat-number">{{ formatCount(creator.stats.following) }}</span>
                   <span class="stat-label">Following</span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-number">{{ creator.totalPlans }}</span>
+                  <span class="stat-number">{{ formatCount(creator.stats.totalPlans) }}</span>
                   <span class="stat-label">Plans</span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-number">{{ creator.totalViews }}</span>
+                  <span class="stat-number">{{ formatCount(creator.stats.totalViews) }}</span>
                   <span class="stat-label">Views</span>
                 </div>
               </div>
@@ -77,7 +87,7 @@
                 </div>
               </div>
 
-              <div class="specialties">
+              <div v-if="creator.specialties?.length" class="specialties">
                 <h3>Specialties</h3>
                 <div class="specialty-tags">
                   <span v-for="specialty in creator.specialties" :key="specialty" class="specialty-tag">
@@ -149,7 +159,7 @@
             <!-- Right column: recent plans -->
             <aside class="recent-plans-sidebar">
               <h3>Recent Plans</h3>
-              <div class="plans-grid sidebar-grid">
+              <div v-if="hasRecentPlans" class="plans-grid sidebar-grid">
                 <div 
                   v-for="plan in creator.recentPlans" 
                   :key="plan.id" 
@@ -160,10 +170,14 @@
                   <div class="plan-info">
                     <h4>{{ plan.title }}</h4>
                     <div class="plan-stats">
-                      <span><i class="fas fa-eye"></i> {{ plan.views }}</span>
+                      <span><i class="fas fa-eye"></i> {{ formatCount(plan.views) }}</span>
                     </div>
                   </div>
                 </div>
+              </div>
+              <div v-else class="empty-state">
+                <i class="fas fa-camera-retro"></i>
+                <p>No recent plans yet.</p>
               </div>
             </aside>
           </div>
@@ -177,7 +191,8 @@
 
 <script>
 import Header from './Header.vue'
-import creatorsData from '../data/creators.json'
+import apiService from '../services/api.js'
+import { mapProfileToCreator, formatCount } from '../utils/creatorMapper.js'
 
 export default {
   name: 'CreatorProfile',
@@ -187,13 +202,18 @@ export default {
   data() {
     return {
       creator: null,
-      isFollowing: false
+      isFollowing: false,
+      isLoading: false,
+      error: ''
     }
   },
   computed: {
     roundedRating() {
       const value = this.creator?.rating?.value || 0
       return Math.round(value)
+    },
+    hasRecentPlans() {
+      return (this.creator?.recentPlans?.length || 0) > 0
     }
   },
   created() {
@@ -204,6 +224,31 @@ export default {
     window.scrollTo(0, 0)
   },
   methods: {
+    formatCount,
+    async loadCreator() {
+      this.isLoading = true
+      this.error = ''
+      try {
+        const result = await apiService.getProfile()
+        if (result.success) {
+          const payload = result.data?.data || result.data || {}
+          const creator = mapProfileToCreator(payload)
+          if (creator) {
+            this.creator = creator
+            // Reset follow state when reloading creator
+            this.isFollowing = false
+          } else {
+            this.error = 'Creator data is unavailable.'
+          }
+        } else {
+          this.error = result.error || 'Failed to load creator profile.'
+        }
+      } catch (error) {
+        this.error = error.message || 'Failed to load creator profile.'
+      } finally {
+        this.isLoading = false
+      }
+    },
     socialIcon(platform) {
       const p = (platform || '').toLowerCase()
       if (p.includes('youtube')) return 'fa-brands fa-youtube'
@@ -212,7 +257,6 @@ export default {
       if (p.includes('twitter') || p.includes('x')) return 'fa-brands fa-x-twitter'
       return 'fa-solid fa-link'
     },
-
     platformClass(platform) {
       const p = (platform || '').toLowerCase()
       if (p.includes('youtube')) return 'platform-youtube'
@@ -221,78 +265,27 @@ export default {
       if (p.includes('twitter') || p.includes('x')) return 'platform-twitter'
       return 'platform-generic'
     },
-
     countryFlag(code) {
-      // Convert ISO country code to regional indicator symbols
       if (!code) return ''
       const cc = code.toUpperCase()
-      return cc
-        .replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)))
+      return cc.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
     },
-
-    
-
-    loadCreator() {
-      const creatorId = parseInt(this.$route.params.id)
-      this.creator = creatorsData.creators.find(c => c.id === creatorId)
-      
-      if (!this.creator) {
-        // Create a fallback creator for IDs not in creators.json
-        this.creator = {
-          id: creatorId,
-          name: `Creator ${creatorId}`,
-          username: `@creator${creatorId}`,
-          avatar: `https://i.pravatar.cc/140?img=${creatorId}`,
-          coverImage: '/photos/photo_2025-10-28_00-02-25.jpg',
-          followers: '100K',
-          following: '1K',
-          totalPlans: 10,
-          totalViews: '1M',
-          totalLikes: '50K',
-          verified: false,
-          bio: 'Travel content creator sharing amazing experiences.',
-          location: 'Unknown',
-          joinedDate: '2023-01-01',
-          specialties: ['Travel', 'Adventure'],
-          featuredPlan: {
-            id: creatorId,
-            title: 'Featured Plan',
-            thumbnail: '/photos/photo_2025-10-28_00-02-27.jpg',
-            views: '100K',
-            likes: '5K'
-          },
-          recentPlans: [
-            {
-              id: creatorId * 10 + 1,
-              title: 'Recent Plan 1',
-              thumbnail: '/photos/photo_2025-10-28_00-02-29.jpg',
-              views: '50K'
-            },
-            {
-              id: creatorId * 10 + 2,
-              title: 'Recent Plan 2',
-              thumbnail: '/photos/photo_2025-10-28_00-02-31.jpg',
-              views: '30K'
-            }
-          ]
-        }
-      }
-    },
-    
     formatDate(dateString) {
+      if (!dateString) return ''
       const date = new Date(dateString)
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long' 
+      if (Number.isNaN(date.getTime())) return dateString
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long'
       })
     },
-    
     toggleFollow() {
+      if (!this.creator) return
       this.isFollowing = !this.isFollowing
       console.log(this.isFollowing ? 'Following' : 'Unfollowed', this.creator.name)
     },
-    
     shareProfile() {
+      if (!this.creator) return
       if (navigator.share) {
         navigator.share({
           title: `${this.creator.name} - Travel Creator`,
@@ -300,23 +293,21 @@ export default {
           url: window.location.href
         })
       } else {
-        // Fallback: copy to clipboard
         navigator.clipboard.writeText(window.location.href)
         console.log('Profile URL copied to clipboard')
       }
     },
-    
     viewPlan(planId) {
       console.log('Viewing plan:', planId)
       // TODO: Navigate to plan detail page
     },
-    
     handleImageError(event) {
-      event.target.src = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=300&fit=crop'
+      event.target.src =
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=300&fit=crop'
     },
-    
     handleAvatarError(event) {
-      event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iNDAiIGZpbGw9IiM2NjdFRUEiLz4KPHRleHQgeD0iNDAiIHk9IjQ1IiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QTwvdGV4dD4KPC9zdmc+'
+      event.target.src =
+        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iNDAiIGZpbGw9IiM2NjdFRUEiLz4KPHRleHQgeD0iNDAiIHk9IjQ1IiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QTwvdGV4dD4KPC9zdmc+'
     }
   }
 }
@@ -599,6 +590,45 @@ export default {
 .share-btn:hover {
   background: var(--bg-secondary);
   border-color: var(--secondary-color);
+}
+
+.status-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  min-height: 200px;
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  flex-direction: column;
+}
+
+.status-block.loading {
+  color: var(--secondary-color);
+}
+
+.status-block.error {
+  color: var(--error-color);
+}
+
+.status-block i {
+  font-size: var(--font-size-xl);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.empty-state i {
+  font-size: var(--font-size-xl);
+  color: var(--text-muted);
 }
 
 .profile-content-section {

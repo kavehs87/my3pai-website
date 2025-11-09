@@ -59,8 +59,7 @@ src/
 │   └── Home.vue                # Main page orchestrator
 ├── data/
 │   ├── dummyData.js            # Legacy mock data
-│   ├── plans.json              # Video content data
-│   └── creators.json           # Creator profiles data
+│   └── plans.json              # Video content data
 ├── App.vue                     # Root component
 ├── main.js                     # App entry point
 └── style.css                   # Global styles with CSS variables
@@ -110,11 +109,12 @@ The built files will be in the `dist` directory.
 - **Creator Info**: Name, avatar, stats
 - **Metadata**: Difficulty, budget, tags, duration
 
-### Creator Profiles (`creators.json`)
-- **Profile**: Name, username, avatar, cover image
-- **Stats**: Followers, total plans, total views
-- **Content**: Featured plans, recent plans, specialties
-- **Location**: Geographic information
+### Creator Profiles (Profile API)
+- **Endpoint**: `GET /api/profile` (see `docs/Profile_api.md`)
+- **Profile**: Display name, username, avatar, cover image, bio, tier, specialties
+- **Stats**: Followers, following, total plans, total views, total likes
+- **Content**: Featured plan, recent plans, partnerships, social links
+- **Misc**: Countries visited, languages, preferences
 
 ## 🎨 Design System
 

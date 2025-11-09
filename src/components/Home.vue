@@ -19,7 +19,7 @@
     <TripShorts />
 
     <!-- Popular Creators Section -->
-    <!-- <PopularCreators /> -->
+    <PopularCreators />
 
     <!-- CTA Section -->
     <CTA />

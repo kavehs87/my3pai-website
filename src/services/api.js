@@ -254,6 +254,17 @@ class ApiService {
     return this.request(`/profile/trips${query}`)
   }
 
+  async getCreators(params = {}) {
+    const searchParams = new URLSearchParams()
+    if (params.page) searchParams.append('page', params.page)
+    if (params.perPage) searchParams.append('perPage', params.perPage)
+    if (params.tier) searchParams.append('tier', params.tier)
+    if (params.specialty) searchParams.append('specialty', params.specialty)
+    if (params.search) searchParams.append('search', params.search)
+    const queryString = searchParams.toString() ? `?${searchParams.toString()}` : ''
+    return this.request(`/creators${queryString}`)
+  }
+
   async createTrip(tripData) {
     return this.request('/profile/trips', {
       method: 'POST',
@@ -287,6 +298,29 @@ class ApiService {
       return { success: true, data }
     } catch (e) {
       console.error('Upload trip thumbnail failed:', e)
+      return { success: false, error: e.message }
+    }
+  }
+
+  async uploadTripShortThumbnail(id, file) {
+    const formData = new FormData()
+    formData.append('shortThumbnail', file)
+    const url = `${this.baseURL}/profile/trips/${id}/short-thumbnail`
+    const headers = { 'Accept': 'application/json' }
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.message || `HTTP ${res.status}: ${res.statusText}`)
+      }
+      return { success: true, data }
+    } catch (e) {
+      console.error('Upload trip short thumbnail failed:', e)
       return { success: false, error: e.message }
     }
   }

@@ -6,7 +6,15 @@
         <p>Follow top travel creators and discover their amazing itineraries</p>
       </div>
 
-      <div class="creators-grid">
+      <div v-if="isLoading" class="status-block loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading creators...</span>
+      </div>
+      <div v-else-if="error" class="status-block error">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>{{ error }}</span>
+      </div>
+      <div v-else-if="creators.length" class="creators-grid">
         <div 
           v-for="creator in creators" 
           :key="creator.id" 
@@ -50,20 +58,20 @@
 
             <div class="creator-stats">
               <div class="stat">
-                <span class="stat-number">{{ creator.followers }}</span>
+                <span class="stat-number">{{ formatNumber(creator.stats.followers) }}</span>
                 <span class="stat-label">Followers</span>
               </div>
               <div class="stat">
-                <span class="stat-number">{{ creator.totalPlans }}</span>
+                <span class="stat-number">{{ formatNumber(creator.stats.totalPlans) }}</span>
                 <span class="stat-label">Plans</span>
               </div>
               <div class="stat">
-                <span class="stat-number">{{ formatNumber(creator.totalViews) }}</span>
+                <span class="stat-number">{{ formatNumber(creator.stats.totalViews) }}</span>
                 <span class="stat-label">Views</span>
               </div>
             </div>
 
-            <div class="creator-specialties">
+            <div v-if="creator.specialties?.length" class="creator-specialties">
               <span 
                 v-for="specialty in creator.specialties" 
                 :key="specialty" 
@@ -73,7 +81,7 @@
               </span>
             </div>
 
-            <div class="featured-plan">
+            <div v-if="creator.featuredPlan && creator.featuredPlan.title" class="featured-plan">
               <h4>Featured Plan</h4>
               <div class="plan-preview" @click.stop="selectPlan(creator.featuredPlan)">
                 <img :src="creator.featuredPlan.thumbnail" :alt="creator.featuredPlan.title" @error="handleImageError" />
@@ -84,7 +92,7 @@
                       <i class="fas fa-eye"></i>
                       {{ formatNumber(creator.featuredPlan.views) }}
                     </span>
-                    <span class="plan-likes">
+                    <span class="plan-likes" v-if="creator.featuredPlan.likes !== undefined">
                       <i class="fas fa-heart"></i>
                       {{ formatNumber(creator.featuredPlan.likes) }}
                     </span>
@@ -93,7 +101,7 @@
               </div>
             </div>
 
-            <div class="recent-plans">
+            <div v-if="creator.recentPlans?.length" class="recent-plans">
               <h4>Recent Plans</h4>
               <div class="plans-grid">
                 <div 
@@ -109,41 +117,66 @@
                 </div>
               </div>
             </div>
+            <div v-else class="creator-no-plans">
+              <p>No recent plans shared yet.</p>
+            </div>
           </div>
         </div>
+      </div>
+      <div v-else class="status-block empty">
+        <i class="fas fa-user-slash"></i>
+        <span>No creators to display yet.</span>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import creatorsData from '../data/creators.json'
+import apiService from '../services/api.js'
+import { mapProfileToCreator, formatCount } from '../utils/creatorMapper.js'
 
 export default {
   name: 'PopularCreators',
   data() {
     return {
-      creators: creatorsData.creators.map(creator => ({
-        ...creator,
-        isFollowing: false
-      }))
+      creators: [],
+      isLoading: false,
+      error: ''
     }
   },
+  created() {
+    this.loadCreators()
+  },
   methods: {
-    formatNumber(num) {
-      if (num.includes('M')) return num
-      if (num.includes('K')) return num
-      const number = parseInt(num.replace(/[^\d]/g, ''))
-      if (number >= 1000000) return (number / 1000000).toFixed(1) + 'M'
-      if (number >= 1000) return (number / 1000).toFixed(1) + 'K'
-      return number.toString()
+    formatNumber(value) {
+      return formatCount(value)
+    },
+    async loadCreators() {
+      this.isLoading = true
+      this.error = ''
+      try {
+        const result = await apiService.getCreators({ perPage: 12 })
+        if (result.success) {
+          const payload = result.data?.data || result.data || {}
+          const list = Array.isArray(payload.creators) ? payload.creators : []
+          this.creators = list.map((creator) => ({
+            ...mapProfileToCreator(creator),
+            isFollowing: false
+          }))
+        } else {
+          this.error = result.error || 'Failed to load creators.'
+        }
+      } catch (error) {
+        this.error = error.message || 'Failed to load creators.'
+      } finally {
+        this.isLoading = false
+      }
     },
     toggleFollow(creator) {
       creator.isFollowing = !creator.isFollowing
       console.log(`${creator.isFollowing ? 'Following' : 'Unfollowed'} ${creator.name}`)
     },
     selectCreator(creator) {
-      console.log('Selected creator:', creator)
       this.$router.push({ name: 'creator-profile', params: { id: creator.id } })
     },
     selectPlan(plan) {
@@ -151,12 +184,12 @@ export default {
       // TODO: Navigate to plan detail page
     },
     handleImageError(event) {
-      // Fallback to a default cover image
-      event.target.src = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=300&fit=crop'
+      event.target.src =
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=300&fit=crop'
     },
     handleAvatarError(event) {
-      // Fallback to a default avatar - using SVG data URI
-      event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iNDAiIGZpbGw9IiM2NjdFRUEiLz4KPHRleHQgeD0iNDAiIHk9IjQ1IiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QTwvdGV4dD4KPC9zdmc+'
+      event.target.src =
+        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iNDAiIGZpbGw9IiM2NjdFRUEiLz4KPHRleHQgeD0iNDAiIHk9IjQ1IiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QTwvdGV4dD4KPC9zdmc+'
     }
   }
 }
@@ -473,6 +506,34 @@ export default {
   border-radius: 4px;
   font-size: 10px;
   font-weight: 600;
+}
+
+.status-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 200px;
+  font-size: 16px;
+  color: #64748b;
+}
+
+.status-block.loading {
+  color: var(--secondary-color);
+}
+
+.status-block.error {
+  color: var(--error-color);
+}
+
+.status-block i {
+  font-size: 20px;
+}
+
+.creator-no-plans {
+  font-size: 13px;
+  color: #94a3b8;
 }
 
 /* Responsive Design */
