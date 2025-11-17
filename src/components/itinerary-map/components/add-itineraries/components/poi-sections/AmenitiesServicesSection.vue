@@ -139,14 +139,11 @@ export default {
       amenityOptions: [
         { label: 'Restaurant', value: 'restaurant' },
         { label: 'Café', value: 'cafe' },
-        { label: 'Kiosk', value: 'kiosk' },
         { label: 'Shop', value: 'shop' },
         { label: 'WC', value: 'wc' },
-        { label: 'Playground', value: 'playground' },
         { label: 'Picnic area', value: 'picnic' },
         { label: 'BBQ area', value: 'bbq' },
-        { label: 'Rental (boats, SUP)', value: 'rental' },
-        { label: 'Lifeguard', value: 'lifeguard' }
+        { label: 'Rental (boats, SUP)', value: 'rental' }
       ],
       petOptions: [
         { label: 'Yes', value: 'yes' },
