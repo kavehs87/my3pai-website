@@ -130,12 +130,11 @@ export default {
   cursor: pointer;
   transition: all var(--transition-normal);
   min-height: 110px;
-  max-height: 140px;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .thumbnail-upload:hover {
