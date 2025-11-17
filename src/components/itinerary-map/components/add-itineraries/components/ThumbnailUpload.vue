@@ -171,29 +171,29 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-2xs);
-  padding: var(--spacing-md);
+  gap: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
   text-align: center;
 }
 
 .upload-icon {
-  font-size: 28px;
+  font-size: 24px;
   color: var(--text-secondary);
   opacity: 0.6;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .upload-text {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   color: var(--text-primary);
   font-weight: 500;
   margin: 0;
 }
 
 .upload-hint {
-  font-size: var(--font-size-2xs);
+  font-size: var(--font-size-3xs);
   color: var(--text-secondary);
-  opacity: 0.75;
+  opacity: 0.7;
   margin: 0;
 }
 
