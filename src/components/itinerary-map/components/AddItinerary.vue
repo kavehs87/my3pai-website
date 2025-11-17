@@ -13,13 +13,15 @@
         <!-- Add itinerary form content -->
         <div class="form-section">
           <div class="field-group">
-            <label for="itinerary-title">Itinerary title</label>
+            <label for="itinerary-title">Itinerary title <span>*</span></label>
             <input
               id="itinerary-title"
               type="text"
               v-model="formData.title"
               placeholder="Give this itinerary a name"
+              :class="{ 'has-error': titleError }"
             />
+            <p v-if="titleError" class="error-text">{{ titleError }}</p>
           </div>
           <ThumbnailUpload
             label="Thumbnail"
@@ -110,7 +112,8 @@ export default {
       },
       showPOIForm: false,
       poiForm: this.createEmptyPOIForm(),
-      editingPoiIndex: null
+      editingPoiIndex: null,
+      titleError: ''
     }
   },
   methods: {
@@ -141,6 +144,11 @@ export default {
       this.$emit('close')
     },
     handlePublish() {
+      if (!this.formData.title.trim()) {
+        this.titleError = 'Title is required'
+        return
+      }
+      this.titleError = ''
       this.$emit('publish')
     },
     handleSaveDraft() {
@@ -341,6 +349,10 @@ export default {
   color: var(--text-secondary);
 }
 
+.field-group label span {
+  color: var(--error-color, #ef4444);
+}
+
 .field-group input {
   width: 100%;
   padding: var(--spacing-sm);
@@ -349,6 +361,18 @@ export default {
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: var(--font-size-base);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.field-group input.has-error {
+  border-color: var(--error-color, #ef4444);
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.15);
+}
+
+.error-text {
+  color: var(--error-color, #ef4444);
+  font-size: var(--font-size-xs);
+  margin: 0;
 }
 
 .poi-list {

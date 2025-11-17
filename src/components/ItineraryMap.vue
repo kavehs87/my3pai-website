@@ -92,7 +92,7 @@ export default {
       }
       
       const script = document.createElement('script')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker&callback=${callbackName}&loading=async`
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker,places&callback=${callbackName}&loading=async`
       script.async = true
       script.defer = true
       script.onerror = () => {
