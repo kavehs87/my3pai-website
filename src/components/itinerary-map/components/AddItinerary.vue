@@ -68,6 +68,7 @@
     :visible="showPOIForm"
     @close="handlePOIModalClose"
     @save="handlePOISave"
+    @save-and-add="handlePOISaveAndAddAnother"
   />
   </div>
 </template>
@@ -151,7 +152,8 @@ export default {
       this.editingPoiIndex = null
       // this.poiForm = this.clonePOIData()
     },
-    handlePOISave(poiData = this.poiForm) {
+    handlePOISave(poiData = this.poiForm, options = {}) {
+      const { keepOpen = false } = options
       const isEdit = this.editingPoiIndex !== null
       const existingEntry = isEdit ? this.formData.pointsOfInterest[this.editingPoiIndex] : null
       const payload = {
@@ -167,7 +169,13 @@ export default {
 
       this.editingPoiIndex = null
       this.poiForm = this.clonePOIData()
-      this.showPOIForm = false
+      this.showPOIForm = keepOpen
+      if (!keepOpen) {
+        this.showPOIForm = false
+      }
+    },
+    handlePOISaveAndAddAnother(poiData) {
+      this.handlePOISave(poiData, { keepOpen: true })
     },
     editPOI(index) {
       const existing = this.formData.pointsOfInterest[index] || this.createEmptyPOIForm()

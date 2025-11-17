@@ -38,6 +38,7 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" @click="handleClose">Cancel</button>
+        <button class="btn btn-outline" @click="handleSaveAndAddAnother">Save & Add Another</button>
         <button class="btn btn-primary" @click="handleSave">Save POI</button>
       </div>
     </div>
@@ -159,7 +160,7 @@ export default {
       default: () => defaultSections
     }
   },
-  emits: ['close', 'save', 'update:modelValue'],
+  emits: ['close', 'save', 'save-and-add', 'update:modelValue'],
   data() {
     return {
       openSection: null,
@@ -195,10 +196,22 @@ export default {
     handleClose() {
       this.$emit('close')
     },
+    buildPayload() {
+      return { ...defaultPOIValue(), ...(this.localValue || {}) }
+    },
     handleSave() {
-      const payload = { ...defaultPOIValue(), ...(this.localValue || {}) }
+      const payload = this.buildPayload()
       this.$emit('update:modelValue', payload)
       this.$emit('save', payload)
+    },
+    handleSaveAndAddAnother() {
+      const payload = this.buildPayload()
+      this.$emit('update:modelValue', payload)
+      this.$emit('save-and-add', payload)
+      this.localValue = { ...defaultPOIValue() }
+      if (this.sectionsToRender?.length) {
+        this.openSection = this.sectionsToRender[0].id
+      }
     }
   }
 }
@@ -312,6 +325,16 @@ export default {
 .btn-primary:hover {
   filter: brightness(0.95);
   transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.btn-outline:hover {
+  background: rgba(99, 102, 241, 0.1);
 }
 
 .poi-accordion {
