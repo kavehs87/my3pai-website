@@ -18,23 +18,6 @@
     </div>
 
     <div class="pill-group">
-      <label>Other regions</label>
-      <div class="pill-list">
-        <button
-          v-for="region in otherRegionOptions"
-          :key="region.value"
-          type="button"
-          class="pill"
-          :class="{ active: otherRegions.includes(region.value) }"
-          @click="toggleRegion(region.value)"
-        >
-          {{ region.label }}
-          <span class="count" v-if="region.count">({{ region.count }})</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="pill-group">
       <label>Tags</label>
       <div class="pill-list">
         <button
@@ -47,6 +30,40 @@
         >
           {{ tag.label }}
         </button>
+        <button
+          type="button"
+          class="pill"
+          :class="{ active: showCustomTagInput }"
+          @click="toggleCustomTagInput"
+        >
+          Others
+        </button>
+      </div>
+      <div v-if="showCustomTagInput" class="custom-tag-entry">
+        <input
+          type="text"
+          v-model="customTagValue"
+          maxlength="10"
+          placeholder="Enter custom tag (max 10 chars)"
+        />
+        <button type="button" class="add-btn" @click="addCustomTag">Add</button>
+      </div>
+      <div v-if="customTags.length" class="custom-tags">
+        <span
+          v-for="customTag in customTags"
+          :key="customTag"
+          class="custom-tag-pill"
+        >
+          {{ customTag }}
+          <button
+            type="button"
+            class="remove-btn"
+            @click="removeCustomTag(customTag)"
+            aria-label="Remove tag"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </span>
       </div>
     </div>
 
@@ -60,7 +77,6 @@
 <script>
 const defaultValue = () => ({
   primaryRegion: '',
-  otherRegions: [],
   tags: []
 })
 
@@ -83,23 +99,13 @@ export default {
         { label: 'Ticino', value: 'ticino', count: 27 },
         { label: 'Other', value: 'other' }
       ],
-      otherRegionOptions: [
-        { label: 'Graubünden', value: 'graubuenden', count: 27 },
-        { label: 'Interlaken', value: 'interlaken', count: 26 },
-        { label: 'Vaud', value: 'vaud', count: 19 }
-      ],
       tagOptions: [
-        { label: 'Local', value: 'local' },
-        { label: 'Family friendly', value: 'family' },
-        { label: 'Top pick', value: 'top-pick' },
+        { label: 'Instagrammable', value: 'instagrammable' },
         { label: 'Hidden gem', value: 'hidden-gem' },
-        { label: 'Good for sunrise', value: 'sunrise' },
-        { label: 'Good for sunset', value: 'sunset' },
-        { label: 'Pet-friendly', value: 'pet-friendly' },
-        { label: 'Accessible', value: 'accessible' },
-        { label: 'Rainy-day friendly', value: 'rainy-day' },
-        { label: 'Instagrammable', value: 'instagrammable' }
-      ]
+        { label: 'Pet friendly', value: 'pet-friendly' }
+      ],
+      showCustomTagInput: false,
+      customTagValue: ''
     }
   },
   computed: {
@@ -111,14 +117,6 @@ export default {
         this.updateField('primaryRegion', value)
       }
     },
-    otherRegions: {
-      get() {
-        return ensureArray(this.modelValue?.otherRegions)
-      },
-      set(value) {
-        this.updateField('otherRegions', ensureArray(value))
-      }
-    },
     tags: {
       get() {
         return ensureArray(this.modelValue?.tags)
@@ -126,20 +124,39 @@ export default {
       set(value) {
         this.updateField('tags', ensureArray(value))
       }
+    },
+    customTags() {
+      const baseValues = this.tagOptions.map((tag) => tag.value)
+      return ensureArray(this.tags).filter((tag) => !baseValues.includes(tag))
     }
   },
   methods: {
-    toggleRegion(value) {
-      const list = ensureArray(this.otherRegions)
-      const exists = list.includes(value)
-      const next = exists ? list.filter((v) => v !== value) : [...list, value]
-      this.otherRegions = next
-    },
     toggleTag(value) {
       const list = ensureArray(this.tags)
       const exists = list.includes(value)
       const next = exists ? list.filter((v) => v !== value) : [...list, value]
       this.tags = next
+    },
+    toggleCustomTagInput() {
+      this.showCustomTagInput = !this.showCustomTagInput
+      if (!this.showCustomTagInput) {
+        this.customTagValue = ''
+      }
+    },
+    addCustomTag() {
+      const value = (this.customTagValue || '').trim()
+      if (!value || value.length > 10) return
+      const list = ensureArray(this.tags)
+      if (list.includes(value)) {
+        this.customTagValue = ''
+        return
+      }
+      this.tags = [...list, value]
+      this.customTagValue = ''
+    },
+    removeCustomTag(tag) {
+      const list = ensureArray(this.tags).filter((value) => value !== tag)
+      this.tags = list
     },
     updateField(key, value) {
       const base = { ...defaultValue(), ...(this.modelValue || {}) }
@@ -204,6 +221,58 @@ label {
 .pill:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
+}
+
+.custom-tag-entry {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.custom-tag-entry input {
+  flex: 1;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.add-btn {
+  border: 1px solid var(--primary-color);
+  background: var(--primary-color);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.custom-tags {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.custom-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  font-size: var(--font-size-sm);
+}
+
+.remove-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 .ai-suggestion {
