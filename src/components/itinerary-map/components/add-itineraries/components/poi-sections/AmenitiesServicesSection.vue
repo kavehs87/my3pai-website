@@ -40,6 +40,14 @@
       </div>
     </div>
 
+    <div v-if="petFriendly === 'yes'" class="field-group">
+      <label>Pet-friendly notes</label>
+      <textarea
+        v-model="petNotes"
+        placeholder="e.g. Dogs welcome on leash, water bowls available"
+      ></textarea>
+    </div>
+
     <div class="pill-group">
       <label>Accessibility</label>
       <div class="pill-list">
@@ -63,6 +71,7 @@ const defaultValue = () => ({
   amenities: [],
   nearbyServices: '',
   petFriendly: '',
+  petNotes: '',
   accessibility: []
 })
 
@@ -125,7 +134,19 @@ export default {
         return this.modelValue?.petFriendly || ''
       },
       set(value) {
-        this.updateField('petFriendly', value)
+        const patch = { petFriendly: value }
+        if (value !== 'yes') {
+          patch.petNotes = ''
+        }
+        this.updateFields(patch)
+      }
+    },
+    petNotes: {
+      get() {
+        return this.modelValue?.petNotes || ''
+      },
+      set(value) {
+        this.updateField('petNotes', value)
       }
     },
     accessibility: {
@@ -138,6 +159,16 @@ export default {
     }
   },
   methods: {
+    updateFields(patch) {
+      this.$emit('update:modelValue', {
+        ...defaultValue(),
+        ...(this.modelValue || {}),
+        ...patch
+      })
+    },
+    updateField(key, value) {
+      this.updateFields({ [key]: value })
+    },
     toggleAmenity(value) {
       const list = ensureArray(this.amenities)
       const exists = list.includes(value)
@@ -150,11 +181,7 @@ export default {
       const next = exists ? list.filter((item) => item !== value) : [...list, value]
       this.accessibility = next
     },
-    updateField(key, value) {
-      const base = { ...defaultValue(), ...(this.modelValue || {}) }
-      base[key] = value
-      this.$emit('update:modelValue', base)
-    }
+    
   }
 }
 </script>
