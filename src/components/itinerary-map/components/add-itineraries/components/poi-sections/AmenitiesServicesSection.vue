@@ -66,6 +66,8 @@ const defaultValue = () => ({
   accessibility: []
 })
 
+const ensureArray = (value) => (Array.isArray(value) ? value : [])
+
 export default {
   name: 'AmenitiesServicesSection',
   props: {
@@ -104,10 +106,10 @@ export default {
   computed: {
     amenities: {
       get() {
-        return this.modelValue?.amenities || []
+        return ensureArray(this.modelValue?.amenities)
       },
       set(value) {
-        this.updateField('amenities', value)
+        this.updateField('amenities', ensureArray(value))
       }
     },
     nearbyServices: {
@@ -128,34 +130,30 @@ export default {
     },
     accessibility: {
       get() {
-        return this.modelValue?.accessibility || []
+        return ensureArray(this.modelValue?.accessibility)
       },
       set(value) {
-        this.updateField('accessibility', value)
+        this.updateField('accessibility', ensureArray(value))
       }
     }
   },
   methods: {
     toggleAmenity(value) {
-      const exists = this.amenities.includes(value)
-      const next = exists
-        ? this.amenities.filter((item) => item !== value)
-        : [...this.amenities, value]
+      const list = ensureArray(this.amenities)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((item) => item !== value) : [...list, value]
       this.amenities = next
     },
     toggleAccessibility(value) {
-      const exists = this.accessibility.includes(value)
-      const next = exists
-        ? this.accessibility.filter((item) => item !== value)
-        : [...this.accessibility, value]
+      const list = ensureArray(this.accessibility)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((item) => item !== value) : [...list, value]
       this.accessibility = next
     },
     updateField(key, value) {
-      this.$emit('update:modelValue', {
-        ...defaultValue(),
-        ...(this.modelValue || {}),
-        [key]: value
-      })
+      const base = { ...defaultValue(), ...(this.modelValue || {}) }
+      base[key] = value
+      this.$emit('update:modelValue', base)
     }
   }
 }

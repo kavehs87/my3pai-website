@@ -64,14 +64,14 @@
       <div class="group-label">Terrain type</div>
       <div class="pill-list">
         <button
-          v-for="terrain in terrainOptions"
-          :key="terrain.value"
+          v-for="terrainOption in terrainOptions"
+          :key="terrainOption.value"
           type="button"
           class="pill"
-          :class="{ active: terrain.includes(terrain.value) }"
-          @click="toggleTerrain(terrain.value)"
+          :class="{ active: terrain.includes(terrainOption.value) }"
+          @click="toggleTerrain(terrainOption.value)"
         >
-          {{ terrain.label }}
+          {{ terrainOption.label }}
         </button>
       </div>
     </div>
@@ -88,6 +88,8 @@ const defaultValue = () => ({
   fitness: '',
   terrain: []
 })
+
+const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
 export default {
   name: 'DifficultyEffortSection',
@@ -175,27 +177,24 @@ export default {
     },
     terrain: {
       get() {
-        return this.modelValue?.terrain || []
+        return ensureArray(this.modelValue?.terrain)
       },
       set(value) {
-        this.updateField('terrain', value)
+        this.updateField('terrain', ensureArray(value))
       }
     }
   },
   methods: {
     toggleTerrain(value) {
-      const exists = this.terrain.includes(value)
-      const next = exists
-        ? this.terrain.filter((item) => item !== value)
-        : [...this.terrain, value]
+      const list = ensureArray(this.terrain)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((item) => item !== value) : [...list, value]
       this.terrain = next
     },
     updateField(key, value) {
-      this.$emit('update:modelValue', {
-        ...defaultValue(),
-        ...(this.modelValue || {}),
-        [key]: value
-      })
+      const base = { ...defaultValue(), ...(this.modelValue || {}) }
+      base[key] = value
+      this.$emit('update:modelValue', base)
     }
   }
 }

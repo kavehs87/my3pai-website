@@ -64,6 +64,8 @@ const defaultValue = () => ({
   tags: []
 })
 
+const ensureArray = (value) => (Array.isArray(value) ? value : [])
+
 export default {
   name: 'RegionsTagsSection',
   props: {
@@ -111,42 +113,38 @@ export default {
     },
     otherRegions: {
       get() {
-        return this.modelValue?.otherRegions || []
+        return ensureArray(this.modelValue?.otherRegions)
       },
       set(value) {
-        this.updateField('otherRegions', value)
+        this.updateField('otherRegions', ensureArray(value))
       }
     },
     tags: {
       get() {
-        return this.modelValue?.tags || []
+        return ensureArray(this.modelValue?.tags)
       },
       set(value) {
-        this.updateField('tags', value)
+        this.updateField('tags', ensureArray(value))
       }
     }
   },
   methods: {
     toggleRegion(value) {
-      const exists = this.otherRegions.includes(value)
-      const next = exists
-        ? this.otherRegions.filter((v) => v !== value)
-        : [...this.otherRegions, value]
+      const list = ensureArray(this.otherRegions)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((v) => v !== value) : [...list, value]
       this.otherRegions = next
     },
     toggleTag(value) {
-      const exists = this.tags.includes(value)
-      const next = exists
-        ? this.tags.filter((v) => v !== value)
-        : [...this.tags, value]
+      const list = ensureArray(this.tags)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((v) => v !== value) : [...list, value]
       this.tags = next
     },
     updateField(key, value) {
-      this.$emit('update:modelValue', {
-        ...defaultValue(),
-        ...(this.modelValue || {}),
-        [key]: value
-      })
+      const base = { ...defaultValue(), ...(this.modelValue || {}) }
+      base[key] = value
+      this.$emit('update:modelValue', base)
     }
   }
 }

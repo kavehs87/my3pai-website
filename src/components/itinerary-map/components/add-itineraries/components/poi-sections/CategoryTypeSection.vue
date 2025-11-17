@@ -33,14 +33,14 @@
       <div class="group-label">Audience type</div>
       <div class="pill-list">
         <button
-          v-for="audience in audienceOptions"
-          :key="audience.value"
+          v-for="audienceOption in audienceOptions"
+          :key="audienceOption.value"
           type="button"
           class="pill"
-          :class="{ active: audience.includes(audience.value) }"
-          @click="toggleAudience(audience.value)"
+          :class="{ active: audience.includes(audienceOption.value) }"
+          @click="toggleAudience(audienceOption.value)"
         >
-          {{ audience.label }}
+          {{ audienceOption.label }}
         </button>
       </div>
     </div>
@@ -65,6 +65,8 @@ const defaultValue = () => ({
   audience: [],
   ageRequirement: ''
 })
+
+const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
 export default {
   name: 'CategoryTypeSection',
@@ -114,18 +116,18 @@ export default {
     },
     activities: {
       get() {
-        return this.modelValue?.activities || []
+        return ensureArray(this.modelValue?.activities)
       },
       set(value) {
-        this.updateField('activities', value)
+        this.updateField('activities', ensureArray(value))
       }
     },
     audience: {
       get() {
-        return this.modelValue?.audience || []
+        return ensureArray(this.modelValue?.audience)
       },
       set(value) {
-        this.updateField('audience', value)
+        this.updateField('audience', ensureArray(value))
       }
     },
     ageRequirement: {
@@ -139,25 +141,21 @@ export default {
   },
   methods: {
     toggleActivity(value) {
-      const exists = this.activities.includes(value)
-      const next = exists
-        ? this.activities.filter((v) => v !== value)
-        : [...this.activities, value]
+      const list = ensureArray(this.activities)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((v) => v !== value) : [...list, value]
       this.activities = next
     },
     toggleAudience(value) {
-      const exists = this.audience.includes(value)
-      const next = exists
-        ? this.audience.filter((v) => v !== value)
-        : [...this.audience, value]
+      const list = ensureArray(this.audience)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((v) => v !== value) : [...list, value]
       this.audience = next
     },
     updateField(key, value) {
-      this.$emit('update:modelValue', {
-        ...defaultValue(),
-        ...(this.modelValue || {}),
-        [key]: value
-      })
+      const base = { ...defaultValue(), ...(this.modelValue || {}) }
+      base[key] = value
+      this.$emit('update:modelValue', base)
     }
   }
 }
