@@ -441,7 +441,7 @@ export default {
   font-size: var(--font-size-2xs);
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
