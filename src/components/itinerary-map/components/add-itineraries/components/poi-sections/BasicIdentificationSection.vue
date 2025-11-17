@@ -35,6 +35,15 @@
             <div class="char-count">{{ summaryLength }}/400</div>
           </div>
         </div>
+
+        <div class="field-group">
+          <label>Estimated duration (e.g. 2-3h, 4-6h)</label>
+          <input
+            type="text"
+            v-model="estimatedDuration"
+            placeholder="e.g. 2-3h, 4-6h"
+          />
+        </div>
       </div>
 
       <div class="pdf-preview">
@@ -169,6 +178,7 @@ const defaultForm = () => ({
   name: '',
   tagline: '',
   summary: '',
+  estimatedDuration: '',
   country: '',
   region: '',
   landmark: '',
@@ -318,6 +328,14 @@ export default {
       },
       set(value) {
         this.updateField('summary', value)
+      }
+    },
+    estimatedDuration: {
+      get() {
+        return this.modelValue?.estimatedDuration || ''
+      },
+      set(value) {
+        this.updateField('estimatedDuration', value)
       }
     },
     country: {

@@ -10,13 +10,16 @@
           </option>
         </select>
       </div>
-
       <div class="field-group">
-        <label>Activity level icons</label>
-        <select v-model="activityLevel">
-          <option value="" disabled>Select activity level</option>
-          <option v-for="level in activityLevelOptions" :key="level.value" :value="level.value">
-            {{ level.label }}
+        <label>Required fitness</label>
+        <select v-model="fitness">
+          <option value="" disabled>Select required fitness</option>
+          <option
+            v-for="fitnessOption in fitnessOptions"
+            :key="fitnessOption.value"
+            :value="fitnessOption.value"
+          >
+            {{ fitnessOption.label }}
           </option>
         </select>
       </div>
@@ -24,38 +27,19 @@
 
     <div class="grid two-cols">
       <div class="field-group">
-        <label>Distance (e.g. 6 km round trip)</label>
+        <label>Nearest public transport</label>
         <input
           type="text"
           v-model="distance"
-          placeholder="e.g. 6 km round trip"
+          placeholder="e.g. 5 min walk to station"
         />
       </div>
       <div class="field-group">
-        <label>Elevation gain (e.g. 350 m up)</label>
+        <label>Elevation open sea</label>
         <input
           type="text"
           v-model="elevationGain"
-          placeholder="e.g. 350 m up"
-        />
-      </div>
-    </div>
-
-    <div class="grid two-cols">
-      <div class="field-group">
-        <label>Estimated duration (e.g. 2-3h, 4-6h)</label>
-        <input
-          type="text"
-          v-model="duration"
-          placeholder="e.g. 2-3h, 4-6h"
-        />
-      </div>
-      <div class="field-group">
-        <label>Required fitness</label>
-        <input
-          type="text"
-          v-model="fitness"
-          placeholder="e.g. Suitable for most people"
+          placeholder="e.g. 1500 m above sea level"
         />
       </div>
     </div>
@@ -81,10 +65,8 @@
 <script>
 const defaultValue = () => ({
   difficulty: '',
-  activityLevel: '',
   distance: '',
   elevationGain: '',
-  duration: '',
   fitness: '',
   terrain: []
 })
@@ -110,11 +92,6 @@ export default {
         { label: 'Hard', value: 'hard' },
         { label: 'Extreme', value: 'extreme' }
       ],
-      activityLevelOptions: [
-        { label: 'Relaxed', value: 'relaxed' },
-        { label: 'Steady', value: 'steady' },
-        { label: 'Intense', value: 'intense' }
-      ],
       terrainOptions: [
         { label: 'Paved', value: 'paved' },
         { label: 'Gravel', value: 'gravel' },
@@ -123,6 +100,13 @@ export default {
         { label: 'Exposed', value: 'exposed' },
         { label: 'Narrow path', value: 'narrow-path' },
         { label: 'Steps', value: 'steps' }
+      ],
+      fitnessOptions: [
+        { label: '1. Casual', value: 'casual' },
+        { label: '2. Active', value: 'active' },
+        { label: '3. Fit', value: 'fit' },
+        { label: '4. Athletic', value: 'athletic' },
+        { label: '5. Elite', value: 'elite' }
       ]
     }
   },
@@ -133,14 +117,6 @@ export default {
       },
       set(value) {
         this.updateField('difficulty', value)
-      }
-    },
-    activityLevel: {
-      get() {
-        return this.modelValue?.activityLevel || ''
-      },
-      set(value) {
-        this.updateField('activityLevel', value)
       }
     },
     distance: {
@@ -157,14 +133,6 @@ export default {
       },
       set(value) {
         this.updateField('elevationGain', value)
-      }
-    },
-    duration: {
-      get() {
-        return this.modelValue?.duration || ''
-      },
-      set(value) {
-        this.updateField('duration', value)
       }
     },
     fitness: {
