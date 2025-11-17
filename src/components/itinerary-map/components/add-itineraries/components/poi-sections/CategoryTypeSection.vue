@@ -13,53 +13,54 @@
       </select>
     </div>
 
-    <div class="field-group">
-      <label>Activity type</label>
-      <select
-        multiple
-        size="6"
-        v-model="activities"
-        class="multi-select"
-      >
-        <option
+    <div class="pill-group">
+      <div class="group-label">Activity type</div>
+      <div class="pill-list">
+        <button
           v-for="activity in activityOptions"
           :key="activity.value"
-          :value="activity.value"
+          type="button"
+          class="pill"
+          :class="{ active: activities.includes(activity.value) }"
+          @click="toggleActivity(activity.value)"
         >
           {{ activity.label }}
-        </option>
-      </select>
-      <p class="helper-text">Hold Cmd/Ctrl (or drag) to select multiple activity types.</p>
+        </button>
+      </div>
+      <p class="helper-text">Select all activities that apply.</p>
     </div>
 
-    <div class="field-group">
-      <label>Audience type</label>
-      <select
-        multiple
-        size="5"
-        v-model="audience"
-        class="multi-select"
-      >
-        <option
+    <div class="pill-group">
+      <div class="group-label">Audience type</div>
+      <div class="pill-list">
+        <button
           v-for="audienceOption in audienceOptions"
           :key="audienceOption.value"
-          :value="audienceOption.value"
+          type="button"
+          class="pill"
+          :class="{ active: audience.includes(audienceOption.value) }"
+          @click="toggleAudience(audienceOption.value)"
         >
           {{ audienceOption.label }}
-        </option>
-      </select>
-      <p class="helper-text">Select every audience this POI is ideal for.</p>
+        </button>
+      </div>
+      <p class="helper-text">Choose the audiences that will love this POI.</p>
     </div>
 
-    <div class="field-group">
-      <label>Age requirement</label>
-      <select v-model="ageRequirement">
-        <option value="" disabled>Select age requirement</option>
-        <option value="none">All ages</option>
-        <option value="kids">Kids (0-12)</option>
-        <option value="teens">Teens (13-17)</option>
-        <option value="adults">Adults (18+)</option>
-      </select>
+    <div class="pill-group">
+      <div class="group-label">Age limitation</div>
+      <div class="pill-list">
+        <button
+          v-for="option in ageOptions"
+          :key="option.value"
+          type="button"
+          class="pill"
+          :class="{ active: ageRequirement === option.value }"
+          @click="selectAge(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -108,6 +109,13 @@ export default {
         { label: 'Groups', value: 'groups' },
         { label: 'Digital nomads', value: 'digital-nomads' },
         { label: 'Van-lifers', value: 'van-lifers' }
+      ],
+      ageOptions: [
+        { label: 'Infants (0-3)', value: 'infant' },
+        { label: 'Kids (4-12)', value: 'kids' },
+        { label: 'Teens (13-17)', value: 'teens' },
+        { label: 'Adults (18+)', value: 'adults' },
+        { label: 'All ages welcome', value: 'none' }
       ]
     }
   },
@@ -145,11 +153,26 @@ export default {
       }
     }
   },
-  methods: {
+    methods: {
     updateField(key, value) {
       const base = { ...defaultValue(), ...(this.modelValue || {}) }
       base[key] = value
       this.$emit('update:modelValue', base)
+    },
+    toggleActivity(value) {
+      const list = ensureArray(this.activities)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((item) => item !== value) : [...list, value]
+      this.activities = next
+    },
+    toggleAudience(value) {
+      const list = ensureArray(this.audience)
+      const exists = list.includes(value)
+      const next = exists ? list.filter((item) => item !== value) : [...list, value]
+      this.audience = next
+    },
+    selectAge(value) {
+      this.ageRequirement = value
     }
   }
 }
@@ -162,49 +185,43 @@ export default {
   gap: var(--spacing-lg);
 }
 
-.field-group {
+.pill-group {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
 }
 
-label {
+.group-label {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-secondary);
 }
 
-label span {
-  color: var(--error-color, #ef4444);
+.pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
 }
 
-select {
-  width: 100%;
-  padding: var(--spacing-sm);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-}
-
-.multi-select {
-  width: 100%;
-  padding: var(--spacing-xs);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+.pill {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--font-size-sm);
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
 }
 
-.multi-select option {
-  padding: var(--spacing-2xs) var(--spacing-xs);
-}
-
-.multi-select option:checked {
+.pill.active {
   background: var(--primary-color);
+  border-color: var(--primary-color);
   color: white;
+}
+
+.pill:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .helper-text {
