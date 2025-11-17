@@ -75,6 +75,15 @@
         </div>
       </div>
 
+      <div class="field-group" v-if="costType === 'paid'">
+        <label>Booking link</label>
+        <input
+          type="url"
+          v-model="bookingLink"
+          placeholder="https://example.com/booking"
+        />
+      </div>
+
       <div class="field-group">
         <label>Price notes</label>
         <textarea
@@ -155,12 +164,13 @@
 
 <script>
 const defaultValue = () => ({
-  costType: '',
+  costType: 'free',
   priceChargedAs: '',
   currency: '',
   estimatedMinPrice: '',
   estimatedMaxPrice: '',
   priceNotes: '',
+  bookingLink: '',
   voucher: '',
   voucherCode: '',
   voucherPartner: '',
@@ -210,6 +220,11 @@ export default {
         { code: 'AED', name: 'UAE Dirham' }
       ],
       currencyListId: `currency-options-${Math.random().toString(36).slice(2)}`
+    }
+  },
+  created() {
+    if (!this.modelValue?.costType) {
+      this.updateField('costType', 'free')
     }
   },
   computed: {
@@ -299,6 +314,14 @@ export default {
       },
       set(value) {
         this.updateField('priceNotes', value)
+      }
+    },
+    bookingLink: {
+      get() {
+        return this.modelValue?.bookingLink || ''
+      },
+      set(value) {
+        this.updateField('bookingLink', value)
       }
     },
     priceNotesLength() {

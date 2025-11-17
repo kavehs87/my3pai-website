@@ -99,8 +99,7 @@ const defaultSections = [
     title: '5. Pricing & Vouchers',
     subtitle: 'Explain costs, passes, or discounts.',
     component: PricingVouchersSection,
-    modelKey: 'pricing',
-    requiredFields: ['pricing.costType']
+    modelKey: 'pricing'
   },
   {
     id: 'regions',
