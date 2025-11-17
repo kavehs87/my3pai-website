@@ -171,8 +171,8 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: 0px;
+  padding: 0;
   text-align: center;
 }
 
@@ -200,17 +200,20 @@ export default {
 .image-preview {
   position: relative;
   width: 100%;
-  height: 100%;
   min-height: 110px;
+  padding: var(--spacing-xs);
+  background: var(--bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .image-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   display: block;
 }
 
