@@ -1,28 +1,52 @@
 <template>
   <div class="media-credits">
     <div class="image-grid">
-      <div class="upload-box" v-for="image in imageFields" :key="image.key">
-        <label>{{ image.label }} <span v-if="image.required">*</span></label>
-        <div class="upload-area" @click="triggerFileInput(image.key)">
+      <div class="upload-box">
+        <label>Media uploads</label>
+        <div
+          class="upload-area"
+          @click="triggerFileInput"
+          @dragover.prevent
+          @drop.prevent="handleDrop"
+        >
           <input
+            ref="mediaInput"
             type="file"
             accept="image/png, image/jpeg, image/gif"
-            :ref="image.key"
+            multiple
             style="display: none"
-            @change="handleImageChange($event, image.key)"
+            @change="handleImageChange"
           >
           <div class="upload-content">
             <i class="fas fa-cloud-upload-alt"></i>
-            <span>Click to upload or drag and drop</span>
-            <small>{{ image.help }}</small>
+            <span>Upload up to 10 images (PNG, JPG, GIF, 10MB max each)</span>
+            <small>Click to upload or drag and drop files here</small>
           </div>
         </div>
+        <ul v-if="images.length" class="media-list">
+          <li v-for="(file, index) in images" :key="file.name + index">
+            {{ file.name }}
+            <button type="button" class="remove-media" @click="removeImage(index)">
+              <i class="fas fa-times"></i>
+            </button>
+          </li>
+        </ul>
       </div>
     </div>
 
     <div class="field-group">
-      <label>Image Credit</label>
-      <input type="text" v-model="imageCredit" placeholder="Name or handle to credit" />
+      <label>Copyright owner</label>
+      <textarea
+        v-model="imageCredit"
+        placeholder="Name or handle to credit"
+      ></textarea>
+      <div class="actions-row space-between">
+        <button type="button" class="ghost-button">
+          <i class="fas fa-wand-magic-sparkles"></i>
+          Polish my text
+        </button>
+        <div class="char-count">{{ imageCreditLength }} chars</div>
+      </div>
     </div>
 
     <div class="field-group">
@@ -44,47 +68,49 @@
       <label>Caption for video box</label>
       <input type="text" v-model="videoCaption" placeholder="See this lake at 4:32 in our vlog" />
 
-      <label>Instagram / TikTok handle</label>
-      <input type="text" v-model="socialHandle" placeholder="@yourhandle" />
+      <label>Social showcases</label>
+      <div class="social-entry">
+        <input
+          type="url"
+          v-model="socialLinkInput"
+          :disabled="!canAddSocialLink"
+          placeholder="Paste a TikTok / Instagram / Facebook post URL"
+        />
+        <button
+          type="button"
+          class="add-btn"
+          :disabled="!canAddSocialLink || !socialLinkInput"
+          @click="addSocialLink"
+        >
+          Add
+        </button>
+      </div>
+      <p class="social-helper">
+        {{ socialPosts.length }}/3 links added. Supported: TikTok, Instagram, Facebook posts or reels.
+      </p>
+      <p v-if="socialLinkError" class="social-error">{{ socialLinkError }}</p>
+      <ul v-if="socialPosts.length" class="social-list">
+        <li v-for="(link, index) in socialPosts" :key="link + index">
+          <span>{{ link }}</span>
+          <button type="button" class="remove-social" @click="removeSocialLink(index)">
+            <i class="fas fa-times"></i>
+          </button>
+        </li>
+      </ul>
     </div>
 
-    <div class="field-group">
-      <h4>Creator Details</h4>
-      <label>Creator name</label>
-      <input type="text" v-model="creatorName" placeholder="Creator name" />
-
-      <label>Creator role</label>
-      <select v-model="creatorRole">
-        <option value="" disabled>Select a role</option>
-        <option value="guide">Guide</option>
-        <option value="photographer">Photographer</option>
-        <option value="videographer">Videographer</option>
-        <option value="host">Host</option>
-        <option value="influencer">Influencer</option>
-      </select>
-
-      <label>Creator notes</label>
-      <input type="text" v-model="creatorNotes" placeholder="Contact via My3P for custom trip planning" />
-    </div>
   </div>
 </template>
 
 <script>
 const defaultValue = () => ({
-  images: {
-    primary: null,
-    access: null,
-    map: null
-  },
+  images: [],
   imageCredit: '',
   videoUrl: '',
   videoStart: '',
   videoEnd: '',
   videoCaption: '',
-  socialHandle: '',
-  creatorName: '',
-  creatorRole: '',
-  creatorNotes: ''
+  socialPosts: []
 })
 
 export default {
@@ -98,11 +124,8 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      imageFields: [
-        { key: 'primary', label: 'Image 1 - Primary view', required: true, help: 'PNG, JPG, GIF up to 10MB' },
-        { key: 'access', label: 'Image 2 - Access / route', required: false, help: 'Optional' },
-        { key: 'map', label: 'Image 3 - Map / context / detail', required: false, help: 'Optional' }
-      ]
+      socialLinkInput: '',
+      socialLinkError: ''
     }
   },
   computed: {
@@ -146,54 +169,78 @@ export default {
         this.updateField('videoCaption', value)
       }
     },
-    socialHandle: {
-      get() {
-        return this.modelValue?.socialHandle || ''
-      },
-      set(value) {
-        this.updateField('socialHandle', value)
-      }
-    },
-    creatorName: {
-      get() {
-        return this.modelValue?.creatorName || ''
-      },
-      set(value) {
-        this.updateField('creatorName', value)
-      }
-    },
-    creatorRole: {
-      get() {
-        return this.modelValue?.creatorRole || ''
-      },
-      set(value) {
-        this.updateField('creatorRole', value)
-      }
-    },
-    creatorNotes: {
-      get() {
-        return this.modelValue?.creatorNotes || ''
-      },
-      set(value) {
-        this.updateField('creatorNotes', value)
-      }
+    socialPosts() {
+      return Array.isArray(this.modelValue?.socialPosts) ? this.modelValue.socialPosts : []
     },
     images() {
-      return this.modelValue?.images || defaultValue().images
+      return Array.isArray(this.modelValue?.images) ? this.modelValue.images : []
+    },
+    imageCreditLength() {
+      return this.imageCredit?.length || 0
+    },
+    canAddSocialLink() {
+      return this.socialPosts.length < 3
     }
   },
   methods: {
-    triggerFileInput(key) {
-      this.$refs[key]?.click()
+    triggerFileInput() {
+      this.$refs.mediaInput?.click()
     },
-    handleImageChange(event, key) {
-      const file = event.target.files[0]
-      if (file) {
-        const nextImages = {
-          ...this.images,
-          [key]: file
-        }
-        this.updateField('images', nextImages)
+    handleImageChange(event) {
+      const files = Array.from(event.target.files || [])
+      this.addFiles(files)
+    },
+    handleDrop(event) {
+      const files = Array.from(event.dataTransfer?.files || [])
+      this.addFiles(files)
+    },
+    addFiles(files) {
+      if (!files.length) return
+      const filtered = files.filter((file) =>
+        ['image/png', 'image/jpeg', 'image/gif'].includes(file.type)
+      )
+      const next = [...this.images, ...filtered].slice(0, 10)
+      this.updateField('images', next)
+    },
+    removeImage(index) {
+      const next = this.images.filter((_, idx) => idx !== index)
+      this.updateField('images', next)
+    },
+    addSocialLink() {
+      const value = (this.socialLinkInput || '').trim()
+      if (!value || !this.canAddSocialLink) return
+      if (!this.isSupportedSocialLink(value)) {
+        this.socialLinkError = 'Only Instagram, TikTok, or Facebook post links are allowed.'
+        return
+      }
+      if (this.socialPosts.includes(value)) {
+        this.socialLinkError = 'This link is already added.'
+        this.socialLinkInput = ''
+        return
+      }
+      this.socialLinkError = ''
+      this.updateField('socialPosts', [...this.socialPosts, value])
+      this.socialLinkInput = ''
+    },
+    removeSocialLink(index) {
+      const next = this.socialPosts.filter((_, idx) => idx !== index)
+      this.updateField('socialPosts', next)
+      if (next.length < 3) {
+        this.socialLinkError = ''
+      }
+    },
+    isSupportedSocialLink(link) {
+      try {
+        const url = new URL(link)
+        const host = url.hostname.toLowerCase()
+        return (
+          host.includes('instagram.com') ||
+          host.includes('tiktok.com') ||
+          host.includes('facebook.com')
+        )
+      } catch (error) {
+        void error
+        return false
       }
     },
     updateField(key, value) {
@@ -256,6 +303,160 @@ export default {
 .upload-content small {
   display: block;
   color: var(--text-light);
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--spacing-xs);
+  gap: var(--spacing-sm);
+}
+
+.actions-row.space-between {
+  justify-content: space-between;
+}
+
+.ghost-button {
+  border: 1px dashed var(--border-medium);
+  background: transparent;
+  color: var(--text-secondary);
+  padding: var(--spacing-2xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.ghost-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.char-count {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.media-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-sm) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+.media-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.remove-media {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+}
+
+.social-entry {
+  margin-top: var(--spacing-xs);
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.social-entry input {
+  flex: 1;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+.social-entry input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.add-btn {
+  border: 1px solid var(--primary-color);
+  background: var(--primary-color);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: filter var(--transition-normal);
+}
+
+.add-btn:hover:enabled {
+  filter: brightness(0.95);
+}
+
+.add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.social-helper {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin: var(--spacing-xs) 0 0;
+}
+
+.social-error {
+  color: var(--error-color, #ef4444);
+  font-size: var(--font-size-xs);
+  margin-top: var(--spacing-2xs);
+}
+
+.social-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-sm) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+.social-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.remove-social {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
 }
 
 .field-group {

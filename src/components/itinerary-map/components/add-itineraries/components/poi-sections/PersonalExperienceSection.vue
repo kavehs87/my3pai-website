@@ -4,7 +4,7 @@
       <label>Personal experience <span>*</span></label>
       <textarea
         v-model="experience"
-        :maxlength="1000"
+        :maxlength="2000"
         placeholder="Share your honest experience, what made this place special, how it felt, what you would tell a friend..."
       ></textarea>
       <div class="actions-row space-between">
@@ -12,7 +12,7 @@
           <i class="fas fa-wand-magic-sparkles"></i>
           Polish my text
         </button>
-        <div class="char-count">{{ experience.length }}/1000</div>
+        <div class="char-count">{{ experience.length }}/2000</div>
       </div>
     </div>
   </div>
