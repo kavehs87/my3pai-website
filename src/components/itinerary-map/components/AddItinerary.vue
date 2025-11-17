@@ -12,6 +12,15 @@
       <div class="modal-content">
         <!-- Add itinerary form content -->
         <div class="form-section">
+          <div class="field-group">
+            <label for="itinerary-title">Itinerary title</label>
+            <input
+              id="itinerary-title"
+              type="text"
+              v-model="formData.title"
+              placeholder="Give this itinerary a name"
+            />
+          </div>
           <ThumbnailUpload
             label="Thumbnail"
             placeholder="Upload itinerary thumbnail"
@@ -95,6 +104,7 @@ export default {
   data() {
     return {
       formData: {
+        title: '',
         thumbnail: null,
         pointsOfInterest: []
       },
@@ -317,6 +327,28 @@ export default {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.field-group label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.field-group input {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
 }
 
 .poi-list {
