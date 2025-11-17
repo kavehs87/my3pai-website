@@ -129,7 +129,8 @@ export default {
   padding: var(--spacing-md);
   cursor: pointer;
   transition: all var(--transition-normal);
-  min-height: 140px;
+  min-height: 110px;
+  max-height: 140px;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
@@ -171,12 +172,12 @@ export default {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   text-align: center;
 }
 
 .upload-icon {
-  font-size: 32px;
+  font-size: 28px;
   color: var(--text-secondary);
   opacity: 0.6;
   margin-bottom: var(--spacing-xs);
@@ -200,7 +201,7 @@ export default {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 140px;
+  min-height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
