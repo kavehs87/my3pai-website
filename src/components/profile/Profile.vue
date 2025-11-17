@@ -53,6 +53,7 @@
         @save-profile="handleSaveProfile"
         @save-preferences="handleSavePreferences"
         @save-social-links="handleSaveSocialLinks"
+        @save-languages="handleSaveLanguages"
         @change-password="handleChangePassword"
         @delete-account="handleDeleteAccount"
       />
@@ -389,7 +390,12 @@ export default {
           lastName: formData.lastName,
           username: formData.username,
           bio: formData.bio,
-          location: formData.location
+          location: formData.location,
+          displayName: formData.displayName,
+          tier: formData.tier,
+          specialties: Array.isArray(formData.specialties) ? formData.specialties : [],
+          countriesVisited: Array.isArray(formData.countriesVisited) ? formData.countriesVisited : [],
+          featuredPlanId: formData.featuredPlanId
         }
         
         const result = await apiService.updateProfile(apiData)
@@ -426,12 +432,23 @@ export default {
             lastName: updatedUser.lastName || updatedUser.last_name || '',
             email: updatedUser.email || '',
             username: updatedUser.username || '',
+            displayName: updatedUser.displayName || updatedUser.display_name || '',
+            tier: updatedUser.tier || '',
             avatar: updatedUser.avatar || updatedUser.avatar_url || '',
             coverImage: updatedUser.coverImage || updatedUser.cover_image || '',
             bio: updatedUser.bio || '',
             location: updatedUser.location || '',
             joinedDate: updatedUser.joinedDate || updatedUser.created_at || updatedUser.joined_date || '',
             verified: updatedUser.verified || false,
+            specialties: Array.isArray(updatedUser.specialties)
+              ? updatedUser.specialties
+              : (typeof updatedUser.specialties === 'string'
+                  ? updatedUser.specialties.split(',').map(s => s.trim()).filter(Boolean)
+                  : []),
+            countriesVisited: Array.isArray(updatedUser.countriesVisited || updatedUser.countries_visited)
+              ? (updatedUser.countriesVisited || updatedUser.countries_visited).map(code => (code || '').toUpperCase())
+              : [],
+            featuredPlan: updatedUser.featuredPlan || updatedUser.featured_plan || null,
             preferences: normalizedPreferences,
             socialLinks: updatedUser.socialLinks || updatedUser.social_links || []
           }
@@ -447,6 +464,7 @@ export default {
             firstName: normalizedUser.firstName,
             lastName: normalizedUser.lastName,
             username: normalizedUser.username,
+            displayName: normalizedUser.displayName,
             bio: normalizedUser.bio,
             location: normalizedUser.location
           })
@@ -526,6 +544,32 @@ export default {
         }
       } catch (error) {
         toast.error(`Error saving preferences: ${error.message}`)
+      }
+    },
+    async handleSaveLanguages(languages) {
+      const settingsComponent = this.$refs.profileSettings
+      if (settingsComponent) {
+        settingsComponent.isSavingLanguages = true
+      }
+      try {
+        const result = await apiService.updateLanguages(languages)
+        if (result.success) {
+          const apiResponse = result.data
+          const data = apiResponse.data || apiResponse
+          const updatedLanguages = Array.isArray(data.languages) ? data.languages : []
+          if (this.profileData?.user) {
+            this.profileData.user.languages = updatedLanguages
+          }
+          toast.success('Languages updated successfully!')
+        } else {
+          toast.error(result.error || 'Failed to update languages')
+        }
+      } catch (error) {
+        toast.error(`Error updating languages: ${error.message}`)
+      } finally {
+        if (settingsComponent) {
+          settingsComponent.isSavingLanguages = false
+        }
       }
     },
     async handleSaveSocialLinks({ current, original }) {

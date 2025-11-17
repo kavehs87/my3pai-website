@@ -1,0 +1,210 @@
+<template>
+  <div class="regions-tags">
+    <div class="pill-group">
+      <label>Primary region <span>*</span></label>
+      <div class="pill-list">
+        <button
+          v-for="region in primaryRegions"
+          :key="region.value"
+          type="button"
+          class="pill"
+          :class="{ active: form.primaryRegion === region.value }"
+          @click="form.primaryRegion = region.value"
+        >
+          {{ region.label }}
+          <span class="count" v-if="region.count">({{ region.count }})</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="pill-group">
+      <label>Other regions</label>
+      <div class="pill-list">
+        <button
+          v-for="region in otherRegions"
+          :key="region.value"
+          type="button"
+          class="pill"
+          :class="{ active: form.otherRegions.includes(region.value) }"
+          @click="toggleRegion(region.value)"
+        >
+          {{ region.label }}
+          <span class="count" v-if="region.count">({{ region.count }})</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="pill-group">
+      <label>Tags</label>
+      <div class="pill-list">
+        <button
+          v-for="tag in tagOptions"
+          :key="tag.value"
+          type="button"
+          class="pill"
+          :class="{ active: form.tags.includes(tag.value) }"
+          @click="toggleTag(tag.value)"
+        >
+          {{ tag.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ai-suggestion">
+      <i class="fas fa-wand-magic-sparkles"></i>
+      <button type="button" class="link-button">Generate tags from description</button>
+    </div>
+  </div>
+</template>
+
+<script>
+const defaultValue = () => ({
+  primaryRegion: '',
+  otherRegions: [],
+  tags: []
+})
+
+export default {
+  name: 'RegionsTagsSection',
+  props: {
+    modelValue: {
+      type: Object,
+      default: () => defaultValue()
+    }
+  },
+  emits: ['update:modelValue'],
+  data() {
+    return {
+      form: { ...defaultValue(), ...this.modelValue },
+      primaryRegions: [
+        { label: 'Bern', value: 'bern', count: 53 },
+        { label: 'Valais', value: 'valais', count: 38 },
+        { label: 'Ticino', value: 'ticino', count: 27 },
+        { label: 'Other', value: 'other' }
+      ],
+      otherRegions: [
+        { label: 'Graubünden', value: 'graubuenden', count: 27 },
+        { label: 'Interlaken', value: 'interlaken', count: 26 },
+        { label: 'Vaud', value: 'vaud', count: 19 }
+      ],
+      tagOptions: [
+        { label: 'Local', value: 'local' },
+        { label: 'Family friendly', value: 'family' },
+        { label: 'Top pick', value: 'top-pick' },
+        { label: 'Hidden gem', value: 'hidden-gem' },
+        { label: 'Good for sunrise', value: 'sunrise' },
+        { label: 'Good for sunset', value: 'sunset' },
+        { label: 'Pet-friendly', value: 'pet-friendly' },
+        { label: 'Accessible', value: 'accessible' },
+        { label: 'Rainy-day friendly', value: 'rainy-day' },
+        { label: 'Instagrammable', value: 'instagrammable' }
+      ]
+    }
+  },
+  watch: {
+    modelValue: {
+      deep: true,
+      handler(newVal) {
+        this.form = { ...defaultValue(), ...newVal }
+      }
+    },
+    form: {
+      deep: true,
+      handler(newVal) {
+        this.$emit('update:modelValue', { ...newVal })
+      }
+    }
+  },
+  methods: {
+    toggleRegion(value) {
+      if (this.form.otherRegions.includes(value)) {
+        this.form.otherRegions = this.form.otherRegions.filter((v) => v !== value)
+      } else {
+        this.form.otherRegions = [...this.form.otherRegions, value]
+      }
+    },
+    toggleTag(value) {
+      if (this.form.tags.includes(value)) {
+        this.form.tags = this.form.tags.filter((v) => v !== value)
+      } else {
+        this.form.tags = [...this.form.tags, value]
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+.regions-tags {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.pill-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.pill {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pill .count {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.pill.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.pill:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.ai-suggestion {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+</style>
+

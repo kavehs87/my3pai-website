@@ -26,7 +26,7 @@ Complete API documentation for trip management endpoints in the My3PAI applicati
 
 **GET** `/api/profile/trips`
 
-Get the latest trips across the platform (not only the authenticated user's). Useful for profile dashboards and shared feeds. Results are ordered by `created_at` descending.
+Get the authenticated creator’s trips. Results are ordered by `created_at` descending. Requires a valid token.
 
 ### Query Parameters
 
@@ -301,7 +301,7 @@ Authorization: Bearer YOUR_TOKEN
 
 **GET** `/api/trips`
 
-Browse trips across the platform (for discovery feeds, homepage carousels, etc.). Requires authentication but does not expose private notes.
+Browse trips across the platform (for discovery feeds, homepage carousels, etc.). No authentication required; the endpoint only returns public/discoverable trips. Logged-in users will receive the same payload.
 
 ### Query Parameters
 

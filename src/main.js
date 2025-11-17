@@ -9,6 +9,7 @@ import CreatorProfile from './components/CreatorProfile.vue'
 import Profile from './components/profile/Profile.vue'
 import TripEditor from './components/trips/TripEditor.vue'
 import OAuthCallback from './components/OAuthCallback.vue'
+import ItineraryMap from './components/ItineraryMap.vue'
 import './style.css'
 
 const routes = [
@@ -18,6 +19,7 @@ const routes = [
   { path: '/profile', component: Profile, name: 'profile' },
   { path: '/trips/new', component: TripEditor, name: 'trip-new' },
   { path: '/trips/:id/edit', component: TripEditor, name: 'trip-edit', props: true },
+  { path: '/itinerary-map', component: ItineraryMap, name: 'itinerary-map' },
   { 
     path: '/auth/callback', 
     component: OAuthCallback, 

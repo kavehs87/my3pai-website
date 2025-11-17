@@ -1,0 +1,386 @@
+<template>
+  <div v-if="visible" class="poi-accordion-overlay" @click.self="handleClose">
+    <div class="poi-accordion-modal">
+      <div class="modal-header">
+        <div>
+          <p class="modal-eyebrow">Point of interest</p>
+          <h3>Create a point of interest</h3>
+        </div>
+        <button class="close-button" @click="handleClose" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="poi-accordion">
+          <div 
+            v-for="section in sectionsToRender" 
+            :key="section.id" 
+            class="accordion-section"
+            :class="{ open: openSection === section.id }"
+          >
+            <button class="accordion-header" @click="toggleSection(section.id)">
+              <div class="header-text">
+                <h4>{{ section.title }}</h4>
+                <p>{{ section.subtitle }}</p>
+              </div>
+              <i :class="['fas', openSection === section.id ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+            </button>
+            <div v-if="openSection === section.id" class="accordion-body">
+              <component
+                :is="section.component"
+                v-model="localValue[section.modelKey]"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" @click="handleClose">Cancel</button>
+        <button class="btn btn-primary" @click="handleSave">Save POI</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import BasicIdentificationSection from './poi-sections/BasicIdentificationSection.vue'
+import CategoryTypeSection from './poi-sections/CategoryTypeSection.vue'
+import DifficultyEffortSection from './poi-sections/DifficultyEffortSection.vue'
+import PricingVouchersSection from './poi-sections/PricingVouchersSection.vue'
+import RegionsTagsSection from './poi-sections/RegionsTagsSection.vue'
+import AmenitiesServicesSection from './poi-sections/AmenitiesServicesSection.vue'
+import TravelTipsSection from './poi-sections/TravelTipsSection.vue'
+import MediaCreditsSection from './poi-sections/MediaCreditsSection.vue'
+import PersonalExperienceSection from './poi-sections/PersonalExperienceSection.vue'
+
+const defaultSections = [
+  {
+    id: 'basic',
+    title: '1. Basic Identification',
+    subtitle: 'Core details about this point of interest.',
+    component: BasicIdentificationSection,
+    modelKey: 'basic'
+  },
+  {
+    id: 'category',
+    title: '2. Category & type',
+    subtitle: 'Classify the type of place or activity.',
+    component: CategoryTypeSection,
+    modelKey: 'category'
+  },
+  {
+    id: 'difficulty',
+    title: '3. Difficulty & physical effort',
+    subtitle: 'Set expectations around energy levels.',
+    component: DifficultyEffortSection,
+    modelKey: 'difficulty'
+  },
+  {
+    id: 'pricing',
+    title: '5. Pricing & Vouchers',
+    subtitle: 'Explain costs, passes, or discounts.',
+    component: PricingVouchersSection,
+    modelKey: 'pricing'
+  },
+  {
+    id: 'regions',
+    title: '6. Regions & tags',
+    subtitle: 'Tag the region or theme it belongs to.',
+    component: RegionsTagsSection,
+    modelKey: 'regions'
+  },
+  {
+    id: 'amenities',
+    title: '7. Amenities & nearby services',
+    subtitle: 'What’s available on-site or nearby?',
+    component: AmenitiesServicesSection,
+    modelKey: 'amenities'
+  },
+  {
+    id: 'tips',
+    title: '8. Travel Tips',
+    subtitle: 'Share insider advice to enjoy the spot.',
+    component: TravelTipsSection,
+    modelKey: 'tips'
+  },
+  {
+    id: 'media',
+    title: '9. Media & Creator Credits',
+    subtitle: 'Reference media assets or collaborators.',
+    component: MediaCreditsSection,
+    modelKey: 'media'
+  },
+  {
+    id: 'experience',
+    title: '10. Personal Experience',
+    subtitle: 'Describe how the place made you feel.',
+    component: PersonalExperienceSection,
+    modelKey: 'experience'
+  }
+]
+
+const defaultPOIValue = () => ({
+  basic: {
+    name: '',
+    tagline: '',
+    summary: '',
+    country: '',
+    region: '',
+    landmark: '',
+    pinAccuracy: '',
+    latitude: '',
+    longitude: ''
+  },
+  category: {},
+  difficulty: {},
+  pricing: {},
+  regions: {},
+  amenities: {},
+  tips: {},
+  media: {},
+  experience: {}
+})
+
+export default {
+  name: 'POIAccordion',
+  props: {
+    modelValue: {
+      type: Object,
+      default: () => defaultPOIValue()
+    },
+    visible: {
+      type: Boolean,
+      default: false
+    },
+    sections: {
+      type: Array,
+      default: () => defaultSections
+    }
+  },
+  emits: ['close', 'save'],
+  data() {
+    return {
+      openSection: null,
+      localValue: { ...defaultPOIValue(), ...this.modelValue }
+    }
+  },
+  computed: {
+    sectionsToRender() {
+      return this.sections?.length ? this.sections : defaultSections
+    }
+  },
+  watch: {
+    modelValue: {
+      deep: true,
+      handler(newVal) {
+        this.localValue = { ...defaultPOIValue(), ...newVal }
+      }
+    },
+    localValue: {
+      deep: true,
+      handler(newVal) {
+        this.$emit('update:modelValue', { ...defaultPOIValue(), ...newVal })
+      }
+    },
+    sectionsToRender: {
+      immediate: true,
+      handler(sections) {
+        if (!this.openSection && sections?.length) {
+          this.openSection = sections[0].id
+        }
+      }
+    }
+  },
+  methods: {
+    toggleSection(id) {
+      this.openSection = this.openSection === id ? null : id
+    },
+    handleClose() {
+      this.$emit('close')
+    },
+    handleSave() {
+      this.$emit('save', { ...this.localValue })
+    }
+  }
+}
+</script>
+
+<style scoped>
+.poi-accordion-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  z-index: 10001;
+}
+
+.poi-accordion-modal {
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.modal-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-xs);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-normal);
+}
+
+.close-button:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border: none;
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--border-light);
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
+.poi-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.accordion-section {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  overflow: hidden;
+  transition: border-color var(--transition-normal);
+}
+
+.accordion-section.open {
+  border-color: var(--primary-color);
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.header-text h4 {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+.header-text p {
+  margin: 4px 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.accordion-body {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-primary);
+}
+
+button:focus {
+  outline: none;
+}
+
+@media (max-width: 768px) {
+  .poi-accordion-overlay {
+    padding: var(--spacing-md);
+  }
+
+  .poi-accordion-modal {
+    max-height: 100vh;
+    border-radius: var(--radius-lg);
+  }
+
+  .modal-body {
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+}
+</style>

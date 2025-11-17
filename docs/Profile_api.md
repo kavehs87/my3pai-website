@@ -212,7 +212,7 @@ Deleting returns `{ "success": true, "message": "Partnership deleted successfull
 
 **GET** `/api/creators`
 
-Returns a paginated list of creator summaries for discovery surfaces (homepage carousel, explore pages, etc.). Requires authentication.
+Returns a paginated list of creator summaries for discovery surfaces (homepage carousel, explore pages, etc.). Authentication is optional; guests receive the same public data.
 
 ### Query Parameters
 
@@ -290,7 +290,7 @@ Returns a paginated list of creator summaries for discovery surfaces (homepage c
 
 **GET** `/api/creators/{id}`
 
-Returns the public-facing profile for a specific creator. Uses the same payload shape as `/api/profile`, minus sensitive fields (no email/preferences). Requires authentication.
+Returns the public-facing profile for a specific creator. Uses the same payload shape as `/api/profile`, minus sensitive fields (no email/preferences). Authentication is optional; guests receive the same public data.
 
 ### Example
 

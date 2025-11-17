@@ -220,6 +220,13 @@ class ApiService {
     })
   }
 
+  async updateLanguages(languages) {
+    return this.request('/profile/languages', {
+      method: 'PUT',
+      body: JSON.stringify({ languages })
+    })
+  }
+
   // Social Links CRUD
   async getSocialLinks() {
     return this.request('/profile/social-links')
