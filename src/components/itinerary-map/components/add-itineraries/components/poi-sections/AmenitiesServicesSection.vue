@@ -13,6 +13,40 @@
         >
           {{ amenity.label }}
         </button>
+        <button
+          type="button"
+          class="pill"
+          :class="{ active: showCustomAmenityInput }"
+          @click="toggleCustomAmenityInput"
+        >
+          Others
+        </button>
+      </div>
+      <div v-if="showCustomAmenityInput" class="custom-entry">
+        <input
+          type="text"
+          v-model="customAmenityValue"
+          maxlength="10"
+          placeholder="Enter custom amenity (max 10 chars)"
+        />
+        <button type="button" class="add-btn" @click="addCustomAmenity">Add</button>
+      </div>
+      <div v-if="customAmenities.length" class="custom-pill-list">
+        <span
+          v-for="customAmenity in customAmenities"
+          :key="customAmenity"
+          class="custom-pill"
+        >
+          {{ customAmenity }}
+          <button
+            type="button"
+            class="remove-btn"
+            @click="removeCustomAmenity(customAmenity)"
+            aria-label="Remove amenity"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </span>
       </div>
     </div>
 
@@ -123,7 +157,9 @@ export default {
         { label: 'Stroller-friendly', value: 'stroller' },
         { label: 'Step-free path', value: 'step-free' },
         { label: 'Accessible toilet', value: 'accessible-toilet' }
-      ]
+      ],
+      showCustomAmenityInput: false,
+      customAmenityValue: ''
     }
   },
   computed: {
@@ -134,6 +170,10 @@ export default {
       set(value) {
         this.updateField('amenities', ensureArray(value))
       }
+    },
+    customAmenities() {
+      const base = this.amenityOptions.map((option) => option.value)
+      return ensureArray(this.amenities).filter((value) => !base.includes(value))
     },
     nearbyServices: {
       get() {
@@ -201,7 +241,30 @@ export default {
       const next = exists ? list.filter((item) => item !== value) : [...list, value]
       this.accessibility = next
     },
-    
+    toggleCustomAmenityInput() {
+      this.showCustomAmenityInput = !this.showCustomAmenityInput
+      if (!this.showCustomAmenityInput) {
+        this.customAmenityValue = ''
+      }
+    },
+    addCustomAmenity() {
+      const value = (this.customAmenityValue || '').trim()
+      if (!value || value.length > 10) return
+      const list = ensureArray(this.amenities)
+      if (list.includes(value)) {
+        this.customAmenityValue = ''
+        return
+      }
+      this.amenities = [...list, value]
+      this.customAmenityValue = ''
+    },
+    removeCustomAmenity(value) {
+      const list = ensureArray(this.amenities).filter((item) => item !== value)
+      this.amenities = list
+      if (!this.customAmenities.length) {
+        this.showCustomAmenityInput = false
+      }
+    }
   }
 }
 </script>
@@ -269,6 +332,74 @@ textarea {
 .pill:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
+}
+
+.custom-entry {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.custom-entry input {
+  flex: 1;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+.custom-entry input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.add-btn {
+  border: 1px solid var(--primary-color);
+  background: var(--primary-color);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: filter var(--transition-normal);
+}
+
+.add-btn:hover {
+  filter: brightness(0.95);
+}
+
+.custom-pill-list {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.custom-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.remove-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
 }
 
 .actions-row {
