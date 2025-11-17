@@ -17,12 +17,26 @@
             v-for="section in sectionsToRender" 
             :key="section.id" 
             class="accordion-section"
-            :class="{ open: openSection === section.id }"
+            :class="{
+              open: openSection === section.id,
+              'has-required-missing': sectionStatuses[section.id] === 'missing'
+            }"
           >
             <button class="accordion-header" @click="toggleSection(section.id)">
               <div class="header-text">
                 <h4>{{ section.title }}</h4>
                 <p>{{ section.subtitle }}</p>
+              </div>
+              <div
+                v-if="section.requiredFields?.length"
+                class="header-status"
+              >
+                <span
+                  class="status-pill"
+                  :class="sectionStatuses[section.id]"
+                >
+                  {{ sectionStatuses[section.id] === 'complete' ? 'Complete' : 'Required' }}
+                </span>
               </div>
               <i :class="['fas', openSection === section.id ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
             </button>
@@ -62,14 +76,16 @@ const defaultSections = [
     title: '1. Basic Identification',
     subtitle: 'Core details about this point of interest.',
     component: BasicIdentificationSection,
-    modelKey: 'basic'
+    modelKey: 'basic',
+    requiredFields: ['basic.name', 'basic.country']
   },
   {
     id: 'category',
     title: '2. Category & type',
     subtitle: 'Classify the type of place or activity.',
     component: CategoryTypeSection,
-    modelKey: 'category'
+    modelKey: 'category',
+    requiredFields: ['category.placeType']
   },
   {
     id: 'difficulty',
@@ -83,7 +99,8 @@ const defaultSections = [
     title: '5. Pricing & Vouchers',
     subtitle: 'Explain costs, passes, or discounts.',
     component: PricingVouchersSection,
-    modelKey: 'pricing'
+    modelKey: 'pricing',
+    requiredFields: ['pricing.costType']
   },
   {
     id: 'regions',
@@ -170,6 +187,22 @@ export default {
   computed: {
     sectionsToRender() {
       return this.sections?.length ? this.sections : defaultSections
+    },
+    sectionStatuses() {
+      const statuses = {}
+      const sections = this.sectionsToRender || []
+      sections.forEach((section) => {
+        if (section.requiredFields?.length) {
+          const missing = section.requiredFields.some((field) => {
+            const value = this.getValueByPath(this.localValue, field)
+            return !this.isFieldFilled(value)
+          })
+          statuses[section.id] = missing ? 'missing' : 'complete'
+        } else {
+          statuses[section.id] = 'optional'
+        }
+      })
+      return statuses
     }
   },
   watch: {
@@ -195,6 +228,20 @@ export default {
     },
     handleClose() {
       this.$emit('close')
+    },
+    getValueByPath(obj, path) {
+      if (!obj || !path) return undefined
+      return path.split('.').reduce((acc, key) => {
+        if (acc && typeof acc === 'object' && key in acc) {
+          return acc[key]
+        }
+        return undefined
+      }, obj)
+    },
+    isFieldFilled(value) {
+      if (Array.isArray(value)) return value.length > 0
+      if (typeof value === 'number') return true
+      return value !== null && value !== undefined && String(value).trim() !== ''
     },
     buildPayload() {
       return { ...defaultPOIValue(), ...(this.localValue || {}) }
@@ -355,6 +402,10 @@ export default {
   border-color: var(--primary-color);
 }
 
+.accordion-section.has-required-missing {
+  border-color: #f87171;
+}
+
 .accordion-header {
   width: 100%;
   display: flex;
@@ -365,6 +416,7 @@ export default {
   border: none;
   cursor: pointer;
   text-align: left;
+  gap: var(--spacing-md);
 }
 
 .header-text h4 {
@@ -377,6 +429,31 @@ export default {
   margin: 4px 0 0;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
+}
+
+.header-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.status-pill {
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-pill.missing {
+  background: rgba(248, 113, 113, 0.15);
+  color: #dc2626;
+}
+
+.status-pill.complete {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
 }
 
 .accordion-body {
