@@ -24,11 +24,11 @@
               class="poi-card"
             >
               <div class="poi-card-content">
-                <div class="poi-card-title">{{ poi?.basic?.name || 'Untitled point' }}</div>
+                <div class="poi-card-title">{{ formatPOITitle(poi) }}</div>
                 <div class="poi-card-meta">
-                  <span v-if="poi?.category?.placeType">{{ poi.category.placeType }}</span>
-                  <span v-if="poi?.regions?.primaryRegion">
-                    <span v-if="poi?.category?.placeType"> • </span>{{ poi.regions.primaryRegion }}
+                  <span v-if="formatPOICategory(poi)">{{ formatPOICategory(poi) }}</span>
+                  <span v-if="formatPOIRegion(poi)">
+                    <span v-if="formatPOICategory(poi)"> • </span>{{ formatPOIRegion(poi) }}
                   </span>
                 </div>
               </div>
@@ -98,7 +98,8 @@ export default {
         pointsOfInterest: []
       },
       showPOIForm: false,
-      poiForm: this.createEmptyPOIForm()
+      poiForm: this.createEmptyPOIForm(),
+      editingPoiIndex: null
     }
   },
   methods: {
@@ -152,11 +153,10 @@ export default {
     },
     handlePOISave(poiData = this.poiForm) {
       const isEdit = this.editingPoiIndex !== null
+      const existingEntry = isEdit ? this.formData.pointsOfInterest[this.editingPoiIndex] : null
       const payload = {
-        id: isEdit
-          ? this.formData.pointsOfInterest[this.editingPoiIndex]?.id
-          : Date.now(),
-        ...poiData
+        id: existingEntry && existingEntry.id ? existingEntry.id : Date.now(),
+        ...this.clonePOIData(poiData)
       }
 
       if (isEdit) {
@@ -176,6 +176,8 @@ export default {
       this.showPOIForm = true
     },
     removePOI(index) {
+      if (index < 0 || index >= this.formData.pointsOfInterest.length) return
+
       this.formData.pointsOfInterest.splice(index, 1)
       if (this.editingPoiIndex === index) {
         this.editingPoiIndex = null
@@ -183,15 +185,22 @@ export default {
         this.editingPoiIndex -= 1
       }
     },
-    clonePOIData(poi = this.createEmptyPOIForm()) {
-      if (typeof structuredClone === 'function') {
-        try {
-          return structuredClone(poi)
-        } catch (error) {
-          // fallback to JSON clone
-        }
+    formatPOITitle(poi) {
+      return (poi && poi.basic && poi.basic.name) || 'Untitled point'
+    },
+    formatPOICategory(poi) {
+      return poi && poi.category && poi.category.placeType
+    },
+    formatPOIRegion(poi) {
+      return poi && poi.regions && poi.regions.primaryRegion
+    },
+    clonePOIData(poi) {
+      const source = poi || this.createEmptyPOIForm()
+      try {
+        return JSON.parse(JSON.stringify(source))
+      } catch (error) {
+        return this.createEmptyPOIForm()
       }
-      return JSON.parse(JSON.stringify(poi))
     }
   }
 }
