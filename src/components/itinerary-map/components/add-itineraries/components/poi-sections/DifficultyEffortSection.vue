@@ -102,11 +102,11 @@ export default {
         { label: 'Steps', value: 'steps' }
       ],
       fitnessOptions: [
-        { label: '1. Casual', value: 'casual' },
-        { label: '2. Active', value: 'active' },
-        { label: '3. Fit', value: 'fit' },
-        { label: '4. Athletic', value: 'athletic' },
-        { label: '5. Elite', value: 'elite' }
+        { label: 'Casual', value: 'casual' },
+        { label: 'Active', value: 'active' },
+        { label: 'Fit', value: 'fit' },
+        { label: 'Athletic', value: 'athletic' },
+        { label: 'Elite', value: 'elite' }
       ]
     }
   },
