@@ -171,7 +171,7 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-2xs);
   padding: var(--spacing-md);
   text-align: center;
 }
@@ -180,20 +180,20 @@ export default {
   font-size: 28px;
   color: var(--text-secondary);
   opacity: 0.6;
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: 2px;
 }
 
 .upload-text {
-  font-size: var(--font-size-base);
-  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
   font-weight: 500;
   margin: 0;
 }
 
 .upload-hint {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-2xs);
   color: var(--text-secondary);
-  opacity: 0.7;
+  opacity: 0.75;
   margin: 0;
 }
 
