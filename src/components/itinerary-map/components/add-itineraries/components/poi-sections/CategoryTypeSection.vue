@@ -185,6 +185,28 @@ export default {
   gap: var(--spacing-lg);
 }
 
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.field-group label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.field-group select {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
 .pill-group {
   display: flex;
   flex-direction: column;
