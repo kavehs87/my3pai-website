@@ -13,36 +13,42 @@
       </select>
     </div>
 
-    <div class="pill-group">
-      <div class="group-label">Activity type</div>
-      <div class="pill-list">
-        <button
+    <div class="field-group">
+      <label>Activity type</label>
+      <select
+        multiple
+        size="6"
+        v-model="activities"
+        class="multi-select"
+      >
+        <option
           v-for="activity in activityOptions"
           :key="activity.value"
-          type="button"
-          class="pill"
-          :class="{ active: activities.includes(activity.value) }"
-          @click="toggleActivity(activity.value)"
+          :value="activity.value"
         >
           {{ activity.label }}
-        </button>
-      </div>
+        </option>
+      </select>
+      <p class="helper-text">Hold Cmd/Ctrl (or drag) to select multiple activity types.</p>
     </div>
 
-    <div class="pill-group">
-      <div class="group-label">Audience type</div>
-      <div class="pill-list">
-        <button
+    <div class="field-group">
+      <label>Audience type</label>
+      <select
+        multiple
+        size="5"
+        v-model="audience"
+        class="multi-select"
+      >
+        <option
           v-for="audienceOption in audienceOptions"
           :key="audienceOption.value"
-          type="button"
-          class="pill"
-          :class="{ active: audience.includes(audienceOption.value) }"
-          @click="toggleAudience(audienceOption.value)"
+          :value="audienceOption.value"
         >
           {{ audienceOption.label }}
-        </button>
-      </div>
+        </option>
+      </select>
+      <p class="helper-text">Select every audience this POI is ideal for.</p>
     </div>
 
     <div class="field-group">
@@ -140,18 +146,6 @@ export default {
     }
   },
   methods: {
-    toggleActivity(value) {
-      const list = ensureArray(this.activities)
-      const exists = list.includes(value)
-      const next = exists ? list.filter((v) => v !== value) : [...list, value]
-      this.activities = next
-    },
-    toggleAudience(value) {
-      const list = ensureArray(this.audience)
-      const exists = list.includes(value)
-      const next = exists ? list.filter((v) => v !== value) : [...list, value]
-      this.audience = next
-    },
     updateField(key, value) {
       const base = { ...defaultValue(), ...(this.modelValue || {}) }
       base[key] = value
@@ -194,43 +188,29 @@ select {
   color: var(--text-primary);
 }
 
-.pill-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.group-label {
+.multi-select {
+  width: 100%;
+  padding: var(--spacing-xs);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
 }
 
-.pill-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
+.multi-select option {
+  padding: var(--spacing-2xs) var(--spacing-xs);
 }
 
-.pill {
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  background: var(--bg-primary);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-}
-
-.pill.active {
+.multi-select option:checked {
   background: var(--primary-color);
-  border-color: var(--primary-color);
   color: white;
 }
 
-.pill:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+.helper-text {
+  margin: 0;
+  font-size: var(--font-size-2xs);
+  color: var(--text-secondary);
 }
 </style>
 
