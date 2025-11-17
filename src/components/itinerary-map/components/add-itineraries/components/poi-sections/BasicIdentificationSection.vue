@@ -27,7 +27,13 @@
             maxlength="400"
             placeholder="Describe the essence of this point of interest."
           ></textarea>
-          <div class="char-count">{{ summaryLength }}/400</div>
+          <div class="actions-row space-between">
+            <button type="button" class="ghost-button">
+              <i class="fas fa-wand-magic-sparkles"></i>
+              Polish my text
+            </button>
+            <div class="char-count">{{ summaryLength }}/400</div>
+          </div>
         </div>
       </div>
 
@@ -42,10 +48,6 @@
       </div>
     </div>
 
-    <div class="ai-suggestion">
-      <i class="fas fa-wand-magic-sparkles"></i>
-      <button type="button" class="link-button">Ask AI to summarise</button>
-    </div>
 
     <div class="location-grid">
       <div class="field-group">
@@ -342,6 +344,40 @@ textarea {
   text-align: right;
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  margin-top: var(--spacing-xs);
+}
+
+.actions-row.align-end {
+  justify-content: flex-end;
+}
+
+.actions-row.space-between {
+  justify-content: space-between;
+}
+
+.ghost-button {
+  border: 1px dashed var(--border-medium);
+  background: transparent;
+  color: var(--text-secondary);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.ghost-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .pdf-preview {

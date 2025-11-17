@@ -7,12 +7,13 @@
         :maxlength="1000"
         placeholder="Share your honest experience, what made this place special, how it felt, what you would tell a friend..."
       ></textarea>
-      <div class="char-counter">{{ experience.length }}/1000</div>
-    </div>
-
-    <div class="ai-suggestion">
-      <i class="fas fa-magic"></i>
-      <button type="button" class="link-button">Polish my text</button>
+      <div class="actions-row space-between">
+        <button type="button" class="ghost-button">
+          <i class="fas fa-wand-magic-sparkles"></i>
+          Polish my text
+        </button>
+        <div class="char-count">{{ experience.length }}/1000</div>
+      </div>
     </div>
   </div>
 </template>
@@ -79,32 +80,38 @@ textarea {
   resize: vertical;
 }
 
-.char-counter {
-  text-align: right;
-  color: var(--text-light);
-  font-size: var(--font-size-xs);
-}
-
-.ai-suggestion {
+.actions-row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  margin-top: var(--spacing-sm);
+  justify-content: space-between;
+  margin-top: var(--spacing-xs);
+  gap: var(--spacing-sm);
+}
+
+.ghost-button {
+  border: 1px dashed var(--border-medium);
+  background: transparent;
   color: var(--text-secondary);
+  padding: var(--spacing-2xs) var(--spacing-md);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
-}
-
-.ai-suggestion i {
-  color: #f7b733;
-}
-
-.link-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--primary-color);
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.ghost-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.char-count {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-left: auto;
 }
 </style>
 

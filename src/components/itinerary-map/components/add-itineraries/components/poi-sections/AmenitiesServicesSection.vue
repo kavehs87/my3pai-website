@@ -22,6 +22,13 @@
         v-model="nearbyServices"
         placeholder="e.g. Supermarket 5 min drive"
       ></textarea>
+      <div class="actions-row space-between">
+        <button type="button" class="ghost-button">
+          <i class="fas fa-wand-magic-sparkles"></i>
+          Polish my text
+        </button>
+        <div class="char-count">{{ nearbyServicesLength }} chars</div>
+      </div>
     </div>
 
     <div class="pill-group">
@@ -46,6 +53,13 @@
         v-model="petNotes"
         placeholder="e.g. Dogs welcome on leash, water bowls available"
       ></textarea>
+      <div class="actions-row space-between">
+        <button type="button" class="ghost-button">
+          <i class="fas fa-wand-magic-sparkles"></i>
+          Polish my text
+        </button>
+        <div class="char-count">{{ petNotesLength }} chars</div>
+      </div>
     </div>
 
     <div class="pill-group">
@@ -156,6 +170,12 @@ export default {
       set(value) {
         this.updateField('accessibility', ensureArray(value))
       }
+    },
+    nearbyServicesLength() {
+      return this.nearbyServices?.length || 0
+    },
+    petNotesLength() {
+      return this.petNotes?.length || 0
     }
   },
   methods: {
@@ -249,6 +269,40 @@ textarea {
 .pill:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--spacing-xs);
+  gap: var(--spacing-sm);
+}
+
+.ghost-button {
+  border: 1px dashed var(--border-medium);
+  background: transparent;
+  color: var(--text-secondary);
+  padding: var(--spacing-2xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.ghost-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.char-count {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-left: auto;
 }
 </style>
 

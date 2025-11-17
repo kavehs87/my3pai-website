@@ -81,6 +81,13 @@
           v-model="priceNotes"
           placeholder="Share what the price includes, add-ons, or seasonal changes"
         ></textarea>
+        <div class="actions-row space-between">
+          <button type="button" class="ghost-button">
+            <i class="fas fa-wand-magic-sparkles"></i>
+            Polish my text
+          </button>
+          <div class="char-count">{{ priceNotesLength }} chars</div>
+        </div>
       </div>
     </div>
 
@@ -125,6 +132,13 @@
           v-model="voucherConditions"
           placeholder="Explain any rules or limitations"
         ></textarea>
+        <div class="actions-row space-between">
+          <button type="button" class="ghost-button">
+            <i class="fas fa-wand-magic-sparkles"></i>
+            Polish my text
+          </button>
+          <div class="char-count">{{ voucherConditionsLength }} chars</div>
+        </div>
       </div>
 
       <div class="field-group">
@@ -287,6 +301,12 @@ export default {
         this.updateField('priceNotes', value)
       }
     },
+    priceNotesLength() {
+      return this.priceNotes?.length || 0
+    },
+    voucherConditionsLength() {
+      return this.voucherConditions?.length || 0
+    },
     showPriceDetails() {
       return ['paid', 'mixed'].includes(this.costType)
     }
@@ -386,6 +406,40 @@ label {
 .info-card .field-group textarea {
   min-height: 100px;
   resize: vertical;
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--spacing-xs);
+  gap: var(--spacing-sm);
+}
+
+.ghost-button {
+  border: 1px dashed var(--border-medium);
+  background: transparent;
+  color: var(--text-secondary);
+  padding: var(--spacing-2xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.ghost-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.char-count {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-left: auto;
 }
 
 @media (max-width: 640px) {

@@ -73,7 +73,7 @@ import PersonalExperienceSection from './poi-sections/PersonalExperienceSection.
 const defaultSections = [
   {
     id: 'basic',
-    title: '1. Basic Identification',
+    title: '1. Basic Information',
     subtitle: 'Core details about this point of interest.',
     component: BasicIdentificationSection,
     modelKey: 'basic',
