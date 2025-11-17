@@ -31,13 +31,54 @@
         </button>
       </div>
     </div>
+
+    <div v-if="voucher === 'yes'" class="voucher-card">
+      <div class="field-group">
+        <label>Voucher code</label>
+        <input
+          type="text"
+          v-model="voucherCode"
+          placeholder="e.g. ALI20"
+        />
+      </div>
+
+      <div class="field-group">
+        <label>Voucher partner</label>
+        <input
+          type="text"
+          v-model="voucherPartner"
+          placeholder="Partner or platform name"
+        />
+      </div>
+
+      <div class="field-group">
+        <label>Voucher conditions</label>
+        <textarea
+          v-model="voucherConditions"
+          placeholder="Explain any rules or limitations"
+        ></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>Voucher link</label>
+        <input
+          type="url"
+          v-model="voucherLink"
+          placeholder="https://example.com/voucher"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 const defaultValue = () => ({
   costType: '',
-  voucher: ''
+  voucher: '',
+  voucherCode: '',
+  voucherPartner: '',
+  voucherConditions: '',
+  voucherLink: ''
 })
 
 export default {
@@ -77,6 +118,38 @@ export default {
       },
       set(value) {
         this.updateField('voucher', value)
+      }
+    },
+    voucherCode: {
+      get() {
+        return this.modelValue?.voucherCode || ''
+      },
+      set(value) {
+        this.updateField('voucherCode', value)
+      }
+    },
+    voucherPartner: {
+      get() {
+        return this.modelValue?.voucherPartner || ''
+      },
+      set(value) {
+        this.updateField('voucherPartner', value)
+      }
+    },
+    voucherConditions: {
+      get() {
+        return this.modelValue?.voucherConditions || ''
+      },
+      set(value) {
+        this.updateField('voucherConditions', value)
+      }
+    },
+    voucherLink: {
+      get() {
+        return this.modelValue?.voucherLink || ''
+      },
+      set(value) {
+        this.updateField('voucherLink', value)
       }
     }
   },
@@ -137,6 +210,33 @@ label {
 .pill:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
+}
+
+.voucher-card {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  background: var(--bg-tertiary, #f8f9fb);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.voucher-card .field-group input,
+.voucher-card .field-group textarea {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+.voucher-card .field-group textarea {
+  min-height: 100px;
+  resize: vertical;
 }
 </style>
 
