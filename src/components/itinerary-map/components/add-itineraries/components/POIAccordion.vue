@@ -159,11 +159,11 @@ export default {
       default: () => defaultSections
     }
   },
-  emits: ['close', 'save'],
+  emits: ['close', 'save', 'update:modelValue'],
   data() {
     return {
       openSection: null,
-      localValue: { ...defaultPOIValue(), ...this.modelValue }
+      localValue: { ...defaultPOIValue(), ...(this.modelValue || {}) }
     }
   },
   computed: {
@@ -174,14 +174,9 @@ export default {
   watch: {
     modelValue: {
       deep: true,
+      immediate: true,
       handler(newVal) {
-        this.localValue = { ...defaultPOIValue(), ...newVal }
-      }
-    },
-    localValue: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...defaultPOIValue(), ...newVal })
+        this.localValue = { ...defaultPOIValue(), ...(newVal || {}) }
       }
     },
     sectionsToRender: {
@@ -201,7 +196,9 @@ export default {
       this.$emit('close')
     },
     handleSave() {
-      this.$emit('save', { ...this.localValue })
+      const payload = { ...defaultPOIValue(), ...(this.localValue || {}) }
+      this.$emit('update:modelValue', payload)
+      this.$emit('save', payload)
     }
   }
 }

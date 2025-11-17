@@ -143,13 +143,13 @@ export default {
     },
     handleAddPOI() {
       this.editingPoiIndex = null
-      this.poiForm = this.clonePOIData()
+      // this.poiForm = this.clonePOIData()
       this.showPOIForm = true
     },
     handlePOIModalClose() {
       this.showPOIForm = false
       this.editingPoiIndex = null
-      this.poiForm = this.clonePOIData()
+      // this.poiForm = this.clonePOIData()
     },
     handlePOISave(poiData = this.poiForm) {
       const isEdit = this.editingPoiIndex !== null
