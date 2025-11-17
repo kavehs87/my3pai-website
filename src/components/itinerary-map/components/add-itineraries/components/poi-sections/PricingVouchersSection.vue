@@ -16,6 +16,74 @@
       </div>
     </div>
 
+    <div v-if="showPriceDetails" class="info-card price-card">
+      <div class="field-row">
+        <div class="field-group">
+          <label>Price charged as</label>
+          <select v-model="priceChargedAs">
+            <option value="">Select one</option>
+            <option
+              v-for="option in priceChargeOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Currency</label>
+          <input
+            type="text"
+            v-model="currency"
+            :list="currencyListId"
+            placeholder="CHF"
+            maxlength="3"
+          />
+          <datalist :id="currencyListId">
+            <option
+              v-for="option in currencyOptions"
+              :key="option.code"
+              :value="option.code"
+            >
+              {{ option.name }}
+            </option>
+          </datalist>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Estimated min price</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            v-model="estimatedMinPrice"
+            placeholder="0"
+          />
+        </div>
+        <div class="field-group">
+          <label>Estimated max price</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            v-model="estimatedMaxPrice"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Price notes</label>
+        <textarea
+          v-model="priceNotes"
+          placeholder="Share what the price includes, add-ons, or seasonal changes"
+        ></textarea>
+      </div>
+    </div>
+
     <div class="pill-group">
       <label>Voucher available?</label>
       <div class="pill-list">
@@ -32,7 +100,7 @@
       </div>
     </div>
 
-    <div v-if="voucher === 'yes'" class="voucher-card">
+    <div v-if="voucher === 'yes'" class="info-card voucher-card">
       <div class="field-group">
         <label>Voucher code</label>
         <input
@@ -74,6 +142,11 @@
 <script>
 const defaultValue = () => ({
   costType: '',
+  priceChargedAs: '',
+  currency: '',
+  estimatedMinPrice: '',
+  estimatedMaxPrice: '',
+  priceNotes: '',
   voucher: '',
   voucherCode: '',
   voucherPartner: '',
@@ -100,7 +173,29 @@ export default {
       voucherOptions: [
         { label: 'Yes', value: 'yes' },
         { label: 'No', value: 'no' }
-      ]
+      ],
+      priceChargeOptions: [
+        { label: 'Per person', value: 'per_person' },
+        { label: 'Per group', value: 'per_group' },
+        { label: 'Per day', value: 'per_day' },
+        { label: 'Per activity', value: 'per_activity' },
+        { label: 'Other', value: 'other' }
+      ],
+      currencyOptions: [
+        { code: 'USD', name: 'US Dollar' },
+        { code: 'EUR', name: 'Euro' },
+        { code: 'GBP', name: 'British Pound' },
+        { code: 'CHF', name: 'Swiss Franc' },
+        { code: 'CAD', name: 'Canadian Dollar' },
+        { code: 'AUD', name: 'Australian Dollar' },
+        { code: 'NZD', name: 'New Zealand Dollar' },
+        { code: 'JPY', name: 'Japanese Yen' },
+        { code: 'CNY', name: 'Chinese Yuan' },
+        { code: 'HKD', name: 'Hong Kong Dollar' },
+        { code: 'SGD', name: 'Singapore Dollar' },
+        { code: 'AED', name: 'UAE Dirham' }
+      ],
+      currencyListId: `currency-options-${Math.random().toString(36).slice(2)}`
     }
   },
   computed: {
@@ -151,6 +246,49 @@ export default {
       set(value) {
         this.updateField('voucherLink', value)
       }
+    },
+    priceChargedAs: {
+      get() {
+        return this.modelValue?.priceChargedAs || ''
+      },
+      set(value) {
+        this.updateField('priceChargedAs', value)
+      }
+    },
+    currency: {
+      get() {
+        return this.modelValue?.currency || ''
+      },
+      set(value) {
+        this.updateField('currency', value?.toUpperCase().slice(0, 3) || '')
+      }
+    },
+    estimatedMinPrice: {
+      get() {
+        return this.modelValue?.estimatedMinPrice || ''
+      },
+      set(value) {
+        this.updateField('estimatedMinPrice', value)
+      }
+    },
+    estimatedMaxPrice: {
+      get() {
+        return this.modelValue?.estimatedMaxPrice || ''
+      },
+      set(value) {
+        this.updateField('estimatedMaxPrice', value)
+      }
+    },
+    priceNotes: {
+      get() {
+        return this.modelValue?.priceNotes || ''
+      },
+      set(value) {
+        this.updateField('priceNotes', value)
+      }
+    },
+    showPriceDetails() {
+      return ['paid', 'mixed'].includes(this.costType)
     }
   },
   methods: {
@@ -212,7 +350,7 @@ label {
   color: var(--primary-color);
 }
 
-.voucher-card {
+.info-card {
   margin-top: var(--spacing-lg);
   padding: var(--spacing-lg);
   border: 1px solid var(--border-light);
@@ -223,8 +361,19 @@ label {
   gap: var(--spacing-md);
 }
 
-.voucher-card .field-group input,
-.voucher-card .field-group textarea {
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.field-row .field-group {
+  margin: 0;
+}
+
+.info-card .field-group input,
+.info-card .field-group textarea,
+.info-card .field-group select {
   width: 100%;
   padding: var(--spacing-sm);
   border: 1px solid var(--border-medium);
@@ -234,9 +383,15 @@ label {
   color: var(--text-primary);
 }
 
-.voucher-card .field-group textarea {
+.info-card .field-group textarea {
   min-height: 100px;
   resize: vertical;
+}
+
+@media (max-width: 640px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 
