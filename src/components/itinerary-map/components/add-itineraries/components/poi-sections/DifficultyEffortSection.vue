@@ -3,7 +3,7 @@
     <div class="grid two-cols">
       <div class="field-group">
         <label>Difficulty rating</label>
-        <select v-model="form.difficulty">
+        <select v-model="difficulty">
           <option value="" disabled>Select difficulty</option>
           <option v-for="option in difficultyOptions" :key="option.value" :value="option.value">
             {{ option.label }}
@@ -13,7 +13,7 @@
 
       <div class="field-group">
         <label>Activity level icons</label>
-        <select v-model="form.activityLevel">
+        <select v-model="activityLevel">
           <option value="" disabled>Select activity level</option>
           <option v-for="level in activityLevelOptions" :key="level.value" :value="level.value">
             {{ level.label }}
@@ -27,7 +27,7 @@
         <label>Distance (e.g. 6 km round trip)</label>
         <input
           type="text"
-          v-model="form.distance"
+          v-model="distance"
           placeholder="e.g. 6 km round trip"
         />
       </div>
@@ -35,7 +35,7 @@
         <label>Elevation gain (e.g. 350 m up)</label>
         <input
           type="text"
-          v-model="form.elevationGain"
+          v-model="elevationGain"
           placeholder="e.g. 350 m up"
         />
       </div>
@@ -46,7 +46,7 @@
         <label>Estimated duration (e.g. 2-3h, 4-6h)</label>
         <input
           type="text"
-          v-model="form.duration"
+          v-model="duration"
           placeholder="e.g. 2-3h, 4-6h"
         />
       </div>
@@ -54,7 +54,7 @@
         <label>Required fitness</label>
         <input
           type="text"
-          v-model="form.fitness"
+          v-model="fitness"
           placeholder="e.g. Suitable for most people"
         />
       </div>
@@ -68,7 +68,7 @@
           :key="terrain.value"
           type="button"
           class="pill"
-          :class="{ active: form.terrain.includes(terrain.value) }"
+          :class="{ active: terrain.includes(terrain.value) }"
           @click="toggleTerrain(terrain.value)"
         >
           {{ terrain.label }}
@@ -100,7 +100,6 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      form: { ...defaultValue(), ...this.modelValue },
       difficultyOptions: [
         { label: 'Very Easy', value: 'very-easy' },
         { label: 'Easy', value: 'easy' },
@@ -125,27 +124,78 @@ export default {
       ]
     }
   },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...defaultValue(), ...newVal }
+  computed: {
+    difficulty: {
+      get() {
+        return this.modelValue?.difficulty || ''
+      },
+      set(value) {
+        this.updateField('difficulty', value)
       }
     },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+    activityLevel: {
+      get() {
+        return this.modelValue?.activityLevel || ''
+      },
+      set(value) {
+        this.updateField('activityLevel', value)
+      }
+    },
+    distance: {
+      get() {
+        return this.modelValue?.distance || ''
+      },
+      set(value) {
+        this.updateField('distance', value)
+      }
+    },
+    elevationGain: {
+      get() {
+        return this.modelValue?.elevationGain || ''
+      },
+      set(value) {
+        this.updateField('elevationGain', value)
+      }
+    },
+    duration: {
+      get() {
+        return this.modelValue?.duration || ''
+      },
+      set(value) {
+        this.updateField('duration', value)
+      }
+    },
+    fitness: {
+      get() {
+        return this.modelValue?.fitness || ''
+      },
+      set(value) {
+        this.updateField('fitness', value)
+      }
+    },
+    terrain: {
+      get() {
+        return this.modelValue?.terrain || []
+      },
+      set(value) {
+        this.updateField('terrain', value)
       }
     }
   },
   methods: {
     toggleTerrain(value) {
-      if (this.form.terrain.includes(value)) {
-        this.form.terrain = this.form.terrain.filter((item) => item !== value)
-      } else {
-        this.form.terrain = [...this.form.terrain, value]
-      }
+      const exists = this.terrain.includes(value)
+      const next = exists
+        ? this.terrain.filter((item) => item !== value)
+        : [...this.terrain, value]
+      this.terrain = next
+    },
+    updateField(key, value) {
+      this.$emit('update:modelValue', {
+        ...defaultValue(),
+        ...(this.modelValue || {}),
+        [key]: value
+      })
     }
   }
 }

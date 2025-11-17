@@ -8,8 +8,8 @@
           :key="region.value"
           type="button"
           class="pill"
-          :class="{ active: form.primaryRegion === region.value }"
-          @click="form.primaryRegion = region.value"
+          :class="{ active: primaryRegion === region.value }"
+          @click="primaryRegion = region.value"
         >
           {{ region.label }}
           <span class="count" v-if="region.count">({{ region.count }})</span>
@@ -21,11 +21,11 @@
       <label>Other regions</label>
       <div class="pill-list">
         <button
-          v-for="region in otherRegions"
+          v-for="region in otherRegionOptions"
           :key="region.value"
           type="button"
           class="pill"
-          :class="{ active: form.otherRegions.includes(region.value) }"
+          :class="{ active: otherRegions.includes(region.value) }"
           @click="toggleRegion(region.value)"
         >
           {{ region.label }}
@@ -42,7 +42,7 @@
           :key="tag.value"
           type="button"
           class="pill"
-          :class="{ active: form.tags.includes(tag.value) }"
+          :class="{ active: tags.includes(tag.value) }"
           @click="toggleTag(tag.value)"
         >
           {{ tag.label }}
@@ -75,14 +75,13 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      form: { ...defaultValue(), ...this.modelValue },
       primaryRegions: [
         { label: 'Bern', value: 'bern', count: 53 },
         { label: 'Valais', value: 'valais', count: 38 },
         { label: 'Ticino', value: 'ticino', count: 27 },
         { label: 'Other', value: 'other' }
       ],
-      otherRegions: [
+      otherRegionOptions: [
         { label: 'Graubünden', value: 'graubuenden', count: 27 },
         { label: 'Interlaken', value: 'interlaken', count: 26 },
         { label: 'Vaud', value: 'vaud', count: 19 }
@@ -101,34 +100,53 @@ export default {
       ]
     }
   },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...defaultValue(), ...newVal }
+  computed: {
+    primaryRegion: {
+      get() {
+        return this.modelValue?.primaryRegion || ''
+      },
+      set(value) {
+        this.updateField('primaryRegion', value)
       }
     },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+    otherRegions: {
+      get() {
+        return this.modelValue?.otherRegions || []
+      },
+      set(value) {
+        this.updateField('otherRegions', value)
+      }
+    },
+    tags: {
+      get() {
+        return this.modelValue?.tags || []
+      },
+      set(value) {
+        this.updateField('tags', value)
       }
     }
   },
   methods: {
     toggleRegion(value) {
-      if (this.form.otherRegions.includes(value)) {
-        this.form.otherRegions = this.form.otherRegions.filter((v) => v !== value)
-      } else {
-        this.form.otherRegions = [...this.form.otherRegions, value]
-      }
+      const exists = this.otherRegions.includes(value)
+      const next = exists
+        ? this.otherRegions.filter((v) => v !== value)
+        : [...this.otherRegions, value]
+      this.otherRegions = next
     },
     toggleTag(value) {
-      if (this.form.tags.includes(value)) {
-        this.form.tags = this.form.tags.filter((v) => v !== value)
-      } else {
-        this.form.tags = [...this.form.tags, value]
-      }
+      const exists = this.tags.includes(value)
+      const next = exists
+        ? this.tags.filter((v) => v !== value)
+        : [...this.tags, value]
+      this.tags = next
+    },
+    updateField(key, value) {
+      this.$emit('update:modelValue', {
+        ...defaultValue(),
+        ...(this.modelValue || {}),
+        [key]: value
+      })
     }
   }
 }

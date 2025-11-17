@@ -8,8 +8,8 @@
           :key="option.value"
           type="button"
           class="pill"
-          :class="{ active: form.costType === option.value }"
-          @click="form.costType = option.value"
+          :class="{ active: costType === option.value }"
+          @click="costType = option.value"
         >
           {{ option.label }}
         </button>
@@ -24,8 +24,8 @@
           :key="option.value"
           type="button"
           class="pill"
-          :class="{ active: form.voucher === option.value }"
-          @click="form.voucher = option.value"
+          :class="{ active: voucher === option.value }"
+          @click="voucher = option.value"
         >
           {{ option.label }}
         </button>
@@ -51,7 +51,6 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      form: { ...defaultValue(), ...this.modelValue },
       costOptions: [
         { label: 'Free', value: 'free' },
         { label: 'Paid', value: 'paid' },
@@ -63,18 +62,31 @@ export default {
       ]
     }
   },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...defaultValue(), ...newVal }
+  computed: {
+    costType: {
+      get() {
+        return this.modelValue?.costType || ''
+      },
+      set(value) {
+        this.updateField('costType', value)
       }
     },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+    voucher: {
+      get() {
+        return this.modelValue?.voucher || ''
+      },
+      set(value) {
+        this.updateField('voucher', value)
       }
+    }
+  },
+  methods: {
+    updateField(key, value) {
+      this.$emit('update:modelValue', {
+        ...defaultValue(),
+        ...(this.modelValue || {}),
+        [key]: value
+      })
     }
   }
 }

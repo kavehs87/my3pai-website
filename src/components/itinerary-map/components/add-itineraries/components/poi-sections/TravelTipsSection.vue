@@ -3,7 +3,7 @@
     <div class="field-group">
       <label>Suggestion to wear and take</label>
       <textarea
-        v-model="form.wearAndTake"
+        v-model="wearAndTake"
         placeholder="e.g. Good hiking shoes, rain jacket, snacks..."
       ></textarea>
     </div>
@@ -11,7 +11,7 @@
     <div class="field-group">
       <label>Things to do nearby</label>
       <textarea
-        v-model="form.nearby"
+        v-model="nearby"
         placeholder="Names of other points of interest to suggest"
       ></textarea>
     </div>
@@ -19,7 +19,7 @@
     <div class="field-group">
       <label>Insider tips</label>
       <textarea
-        v-model="form.insiderTips"
+        v-model="insiderTips"
         placeholder="e.g. - Bring water shoes&#10;- Arrive before 10:00 to get parking"
       ></textarea>
     </div>
@@ -27,7 +27,7 @@
     <div class="field-group">
       <label>Safety notes</label>
       <textarea
-        v-model="form.safetyNotes"
+        v-model="safetyNotes"
         placeholder="e.g. - Steep drop near viewpoint&#10;- Check weather before train ride"
       ></textarea>
     </div>
@@ -51,23 +51,47 @@ export default {
     }
   },
   emits: ['update:modelValue'],
-  data() {
-    return {
-      form: { ...defaultValue(), ...this.modelValue }
-    }
-  },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...defaultValue(), ...newVal }
+  computed: {
+    wearAndTake: {
+      get() {
+        return this.modelValue?.wearAndTake || ''
+      },
+      set(value) {
+        this.updateField('wearAndTake', value)
       }
     },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+    nearby: {
+      get() {
+        return this.modelValue?.nearby || ''
+      },
+      set(value) {
+        this.updateField('nearby', value)
       }
+    },
+    insiderTips: {
+      get() {
+        return this.modelValue?.insiderTips || ''
+      },
+      set(value) {
+        this.updateField('insiderTips', value)
+      }
+    },
+    safetyNotes: {
+      get() {
+        return this.modelValue?.safetyNotes || ''
+      },
+      set(value) {
+        this.updateField('safetyNotes', value)
+      }
+    }
+  },
+  methods: {
+    updateField(key, value) {
+      this.$emit('update:modelValue', {
+        ...defaultValue(),
+        ...(this.modelValue || {}),
+        [key]: value
+      })
     }
   }
 }

@@ -22,39 +22,39 @@
 
     <div class="field-group">
       <label>Image Credit</label>
-      <input type="text" v-model="form.imageCredit" placeholder="Name or handle to credit" />
+      <input type="text" v-model="imageCredit" placeholder="Name or handle to credit" />
     </div>
 
     <div class="field-group">
       <h4>Video &amp; Social</h4>
       <label>YouTube video URL</label>
-      <input type="url" v-model="form.videoUrl" placeholder="Full link to video" />
+      <input type="url" v-model="videoUrl" placeholder="Full link to video" />
 
       <div class="row">
         <div class="col">
           <label>Time in video (start)</label>
-          <input type="text" v-model="form.videoStart" placeholder="e.g. 04:32" />
+          <input type="text" v-model="videoStart" placeholder="e.g. 04:32" />
         </div>
         <div class="col">
           <label>Time in video (end, optional)</label>
-          <input type="text" v-model="form.videoEnd" placeholder="e.g. 05:10" />
+          <input type="text" v-model="videoEnd" placeholder="e.g. 05:10" />
         </div>
       </div>
 
       <label>Caption for video box</label>
-      <input type="text" v-model="form.videoCaption" placeholder="See this lake at 4:32 in our vlog" />
+      <input type="text" v-model="videoCaption" placeholder="See this lake at 4:32 in our vlog" />
 
       <label>Instagram / TikTok handle</label>
-      <input type="text" v-model="form.socialHandle" placeholder="@yourhandle" />
+      <input type="text" v-model="socialHandle" placeholder="@yourhandle" />
     </div>
 
     <div class="field-group">
       <h4>Creator Details</h4>
       <label>Creator name</label>
-      <input type="text" v-model="form.creatorName" placeholder="Creator name" />
+      <input type="text" v-model="creatorName" placeholder="Creator name" />
 
       <label>Creator role</label>
-      <select v-model="form.creatorRole">
+      <select v-model="creatorRole">
         <option value="" disabled>Select a role</option>
         <option value="guide">Guide</option>
         <option value="photographer">Photographer</option>
@@ -64,7 +64,7 @@
       </select>
 
       <label>Creator notes</label>
-      <input type="text" v-model="form.creatorNotes" placeholder="Contact via My3P for custom trip planning" />
+      <input type="text" v-model="creatorNotes" placeholder="Contact via My3P for custom trip planning" />
     </div>
   </div>
 </template>
@@ -98,7 +98,6 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      form: { ...defaultValue(), ...this.modelValue },
       imageFields: [
         { key: 'primary', label: 'Image 1 - Primary view', required: true, help: 'PNG, JPG, GIF up to 10MB' },
         { key: 'access', label: 'Image 2 - Access / route', required: false, help: 'Optional' },
@@ -106,18 +105,81 @@ export default {
       ]
     }
   },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...defaultValue(), ...newVal }
+  computed: {
+    imageCredit: {
+      get() {
+        return this.modelValue?.imageCredit || ''
+      },
+      set(value) {
+        this.updateField('imageCredit', value)
       }
     },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+    videoUrl: {
+      get() {
+        return this.modelValue?.videoUrl || ''
+      },
+      set(value) {
+        this.updateField('videoUrl', value)
       }
+    },
+    videoStart: {
+      get() {
+        return this.modelValue?.videoStart || ''
+      },
+      set(value) {
+        this.updateField('videoStart', value)
+      }
+    },
+    videoEnd: {
+      get() {
+        return this.modelValue?.videoEnd || ''
+      },
+      set(value) {
+        this.updateField('videoEnd', value)
+      }
+    },
+    videoCaption: {
+      get() {
+        return this.modelValue?.videoCaption || ''
+      },
+      set(value) {
+        this.updateField('videoCaption', value)
+      }
+    },
+    socialHandle: {
+      get() {
+        return this.modelValue?.socialHandle || ''
+      },
+      set(value) {
+        this.updateField('socialHandle', value)
+      }
+    },
+    creatorName: {
+      get() {
+        return this.modelValue?.creatorName || ''
+      },
+      set(value) {
+        this.updateField('creatorName', value)
+      }
+    },
+    creatorRole: {
+      get() {
+        return this.modelValue?.creatorRole || ''
+      },
+      set(value) {
+        this.updateField('creatorRole', value)
+      }
+    },
+    creatorNotes: {
+      get() {
+        return this.modelValue?.creatorNotes || ''
+      },
+      set(value) {
+        this.updateField('creatorNotes', value)
+      }
+    },
+    images() {
+      return this.modelValue?.images || defaultValue().images
     }
   },
   methods: {
@@ -127,8 +189,20 @@ export default {
     handleImageChange(event, key) {
       const file = event.target.files[0]
       if (file) {
-        this.form.images[key] = file
+        const nextImages = {
+          ...this.images,
+          [key]: file
+        }
+        this.updateField('images', nextImages)
       }
+    },
+    updateField(key, value) {
+      const base = {
+        ...defaultValue(),
+        ...(this.modelValue || {})
+      }
+      base[key] = value
+      this.$emit('update:modelValue', base)
     }
   }
 }

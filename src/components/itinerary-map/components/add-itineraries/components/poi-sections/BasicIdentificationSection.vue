@@ -6,7 +6,7 @@
           <label>POI Name <span>*</span></label>
           <input
             type="text"
-            v-model="form.name"
+            v-model="name"
             placeholder="Enter the main title"
           />
         </div>
@@ -15,7 +15,7 @@
           <label>Short Title / Tagline <span>*</span></label>
           <input
             type="text"
-            v-model="form.tagline"
+            v-model="tagline"
             placeholder="A catchy tagline appears here."
           />
         </div>
@@ -23,7 +23,7 @@
         <div class="field-group">
           <label>Brief Summary <span>*</span></label>
           <textarea
-            v-model="form.summary"
+            v-model="summary"
             maxlength="400"
             placeholder="Describe the essence of this point of interest."
           ></textarea>
@@ -50,7 +50,7 @@
     <div class="location-grid">
       <div class="field-group">
         <label>Country <span>*</span></label>
-        <select v-model="form.country">
+        <select v-model="country">
           <option value="">Select a country</option>
           <option value="Switzerland">Switzerland</option>
         </select>
@@ -60,7 +60,7 @@
         <label>Region / State / Canton <span>*</span></label>
         <input
           type="text"
-          v-model="form.region"
+          v-model="region"
           placeholder="Enter the region"
         />
       </div>
@@ -71,14 +71,14 @@
         <label>Nearest Town / Landmark <span>*</span></label>
         <input
           type="text"
-          v-model="form.landmark"
+          v-model="landmark"
           placeholder="e.g. Zermatt"
         />
       </div>
 
       <div class="field-group">
         <label>Pin Accuracy</label>
-        <select v-model="form.pinAccuracy">
+        <select v-model="pinAccuracy">
           <option value="">Exact</option>
           <option value="approximate">Approximate</option>
           <option value="estimate">Estimated</option>
@@ -91,7 +91,7 @@
         <label>Latitude <span>*</span></label>
         <input
           type="text"
-          v-model="form.latitude"
+          v-model="latitude"
           placeholder="46.5197"
         />
       </div>
@@ -100,7 +100,7 @@
         <label>Longitude <span>*</span></label>
         <input
           type="text"
-          v-model="form.longitude"
+          v-model="longitude"
           placeholder="6.6323"
         />
       </div>
@@ -114,47 +114,111 @@
 </template>
 
 <script>
+const defaultForm = () => ({
+  name: '',
+  tagline: '',
+  summary: '',
+  country: '',
+  region: '',
+  landmark: '',
+  pinAccuracy: '',
+  latitude: '',
+  longitude: ''
+})
+
 export default {
   name: 'BasicIdentificationSection',
   props: {
     modelValue: {
       type: Object,
-      default: () => ({
-        name: '',
-        tagline: '',
-        summary: '',
-        country: '',
-        region: '',
-        landmark: '',
-        pinAccuracy: '',
-        latitude: '',
-        longitude: ''
-      })
+      default: () => defaultForm()
     }
   },
   emits: ['update:modelValue'],
-  data() {
-    return {
-      form: { ...this.modelValue }
-    }
-  },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...newVal }
+  computed: {
+    name: {
+      get() {
+        return this.modelValue?.name || ''
+      },
+      set(value) {
+        this.updateField('name', value)
       }
     },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+    tagline: {
+      get() {
+        return this.modelValue?.tagline || ''
+      },
+      set(value) {
+        this.updateField('tagline', value)
       }
+    },
+    summary: {
+      get() {
+        return this.modelValue?.summary || ''
+      },
+      set(value) {
+        this.updateField('summary', value)
+      }
+    },
+    country: {
+      get() {
+        return this.modelValue?.country || ''
+      },
+      set(value) {
+        this.updateField('country', value)
+      }
+    },
+    region: {
+      get() {
+        return this.modelValue?.region || ''
+      },
+      set(value) {
+        this.updateField('region', value)
+      }
+    },
+    landmark: {
+      get() {
+        return this.modelValue?.landmark || ''
+      },
+      set(value) {
+        this.updateField('landmark', value)
+      }
+    },
+    pinAccuracy: {
+      get() {
+        return this.modelValue?.pinAccuracy || ''
+      },
+      set(value) {
+        this.updateField('pinAccuracy', value)
+      }
+    },
+    latitude: {
+      get() {
+        return this.modelValue?.latitude || ''
+      },
+      set(value) {
+        this.updateField('latitude', value)
+      }
+    },
+    longitude: {
+      get() {
+        return this.modelValue?.longitude || ''
+      },
+      set(value) {
+        this.updateField('longitude', value)
+      }
+    },
+    summaryLength() {
+      return this.summary?.length || 0
     }
   },
-  computed: {
-    summaryLength() {
-      return this.form.summary?.length || 0
+  methods: {
+    updateField(key, value) {
+      this.$emit('update:modelValue', {
+        ...defaultForm(),
+        ...(this.modelValue || {}),
+        [key]: value
+      })
     }
   }
 }

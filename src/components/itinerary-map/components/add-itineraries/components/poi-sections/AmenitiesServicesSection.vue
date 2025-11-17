@@ -8,7 +8,7 @@
           :key="amenity.value"
           type="button"
           class="pill"
-          :class="{ active: form.amenities.includes(amenity.value) }"
+          :class="{ active: amenities.includes(amenity.value) }"
           @click="toggleAmenity(amenity.value)"
         >
           {{ amenity.label }}
@@ -19,7 +19,7 @@
     <div class="field-group">
       <label>Nearby services</label>
       <textarea
-        v-model="form.nearbyServices"
+        v-model="nearbyServices"
         placeholder="e.g. Supermarket 5 min drive"
       ></textarea>
     </div>
@@ -32,8 +32,8 @@
           :key="option.value"
           type="button"
           class="pill"
-          :class="{ active: form.petFriendly === option.value }"
-          @click="form.petFriendly = option.value"
+          :class="{ active: petFriendly === option.value }"
+          @click="petFriendly = option.value"
         >
           {{ option.label }}
         </button>
@@ -48,7 +48,7 @@
           :key="option.value"
           type="button"
           class="pill"
-          :class="{ active: form.accessibility.includes(option.value) }"
+          :class="{ active: accessibility.includes(option.value) }"
           @click="toggleAccessibility(option.value)"
         >
           {{ option.label }}
@@ -77,7 +77,6 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      form: { ...defaultValue(), ...this.modelValue },
       amenityOptions: [
         { label: 'Restaurant', value: 'restaurant' },
         { label: 'Café', value: 'cafe' },
@@ -102,34 +101,61 @@ export default {
       ]
     }
   },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...defaultValue(), ...newVal }
+  computed: {
+    amenities: {
+      get() {
+        return this.modelValue?.amenities || []
+      },
+      set(value) {
+        this.updateField('amenities', value)
       }
     },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+    nearbyServices: {
+      get() {
+        return this.modelValue?.nearbyServices || ''
+      },
+      set(value) {
+        this.updateField('nearbyServices', value)
+      }
+    },
+    petFriendly: {
+      get() {
+        return this.modelValue?.petFriendly || ''
+      },
+      set(value) {
+        this.updateField('petFriendly', value)
+      }
+    },
+    accessibility: {
+      get() {
+        return this.modelValue?.accessibility || []
+      },
+      set(value) {
+        this.updateField('accessibility', value)
       }
     }
   },
   methods: {
     toggleAmenity(value) {
-      if (this.form.amenities.includes(value)) {
-        this.form.amenities = this.form.amenities.filter((item) => item !== value)
-      } else {
-        this.form.amenities = [...this.form.amenities, value]
-      }
+      const exists = this.amenities.includes(value)
+      const next = exists
+        ? this.amenities.filter((item) => item !== value)
+        : [...this.amenities, value]
+      this.amenities = next
     },
     toggleAccessibility(value) {
-      if (this.form.accessibility.includes(value)) {
-        this.form.accessibility = this.form.accessibility.filter((item) => item !== value)
-      } else {
-        this.form.accessibility = [...this.form.accessibility, value]
-      }
+      const exists = this.accessibility.includes(value)
+      const next = exists
+        ? this.accessibility.filter((item) => item !== value)
+        : [...this.accessibility, value]
+      this.accessibility = next
+    },
+    updateField(key, value) {
+      this.$emit('update:modelValue', {
+        ...defaultValue(),
+        ...(this.modelValue || {}),
+        [key]: value
+      })
     }
   }
 }

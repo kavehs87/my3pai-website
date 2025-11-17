@@ -2,7 +2,7 @@
   <div class="category-type">
     <div class="field-group">
       <label>Place type (main category) <span>*</span></label>
-      <select v-model="form.placeType">
+      <select v-model="placeType">
         <option value="" disabled>Select a place type</option>
         <option value="nature">Nature</option>
         <option value="city">City</option>
@@ -21,7 +21,7 @@
           :key="activity.value"
           type="button"
           class="pill"
-          :class="{ active: form.activities.includes(activity.value) }"
+          :class="{ active: activities.includes(activity.value) }"
           @click="toggleActivity(activity.value)"
         >
           {{ activity.label }}
@@ -37,7 +37,7 @@
           :key="audience.value"
           type="button"
           class="pill"
-          :class="{ active: form.audience.includes(audience.value) }"
+          :class="{ active: audience.includes(audience.value) }"
           @click="toggleAudience(audience.value)"
         >
           {{ audience.label }}
@@ -47,7 +47,7 @@
 
     <div class="field-group">
       <label>Age requirement</label>
-      <select v-model="form.ageRequirement">
+      <select v-model="ageRequirement">
         <option value="" disabled>Select age requirement</option>
         <option value="none">All ages</option>
         <option value="kids">Kids (0-12)</option>
@@ -77,7 +77,6 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      form: { ...defaultValue(), ...this.modelValue },
       activityOptions: [
         { label: 'Sightseeing', value: 'sightseeing' },
         { label: 'Hike / Walk', value: 'hike' },
@@ -104,34 +103,61 @@ export default {
       ]
     }
   },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...defaultValue(), ...newVal }
+  computed: {
+    placeType: {
+      get() {
+        return this.modelValue?.placeType || ''
+      },
+      set(value) {
+        this.updateField('placeType', value)
       }
     },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+    activities: {
+      get() {
+        return this.modelValue?.activities || []
+      },
+      set(value) {
+        this.updateField('activities', value)
+      }
+    },
+    audience: {
+      get() {
+        return this.modelValue?.audience || []
+      },
+      set(value) {
+        this.updateField('audience', value)
+      }
+    },
+    ageRequirement: {
+      get() {
+        return this.modelValue?.ageRequirement || ''
+      },
+      set(value) {
+        this.updateField('ageRequirement', value)
       }
     }
   },
   methods: {
     toggleActivity(value) {
-      if (this.form.activities.includes(value)) {
-        this.form.activities = this.form.activities.filter((v) => v !== value)
-      } else {
-        this.form.activities = [...this.form.activities, value]
-      }
+      const exists = this.activities.includes(value)
+      const next = exists
+        ? this.activities.filter((v) => v !== value)
+        : [...this.activities, value]
+      this.activities = next
     },
     toggleAudience(value) {
-      if (this.form.audience.includes(value)) {
-        this.form.audience = this.form.audience.filter((v) => v !== value)
-      } else {
-        this.form.audience = [...this.form.audience, value]
-      }
+      const exists = this.audience.includes(value)
+      const next = exists
+        ? this.audience.filter((v) => v !== value)
+        : [...this.audience, value]
+      this.audience = next
+    },
+    updateField(key, value) {
+      this.$emit('update:modelValue', {
+        ...defaultValue(),
+        ...(this.modelValue || {}),
+        [key]: value
+      })
     }
   }
 }

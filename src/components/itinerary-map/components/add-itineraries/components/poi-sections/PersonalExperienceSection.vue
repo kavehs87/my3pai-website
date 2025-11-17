@@ -3,11 +3,11 @@
     <div class="field-group">
       <label>Personal experience <span>*</span></label>
       <textarea
-        v-model="form.experience"
+        v-model="experience"
         :maxlength="1000"
         placeholder="Share your honest experience, what made this place special, how it felt, what you would tell a friend..."
       ></textarea>
-      <div class="char-counter">{{ form.experience.length }}/1000</div>
+      <div class="char-counter">{{ experience.length }}/1000</div>
     </div>
 
     <div class="ai-suggestion">
@@ -31,22 +31,17 @@ export default {
     }
   },
   emits: ['update:modelValue'],
-  data() {
-    return {
-      form: { ...defaultValue(), ...this.modelValue }
-    }
-  },
-  watch: {
-    modelValue: {
-      deep: true,
-      handler(newVal) {
-        this.form = { ...defaultValue(), ...newVal }
-      }
-    },
-    form: {
-      deep: true,
-      handler(newVal) {
-        this.$emit('update:modelValue', { ...newVal })
+  computed: {
+    experience: {
+      get() {
+        return this.modelValue?.experience || ''
+      },
+      set(value) {
+        this.$emit('update:modelValue', {
+          ...defaultValue(),
+          ...(this.modelValue || {}),
+          experience: value
+        })
       }
     }
   }
