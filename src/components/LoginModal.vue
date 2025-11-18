@@ -100,6 +100,7 @@ export default {
     
     async handleLogin() {
       this.isLoading = true
+      this.errorMessage = ''
       try {
         const result = await apiService.login({
           email: this.form.email,
@@ -107,15 +108,24 @@ export default {
         })
         
         if (result.success) {
-          // Store the token
-          apiService.setToken(result.data.token)
-          
-          // Emit success event with user data
-          this.$emit('login-success', result.data.user)
+          let user = result?.data?.user || result?.data?.data || null
+
+          if (!user) {
+            const profileResult = await apiService.getCurrentUser()
+            if (profileResult.success) {
+              user = profileResult.data
+            } else {
+              this.errorMessage = profileResult.error || 'Login succeeded, but we could not load your account.'
+              return
+            }
+          }
+
+          this.$emit('login-success', user)
           this.closeModal()
-        } else {
-          this.errorMessage = result.error || 'Login failed'
+          return
         }
+
+        this.errorMessage = result.error || 'Login failed'
       } catch (error) {
         console.error('Login failed:', error)
         this.errorMessage = error.message || 'Login failed. Please check your credentials and try again.'
@@ -125,9 +135,8 @@ export default {
     },
     
     loginWithGoogle() {
-      // Redirect to Laravel Google OAuth endpoint
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
-      window.location.href = `${apiBaseUrl}/auth/google`
+      // The backend now finishes login via HTTP-only cookies, so the callback page only needs to read /api/me.
+      window.location.href = apiService.getGoogleAuthUrl()
     },
     
     switchToSignup() {

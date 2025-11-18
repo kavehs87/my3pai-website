@@ -2,8 +2,8 @@
   <div class="oauth-callback">
     <div class="loading-container">
       <div class="loading-spinner"></div>
-      <h2>Completing sign in...</h2>
-      <p>Please wait while we finish setting up your account.</p>
+      <h2 :class="{ 'error-text': isError }">{{ statusTitle }}</h2>
+      <p :class="{ 'error-text': isError }">{{ statusDescription }}</p>
     </div>
   </div>
 </template>
@@ -14,40 +14,56 @@ import eventBus from '../utils/eventBus.js'
 
 export default {
   name: 'OAuthCallback',
+  data() {
+    return {
+      statusTitle: 'Completing sign in...',
+      statusDescription: 'Please wait while we finish setting up your account.',
+      isError: false,
+      redirectTimer: null
+    }
+  },
   async mounted() {
+    const urlParams = new URLSearchParams(window.location.search)
+    const backendError = urlParams.get('error')
+
+    if (backendError) {
+      this.handleFailure(decodeURIComponent(backendError))
+      return
+    }
+
     try {
-      // Check if token is provided in URL parameters
-      const urlParams = new URLSearchParams(window.location.search)
-      const token = urlParams.get('token')
-      
-      if (token) {
-        // Store the token and get user data
-        apiService.setToken(token)
-        const result = await apiService.getCurrentUser()
-        
-        if (result.success) {
-          // Emit auth success event globally with user data
-          eventBus.emit('auth-success', result.data)
-          this.$router.push('/')
-          return
-        }
-      }
-      
-      // If no token in URL, try to get current user (in case Laravel set cookie)
       const result = await apiService.getCurrentUser()
-      
+
       if (result.success) {
-        // Store user data and redirect to home
         eventBus.emit('auth-success', result.data)
         this.$router.push('/')
+        return
+      }
+
+      if (result.status === 401) {
+        this.handleFailure('We could not verify your session. Please try signing in again.')
       } else {
-        // Handle authentication failure
-        console.error('OAuth authentication failed:', result.error)
-        this.$router.push('/?auth_error=1')
+        this.handleFailure(result.error || 'Unexpected error while completing sign in.')
       }
     } catch (error) {
       console.error('OAuth callback error:', error)
-      this.$router.push('/?auth_error=1')
+      this.handleFailure('Something went wrong while signing you in. Please try again.')
+    }
+  },
+  beforeUnmount() {
+    if (this.redirectTimer) {
+      clearTimeout(this.redirectTimer)
+      this.redirectTimer = null
+    }
+  },
+  methods: {
+    handleFailure(message) {
+      this.isError = true
+      this.statusTitle = 'Unable to complete sign in'
+      this.statusDescription = message || 'Please return to the login page and try again.'
+      this.redirectTimer = setTimeout(() => {
+        this.$router.push('/?auth_error=1')
+      }, 2500)
     }
   }
 }
@@ -90,5 +106,9 @@ h2 {
 p {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+}
+
+.error-text {
+  color: var(--error-color, #ef4444);
 }
 </style>

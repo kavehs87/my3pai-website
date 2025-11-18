@@ -1,50 +1,92 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+const DEFAULT_API_BASE_URL = 'https://api.my3pai.com/api'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '')
 
 // API Service Class
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL
-    this.token = localStorage.getItem('auth_token')
+    this.apiOrigin = this.getApiOrigin(this.baseURL)
+    this.csrfInitialized = false
+    this.csrfPromise = null
   }
 
-  // Set authentication token
-  setToken(token) {
-    this.token = token
-    localStorage.setItem('auth_token', token)
+  getApiOrigin(url) {
+    try {
+      const parsed = new URL(url)
+      return parsed.origin
+    } catch (error) {
+      console.warn('Unable to derive API origin from base URL. Falling back to window origin.', error)
+      return window.location.origin
+    }
   }
 
-  // Remove authentication token
-  removeToken() {
-    this.token = null
-    localStorage.removeItem('auth_token')
-  }
-
-  // Get headers for API requests
-  getHeaders(includeAuth = true) {
-    const headers = {
+  getHeaders() {
+    return {
+      'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  }
+
+  async ensureCsrf() {
+    if (this.csrfInitialized) return
+    if (this.csrfPromise) {
+      await this.csrfPromise
+      return
     }
 
-    if (includeAuth && this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
-    }
+    const csrfUrl = `${this.apiOrigin}/sanctum/csrf-cookie`
+    this.csrfPromise = fetch(csrfUrl, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to initialize CSRF protection (${response.status})`)
+        }
+        this.csrfInitialized = true
+      })
+      .catch((error) => {
+        console.error('CSRF cookie initialization failed:', error)
+        throw error
+      })
+      .finally(() => {
+        this.csrfPromise = null
+      })
 
-    return headers
+    await this.csrfPromise
   }
 
   // Generic request method
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`
-    const config = {
-      headers: this.getHeaders(options.includeAuth !== false),
-      ...options
+    const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`
+    const requiresCsrf = options.requireCsrf !== false
+
+    if (requiresCsrf) {
+      await this.ensureCsrf()
     }
 
-    // Handle body - if it's an object and not already a string, stringify it
+    const config = {
+      method: options.method || 'GET',
+      credentials: 'include',
+      headers: {
+        ...this.getHeaders(),
+        ...(options.headers || {})
+      }
+    }
+
+    if (options.body !== undefined) {
+      config.body = options.body
+    }
+
     if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
       config.body = JSON.stringify(config.body)
+    }
+
+    if (config.body instanceof FormData && config.headers['Content-Type']) {
+      delete config.headers['Content-Type']
     }
 
     try {
@@ -70,13 +112,15 @@ class ApiService {
             errorMessage = validationErrors.join(', ')
           }
         }
-        throw new Error(errorMessage)
+        const error = new Error(errorMessage)
+        error.status = response.status
+        throw error
       }
 
       return { success: true, data }
     } catch (error) {
       console.error('API Request failed:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: error.message, status: error.status || null }
     }
   }
 
@@ -98,9 +142,6 @@ class ApiService {
   // Logout
   async logout() {
     const result = await this.request('/logout', { method: 'GET' })
-    if (result.success) {
-      this.removeToken()
-    }
     return result
   }
 
@@ -108,7 +149,7 @@ class ApiService {
   async register(userData) {
     return this.request('/register', {
       method: 'POST',
-      body: JSON.stringify(userData)
+      body: userData
     })
   }
 
@@ -116,7 +157,7 @@ class ApiService {
   async login(credentials) {
     return this.request('/login', {
       method: 'POST',
-      body: JSON.stringify(credentials)
+      body: credentials
     })
   }
 
@@ -126,7 +167,7 @@ class ApiService {
     // But if you need to process it on frontend:
     return this.request('/auth/google/callback', {
       method: 'POST',
-      body: JSON.stringify({ code, state })
+      body: { code, state }
     })
   }
 
@@ -141,7 +182,7 @@ class ApiService {
   async updateProfile(profileData) {
     return this.request('/profile', {
       method: 'PUT',
-      body: JSON.stringify(profileData)
+      body: profileData
     })
   }
 
@@ -151,16 +192,18 @@ class ApiService {
     formData.append('avatar', file)
     
     const url = `${this.baseURL}/profile/avatar`
-    const headers = { 'Accept': 'application/json' }
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
+    const headers = { 
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
     }
 
     try {
+      await this.ensureCsrf()
       const response = await fetch(url, {
         method: 'POST',
         headers,
-        body: formData
+        body: formData,
+        credentials: 'include'
       })
 
       const data = await response.json()
@@ -182,16 +225,18 @@ class ApiService {
     formData.append('cover', file)
     
     const url = `${this.baseURL}/profile/cover`
-    const headers = { 'Accept': 'application/json' }
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
+    const headers = { 
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
     }
 
     try {
+      await this.ensureCsrf()
       const response = await fetch(url, {
         method: 'POST',
         headers,
-        body: formData
+        body: formData,
+        credentials: 'include'
       })
 
       const data = await response.json()
@@ -216,14 +261,14 @@ class ApiService {
   async updatePreferences(preferences) {
     return this.request('/profile/preferences', {
       method: 'PUT',
-      body: JSON.stringify(preferences)
+      body: preferences
     })
   }
 
   async updateLanguages(languages) {
     return this.request('/profile/languages', {
       method: 'PUT',
-      body: JSON.stringify({ languages })
+      body: { languages }
     })
   }
 
@@ -292,14 +337,14 @@ class ApiService {
   async createTrip(tripData) {
     return this.request('/profile/trips', {
       method: 'POST',
-      body: JSON.stringify(tripData)
+      body: tripData
     })
   }
 
   async updateTrip(id, tripData) {
     return this.request(`/profile/trips/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(tripData)
+      body: tripData
     })
   }
 
@@ -307,13 +352,17 @@ class ApiService {
     const formData = new FormData()
     formData.append('thumbnail', file)
     const url = `${this.baseURL}/profile/trips/${id}/thumbnail`
-    const headers = { 'Accept': 'application/json' }
-    if (this.token) headers['Authorization'] = `Bearer ${this.token}`
+    const headers = { 
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
     try {
+      await this.ensureCsrf()
       const res = await fetch(url, {
         method: 'POST',
         headers,
-        body: formData
+        body: formData,
+        credentials: 'include'
       })
       const data = await res.json()
       if (!res.ok) {
@@ -330,13 +379,17 @@ class ApiService {
     const formData = new FormData()
     formData.append('shortThumbnail', file)
     const url = `${this.baseURL}/profile/trips/${id}/short-thumbnail`
-    const headers = { 'Accept': 'application/json' }
-    if (this.token) headers['Authorization'] = `Bearer ${this.token}`
+    const headers = { 
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
     try {
+      await this.ensureCsrf()
       const res = await fetch(url, {
         method: 'POST',
         headers,
-        body: formData
+        body: formData,
+        credentials: 'include'
       })
       const data = await res.json()
       if (!res.ok) {
@@ -359,7 +412,7 @@ class ApiService {
   async changePassword(passwordData) {
     return this.request('/profile/change-password', {
       method: 'POST',
-      body: JSON.stringify(passwordData)
+      body: passwordData
     })
   }
 
@@ -367,7 +420,7 @@ class ApiService {
   async deleteAccount(password) {
     return this.request('/profile/account', {
       method: 'DELETE',
-      body: JSON.stringify({ password })
+      body: { password }
     })
   }
 }
