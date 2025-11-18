@@ -141,8 +141,7 @@ class ApiService {
 
   // Logout
   async logout() {
-    const result = await this.request('/logout', { method: 'GET' })
-    return result
+    return this.request('/logout', { method: 'POST' })
   }
 
   // Register with email/password

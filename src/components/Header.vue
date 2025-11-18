@@ -213,22 +213,32 @@ export default {
     },
     async logout() {
       this.isLoggingOut = true
+      let logoutError = null
       try {
-        await apiService.logout()
-        this.isLoggedIn = false
-        this.user = { name: '', email: '', avatar: '' }
-        this.showProfileDropdown = false
-        // Optionally redirect to home page
-        this.$router.push('/')
+        const response = await apiService.logout()
+        if (!response?.success) {
+          logoutError = response?.error || 'Unable to contact the server. Your session was cleared locally.'
+        }
       } catch (error) {
         console.error('Logout failed:', error)
-        // Still logout locally even if API call fails
-        this.isLoggedIn = false
-        this.user = { name: '', email: '', avatar: '' }
-        this.showProfileDropdown = false
+        logoutError = error?.message || 'Logout failed. Your session was cleared locally.'
       } finally {
+        if (logoutError && this.$toast) {
+          this.$toast.error(logoutError)
+        } else if (this.$toast) {
+          this.$toast.success('You have been logged out.')
+        }
+        this.resetAuthState()
         this.isLoggingOut = false
       }
+    },
+    resetAuthState() {
+      this.isLoggedIn = false
+      this.user = { name: '', email: '', avatar: '' }
+      this.showProfileDropdown = false
+      this.showSignup = false
+      this.showLogin = true
+      this.$router.push('/')
     },
     toggleProfileDropdown() {
       this.showProfileDropdown = !this.showProfileDropdown
