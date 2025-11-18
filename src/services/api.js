@@ -1,6 +1,8 @@
 // API Configuration
 const DEFAULT_API_BASE_URL = 'https://api.my3pai.com/api'
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '')
+const XSRF_COOKIE_NAME = 'XSRF-TOKEN'
+const XSRF_HEADER_NAME = 'X-XSRF-TOKEN'
 
 // API Service Class
 class ApiService {
@@ -77,6 +79,11 @@ class ApiService {
       }
     }
 
+    const xsrfToken = this.getXsrfToken()
+    if (xsrfToken) {
+      config.headers[XSRF_HEADER_NAME] = xsrfToken
+    }
+
     if (options.body !== undefined) {
       config.body = options.body
     }
@@ -122,6 +129,17 @@ class ApiService {
       console.error('API Request failed:', error)
       return { success: false, error: error.message, status: error.status || null }
     }
+  }
+
+  getXsrfToken() {
+    const raw = this.getCookie(XSRF_COOKIE_NAME)
+    return raw ? decodeURIComponent(raw) : null
+  }
+
+  getCookie(name) {
+    if (typeof document === 'undefined') return null
+    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
+    return match ? match[1] : null
   }
 
   // Health check
@@ -195,6 +213,10 @@ class ApiService {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
     }
+    const xsrfToken = this.getXsrfToken()
+    if (xsrfToken) {
+      headers[XSRF_HEADER_NAME] = xsrfToken
+    }
 
     try {
       await this.ensureCsrf()
@@ -227,6 +249,10 @@ class ApiService {
     const headers = { 
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
+    }
+    const xsrfToken = this.getXsrfToken()
+    if (xsrfToken) {
+      headers[XSRF_HEADER_NAME] = xsrfToken
     }
 
     try {
@@ -355,6 +381,10 @@ class ApiService {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
     }
+    const xsrfToken = this.getXsrfToken()
+    if (xsrfToken) {
+      headers[XSRF_HEADER_NAME] = xsrfToken
+    }
     try {
       await this.ensureCsrf()
       const res = await fetch(url, {
@@ -381,6 +411,10 @@ class ApiService {
     const headers = { 
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
+    }
+    const xsrfToken = this.getXsrfToken()
+    if (xsrfToken) {
+      headers[XSRF_HEADER_NAME] = xsrfToken
     }
     try {
       await this.ensureCsrf()
