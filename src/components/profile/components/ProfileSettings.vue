@@ -552,9 +552,7 @@ export default {
       this.$emit('change-password')
     },
     deleteAccount() {
-      if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-        this.$emit('delete-account')
-      }
+      this.$emit('delete-account')
     }
   }
 }

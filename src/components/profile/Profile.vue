@@ -58,6 +58,144 @@
         @delete-account="handleDeleteAccount"
       />
     </div>
+    
+    <!-- Password Change Modal -->
+    <transition name="fade">
+      <div v-if="passwordModal.visible" class="modal-overlay">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>Change Password</h3>
+            <button class="close-btn" @click="closePasswordModal" aria-label="Close password modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form class="modal-body" @submit.prevent="submitPasswordChange">
+            <p class="helper-text">
+              Updating your password will sign you out everywhere for security.
+            </p>
+            <div v-if="userHasPassword" class="form-group">
+              <label>Current Password</label>
+              <input
+                v-model="passwordModal.currentPassword"
+                type="password"
+                class="form-input"
+                placeholder="Enter current password"
+                autocomplete="current-password"
+              />
+            </div>
+            <div class="form-group">
+              <label>{{ userHasPassword ? 'New Password' : 'Create Password' }}</label>
+              <input
+                v-model="passwordModal.newPassword"
+                type="password"
+                class="form-input"
+                placeholder="Enter new password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Confirm Password</label>
+              <input
+                v-model="passwordModal.confirmPassword"
+                type="password"
+                class="form-input"
+                placeholder="Confirm new password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+              />
+            </div>
+            <p v-if="passwordModal.error" class="error-text">{{ passwordModal.error }}</p>
+            <div class="modal-actions">
+              <button type="button" class="modal-btn ghost" @click="closePasswordModal" :disabled="passwordModal.submitting">
+                Cancel
+              </button>
+              <button type="submit" class="modal-btn primary" :disabled="passwordModal.submitting">
+                <span v-if="passwordModal.submitting">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  Updating...
+                </span>
+                <span v-else>Update Password</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Account Deletion Modal -->
+    <transition name="fade">
+      <div v-if="deleteModal.visible" class="modal-overlay">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>Delete Account</h3>
+            <button class="close-btn" @click="closeDeleteModal" aria-label="Close delete modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="helper-text warning">
+              This action permanently removes your account, trips, and data. This cannot be undone.
+            </p>
+            <form @submit.prevent="submitAccountDeletion">
+              <div v-if="userHasPassword" class="form-group">
+                <label>Confirm with Password</label>
+                <input
+                  v-model="deleteModal.password"
+                  type="password"
+                  class="form-input"
+                  placeholder="Enter your password"
+                  autocomplete="current-password"
+                />
+              </div>
+              <div v-else class="form-group">
+                <label>Reverify with Google</label>
+                <p class="helper-text">
+                  Because this account only uses Google sign-in, we need you to reverify your identity before deletion.
+                </p>
+                <button
+                  type="button"
+                  class="modal-btn outline"
+                  @click="reauthWithGoogle"
+                  :disabled="deleteModal.isReauthing"
+                >
+                  <span v-if="deleteModal.isReauthing">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Waiting for Google...
+                  </span>
+                  <span v-else>
+                    <i class="fab fa-google"></i>
+                    Reverify with Google
+                  </span>
+                </button>
+                <p v-if="deleteModal.providerReauthToken" class="success-text">
+                  Google verification successful. You can now delete your account.
+                </p>
+              </div>
+              <p v-if="deleteModal.error" class="error-text">{{ deleteModal.error }}</p>
+              <div class="modal-actions">
+                <button type="button" class="modal-btn ghost" @click="closeDeleteModal" :disabled="deleteModal.submitting">
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="modal-btn danger"
+                  :disabled="deleteModal.submitting || (!userHasPassword && !deleteModal.providerReauthToken)"
+                >
+                  <span v-if="deleteModal.submitting">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Deleting...
+                  </span>
+                  <span v-else>Delete Account</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </transition>
     </template>
   </div>
 </template>
@@ -101,7 +239,36 @@ export default {
         { id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null },
         { id: 'trips', label: 'Trips', icon: 'fas fa-map-marked-alt', count: 0 },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
-      ]
+      ],
+      passwordModal: {
+        visible: false,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+        error: '',
+        submitting: false
+      },
+      deleteModal: {
+        visible: false,
+        password: '',
+        providerReauthToken: '',
+        error: '',
+        submitting: false,
+        isReauthing: false
+      },
+      googleScriptPromise: null
+    }
+  },
+  computed: {
+    userHasPassword() {
+      const user = this.profileData.user || {}
+      return Boolean(
+        user.hasPassword ??
+        user.has_password ??
+        user.password_set ??
+        user.passwordHash ??
+        user.password
+      )
     }
   },
   watch: {
@@ -180,7 +347,14 @@ export default {
             joinedDate: user.joinedDate || user.created_at || user.joined_date || '',
             verified: user.verified || false,
             preferences: normalizedPreferences,
-            socialLinks: user.socialLinks || user.social_links || []
+            socialLinks: user.socialLinks || user.social_links || [],
+            hasPassword: Boolean(
+              user.hasPassword ??
+              user.has_password ??
+              user.password_set ??
+              user.password ??
+              user.password_hash
+            )
           }
           
           // Normalize trips (handle date field names)
@@ -777,7 +951,14 @@ export default {
                 joinedDate: user.joinedDate || user.created_at || '',
                 verified: user.verified || false,
                 preferences: normalizedPreferences,
-                socialLinks: user.socialLinks || user.social_links || []
+                socialLinks: user.socialLinks || user.social_links || [],
+                hasPassword: Boolean(
+                  user.hasPassword ??
+                  user.has_password ??
+                  user.password_set ??
+                  user.password ??
+                  user.password_hash
+                )
               }
               this.profileData.user = normalizedUser
             }
@@ -826,52 +1007,178 @@ export default {
         }
       }
     },
-    async handleChangePassword() {
-      const currentPassword = prompt('Enter current password:')
-      if (!currentPassword) return
-      
-      const newPassword = prompt('Enter new password:')
-      if (!newPassword) return
-      
-      const confirmPassword = prompt('Confirm new password:')
-      if (newPassword !== confirmPassword) {
-        toast.error('Passwords do not match!')
-        return
-      }
-      
-      try {
-        const result = await apiService.changePassword({
-          currentPassword,
-          newPassword,
-          newPasswordConfirmation: confirmPassword
-        })
-        if (result.success) {
-          toast.success('Password changed successfully!')
-        } else {
-          toast.error(`Failed to change password: ${result.error}`)
-        }
-      } catch (error) {
-        toast.error(`Error changing password: ${error.message}`)
+    handleChangePassword() {
+      this.resetPasswordModal()
+      this.passwordModal.visible = true
+    },
+    handleDeleteAccount() {
+      this.resetDeleteModal()
+      this.deleteModal.visible = true
+    },
+    resetPasswordModal() {
+      this.passwordModal = {
+        visible: false,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+        error: '',
+        submitting: false
       }
     },
-    async handleDeleteAccount() {
-      if (!confirm('Are you absolutely sure? This will permanently delete your account and all associated data.')) return
-      
-      const password = prompt('Enter your password to confirm account deletion:')
-      if (!password) return
-      
+    closePasswordModal() {
+      this.passwordModal.visible = false
+    },
+    async submitPasswordChange() {
+      this.passwordModal.error = ''
+      if (!this.passwordModal.newPassword || !this.passwordModal.confirmPassword) {
+        this.passwordModal.error = 'Please enter and confirm your new password.'
+        return
+      }
+      if (this.passwordModal.newPassword.length < 8) {
+        this.passwordModal.error = 'Password must be at least 8 characters long.'
+        return
+      }
+      if (this.passwordModal.newPassword !== this.passwordModal.confirmPassword) {
+        this.passwordModal.error = 'New passwords do not match.'
+        return
+      }
+      if (this.userHasPassword && !this.passwordModal.currentPassword) {
+        this.passwordModal.error = 'Please provide your current password.'
+        return
+      }
+      this.passwordModal.submitting = true
       try {
-        const result = await apiService.deleteAccount(password)
-        if (result.success) {
-          toast.success('Account deleted successfully')
-          // Clear auth token and redirect
-          apiService.removeToken()
-          this.$router.push('/')
-        } else {
-          toast.error(`Failed to delete account: ${result.error}`)
+        const payload = {
+          newPassword: this.passwordModal.newPassword,
+          newPassword_confirmation: this.passwordModal.confirmPassword
         }
+        if (this.userHasPassword) {
+          payload.currentPassword = this.passwordModal.currentPassword
+        }
+        const result = await apiService.changePassword(payload)
+        if (!result.success) {
+          throw new Error(result.error || 'Unable to change password.')
+        }
+        toast.success('Password updated. Please sign in again.')
+        this.closePasswordModal()
+        await this.forceLogoutAfterSensitiveChange('/?password-updated=1')
       } catch (error) {
-        toast.error(`Error deleting account: ${error.message}`)
+        this.passwordModal.error = error.message || 'Unexpected error changing password.'
+      } finally {
+        this.passwordModal.submitting = false
+      }
+    },
+    resetDeleteModal() {
+      this.deleteModal = {
+        visible: false,
+        password: '',
+        providerReauthToken: '',
+        error: '',
+        submitting: false,
+        isReauthing: false
+      }
+    },
+    closeDeleteModal() {
+      this.deleteModal.visible = false
+    },
+    async submitAccountDeletion() {
+      this.deleteModal.error = ''
+      if (this.userHasPassword) {
+        if (!this.deleteModal.password) {
+          this.deleteModal.error = 'Please confirm with your password.'
+          return
+        }
+      } else if (!this.deleteModal.providerReauthToken) {
+        this.deleteModal.error = 'Please reverify with Google first.'
+        return
+      }
+      this.deleteModal.submitting = true
+      try {
+        const payload = this.userHasPassword
+          ? { password: this.deleteModal.password }
+          : { providerReauthToken: this.deleteModal.providerReauthToken }
+        const result = await apiService.deleteAccount(payload)
+        if (!result.success) {
+          throw new Error(result.error || 'Unable to delete account.')
+        }
+        toast.success('Account deleted. We hope to see you again.')
+        this.closeDeleteModal()
+        await this.forceLogoutAfterSensitiveChange('/?account-deleted=1')
+      } catch (error) {
+        this.deleteModal.error = error.message || 'Unexpected error deleting account.'
+      } finally {
+        this.deleteModal.submitting = false
+      }
+    },
+    async reauthWithGoogle() {
+      this.deleteModal.error = ''
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+      if (!clientId) {
+        this.deleteModal.error = 'Google reauthentication is not configured.'
+        return
+      }
+      try {
+        await this.ensureGoogleClient()
+      } catch (error) {
+        this.deleteModal.error = error.message || 'Unable to load Google services.'
+        return
+      }
+      this.deleteModal.isReauthing = true
+      const client = window.google.accounts.id
+      client.initialize({
+        client_id: clientId,
+        callback: (response) => {
+          this.deleteModal.isReauthing = false
+          if (response?.credential) {
+            this.deleteModal.providerReauthToken = response.credential
+            toast.success('Google verification successful.')
+            this.deleteModal.error = ''
+          } else if (!this.deleteModal.providerReauthToken) {
+            this.deleteModal.error = 'Google reauthentication failed. Please try again.'
+          }
+        },
+        context: 'signin'
+      })
+      client.prompt((notification) => {
+        if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
+          this.deleteModal.isReauthing = false
+          if (!this.deleteModal.providerReauthToken) {
+            this.deleteModal.error = 'Google prompt was dismissed. Please try again.'
+          }
+        }
+      })
+    },
+    ensureGoogleClient() {
+      if (window.google?.accounts?.id) {
+        return Promise.resolve()
+      }
+      if (this.googleScriptPromise) {
+        return this.googleScriptPromise
+      }
+      this.googleScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = 'https://accounts.google.com/gsi/client'
+        script.async = true
+        script.defer = true
+        script.onload = () => {
+          this.googleScriptPromise = null
+          resolve()
+        }
+        script.onerror = () => {
+          this.googleScriptPromise = null
+          reject(new Error('Failed to load Google Identity Services.'))
+        }
+        document.head.appendChild(script)
+      })
+      return this.googleScriptPromise
+    },
+    async forceLogoutAfterSensitiveChange(redirect = '/?reauth=1') {
+      try {
+        await apiService.logout()
+      } catch (error) {
+        console.warn('Logout after sensitive action failed:', error)
+      } finally {
+        window.location.href = redirect
       }
     }
   }
@@ -910,6 +1217,170 @@ export default {
 .loading-spinner p {
   font-size: var(--font-size-lg);
   margin: 0;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: var(--spacing-md);
+}
+
+.modal-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  width: min(420px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-sm);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-full);
+  transition: background var(--transition-normal);
+}
+
+.close-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.modal-body {
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.modal-body form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-group label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-input {
+  width: 100%;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 2px var(--secondary-light);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.modal-btn {
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.modal-btn.ghost {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+
+.modal-btn.primary {
+  background: var(--secondary-color);
+  color: #fff;
+}
+
+.modal-btn.danger {
+  background: var(--error-color);
+  color: #fff;
+}
+
+.modal-btn.outline {
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.helper-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.helper-text.warning {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+.error-text {
+  color: var(--error-color);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.success-text {
+  color: var(--success-color, #16a34a);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
 

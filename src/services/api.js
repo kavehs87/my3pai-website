@@ -416,10 +416,11 @@ class ApiService {
   }
 
   // Delete account
-  async deleteAccount(password) {
+  async deleteAccount(payload) {
+    const body = typeof payload === 'object' ? payload : { password: payload }
     return this.request('/profile/account', {
       method: 'DELETE',
-      body: { password }
+      body
     })
   }
 }
