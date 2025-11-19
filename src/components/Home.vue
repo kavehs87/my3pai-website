@@ -1,18 +1,10 @@
 <template>
   <div class="home">
-    <!-- Header -->
     <Header />
-
-    <!-- Hero Section -->
     <AIHeroSection />
-
-    <!-- Video Plans Section -->
-    <!-- <VideoPlans /> -->
-
-    <!-- CTA Section -->
+    <VideoPlans />
+    <VideoShorts />
     <CTA />
-
-    <!-- Footer -->
     <Footer />
   </div>
 </template>
@@ -21,6 +13,8 @@
 import Header from './Header.vue'
 import AIHeroSection from './AIHeroSection.vue'
 import HeroSection from './HeroSection.vue'
+import VideoShorts from './VideoShorts.vue'
+import VideoPlans from './VideoPlans.vue'
 import CTA from './CTA.vue'
 import DestinationCard from './DestinationCard.vue'
 import CategoriesSection from './CategoriesSection.vue'
@@ -32,6 +26,8 @@ export default {
     Header,
     AIHeroSection,
     HeroSection,
+    VideoShorts,
+    VideoPlans,
     CTA,
     DestinationCard,
     CategoriesSection,
