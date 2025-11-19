@@ -109,6 +109,10 @@
   border-left: 4px solid var(--secondary-color) !important;
 }
 
+.Vue-Toastification__container {
+  z-index: 15000 !important;
+}
+
 .Vue-Toastification__toast-body {
   color: white !important;
   font-size: var(--font-size-base) !important;

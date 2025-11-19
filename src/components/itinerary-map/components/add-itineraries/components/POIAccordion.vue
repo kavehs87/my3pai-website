@@ -69,6 +69,7 @@ import AmenitiesServicesSection from './poi-sections/AmenitiesServicesSection.vu
 import TravelTipsSection from './poi-sections/TravelTipsSection.vue'
 import MediaCreditsSection from './poi-sections/MediaCreditsSection.vue'
 import PersonalExperienceSection from './poi-sections/PersonalExperienceSection.vue'
+import { toast } from '../../../../../utils/toast.js'
 
 const defaultSections = [
   {
@@ -77,7 +78,16 @@ const defaultSections = [
     subtitle: 'Core details about this point of interest.',
     component: BasicIdentificationSection,
     modelKey: 'basic',
-    requiredFields: ['basic.name', 'basic.country']
+    requiredFields: [
+      'basic.name',
+      'basic.tagline',
+      'basic.summary',
+      'basic.country',
+      'basic.region',
+      'basic.landmark',
+      'basic.latitude',
+      'basic.longitude'
+    ]
   },
   {
     id: 'category',
@@ -99,14 +109,16 @@ const defaultSections = [
     title: '5. Pricing & Vouchers',
     subtitle: 'Explain costs, passes, or discounts.',
     component: PricingVouchersSection,
-    modelKey: 'pricing'
+    modelKey: 'pricing',
+    requiredFields: ['pricing.costType']
   },
   {
     id: 'regions',
     title: '6. Regions & tags',
     subtitle: 'Tag the region or theme it belongs to.',
     component: RegionsTagsSection,
-    modelKey: 'regions'
+    modelKey: 'regions',
+    requiredFields: ['regions.primaryRegion']
   },
   {
     id: 'amenities',
@@ -134,9 +146,37 @@ const defaultSections = [
     title: '10. Personal Experience',
     subtitle: 'Describe how the place made you feel.',
     component: PersonalExperienceSection,
-    modelKey: 'experience'
+    modelKey: 'experience',
+    requiredFields: ['experience.experience']
   }
 ]
+
+const FIELD_LABELS = {
+  'basic.name': 'POI name',
+  'basic.tagline': 'Tagline',
+  'basic.summary': 'Summary',
+  'basic.country': 'Country (ISO-2 code)',
+  'basic.region': 'Region / state',
+  'basic.landmark': 'Address',
+  'basic.latitude': 'Latitude',
+  'basic.longitude': 'Longitude',
+  'category.placeType': 'Place type',
+  'pricing.costType': 'Cost type',
+  'regions.primaryRegion': 'Primary region',
+  'experience.experience': 'Personal experience'
+}
+
+const CUSTOM_VALIDATORS = {
+  'basic.country': (value) => /^[A-Za-z]{2}$/.test(String(value || '').trim()),
+  'basic.latitude': (value) => isFinite(Number(value)),
+  'basic.longitude': (value) => isFinite(Number(value))
+}
+
+const VALIDATION_MESSAGES = {
+  'basic.country': 'Country must be a two-letter ISO code (e.g., CH).',
+  'basic.latitude': 'Latitude must be a valid number.',
+  'basic.longitude': 'Longitude must be a valid number.'
+}
 
 const defaultPOIValue = () => ({
   basic: {
@@ -194,7 +234,7 @@ export default {
         if (section.requiredFields?.length) {
           const missing = section.requiredFields.some((field) => {
             const value = this.getValueByPath(this.localValue, field)
-            return !this.isFieldFilled(value)
+            return !this.isFieldFilled(value, field)
           })
           statuses[section.id] = missing ? 'missing' : 'complete'
         } else {
@@ -237,7 +277,15 @@ export default {
         return undefined
       }, obj)
     },
-    isFieldFilled(value) {
+    isFieldFilled(value, path) {
+      if (CUSTOM_VALIDATORS[path]) {
+        try {
+          return CUSTOM_VALIDATORS[path](value)
+        } catch (error) {
+          void error
+          return false
+        }
+      }
       if (Array.isArray(value)) return value.length > 0
       if (typeof value === 'number') return true
       return value !== null && value !== undefined && String(value).trim() !== ''
@@ -245,13 +293,57 @@ export default {
     buildPayload() {
       return { ...defaultPOIValue(), ...(this.localValue || {}) }
     },
+    validatePayload(payload) {
+      const missingPaths = this.collectMissingFieldPaths(payload)
+      if (!missingPaths.length) {
+        return true
+      }
+      const friendly = missingPaths.map((path) => VALIDATION_MESSAGES[path] || FIELD_LABELS[path] || path)
+      const message =
+        friendly.length > 3
+          ? `${friendly.slice(0, 3).join(', ')} and ${friendly.length - 3} more.`
+          : friendly.join(', ')
+      toast.error(`Please complete the required fields: ${message}`)
+      this.focusSectionForPath(missingPaths[0])
+      return false
+    },
+    collectMissingFieldPaths(payload) {
+      const sections = this.sectionsToRender || []
+      const missing = []
+      sections.forEach((section) => {
+        section.requiredFields?.forEach((fieldPath) => {
+          const value = this.getValueByPath(payload, fieldPath)
+          if (!this.isFieldFilled(value, fieldPath)) {
+            missing.push(fieldPath)
+          }
+        })
+      })
+      return missing
+    },
+    focusSectionForPath(path) {
+      const sectionId = this.findSectionIdByPath(path)
+      if (sectionId) {
+        this.openSection = sectionId
+      }
+    },
+    findSectionIdByPath(path) {
+      const sections = this.sectionsToRender || []
+      const match = sections.find((section) => section.requiredFields?.includes(path))
+      return match?.id || null
+    },
     handleSave() {
       const payload = this.buildPayload()
+      if (!this.validatePayload(payload)) {
+        return
+      }
       this.$emit('update:modelValue', payload)
       this.$emit('save', payload)
     },
     handleSaveAndAddAnother() {
       const payload = this.buildPayload()
+      if (!this.validatePayload(payload)) {
+        return
+      }
       this.$emit('update:modelValue', payload)
       this.$emit('save-and-add', payload)
       this.localValue = { ...defaultPOIValue() }

@@ -64,18 +64,23 @@
         <input
           type="text"
           :list="countryListId"
-          v-model="country"
+          v-model="countryInputValue"
           placeholder="Start typing a country name"
+          @input="handleCountryInput"
+          @blur="handleCountryBlur"
         />
         <datalist :id="countryListId">
           <option
             v-for="option in countryOptions"
-            :key="option"
-            :value="option"
+            :key="option.code"
+            :value="option.name"
           >
-            {{ option }}
+            {{ option.name }}
           </option>
         </datalist>
+        <p v-if="selectedCountryName" class="helper-text subtle">
+          Saved as {{ selectedCountryName }} ({{ country || 'N/A' }})
+        </p>
       </div>
 
       <div class="field-group">
@@ -124,7 +129,7 @@
       <div class="field-group">
         <label>Pin Accuracy</label>
         <select v-model="pinAccuracy">
-          <option value="">Exact</option>
+          <option value="exact">Exact</option>
           <option value="approximate">Approximate</option>
           <option value="estimate">Estimated</option>
         </select>
@@ -158,8 +163,8 @@
       <h4>Update {{ activeReplacement.label }}</h4>
       <p>
         Replace the existing {{ activeReplacement.label }} value
-        (<strong>{{ activeReplacement.currentValue }}</strong>) with
-        <strong>{{ activeReplacement.newValue }}</strong>?
+        (<strong>{{ getActiveReplacementCurrentLabel() }}</strong>) with
+        <strong>{{ getActiveReplacementNewLabel() }}</strong>?
       </p>
       <div class="dialog-actions">
         <button type="button" class="dialog-btn outline" @click="handleReplacementDecision(false)">
@@ -182,50 +187,30 @@ const defaultForm = () => ({
   country: '',
   region: '',
   landmark: '',
-  pinAccuracy: '',
+  pinAccuracy: 'exact',
   latitude: '',
   longitude: ''
 })
 
-const COUNTRY_LIST = [
-  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda',
-  'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas',
-  'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin',
-  'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei',
-  'Bulgaria', 'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cambodia', 'Cameroon',
-  'Canada', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia',
-  'Comoros', 'Congo (Congo-Brazzaville)', 'Costa Rica', 'Côte d’Ivoire', 'Croatia',
-  'Cuba', 'Cyprus', 'Czechia (Czech Republic)', 'Democratic Republic of the Congo',
-  'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt',
-  'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini (fmr. "Swaziland")',
-  'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany',
-  'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
-  'Haiti', 'Holy See', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia',
-  'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan',
-  'Kazakhstan', 'Kenya', 'Kiribati', 'Kuwait', 'Kyrgyzstan', 'Laos',
-  'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania',
-  'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta',
-  'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova',
-  'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar (Burma)',
-  'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger',
-  'Nigeria', 'North Korea', 'North Macedonia', 'Norway', 'Oman', 'Pakistan', 'Palau',
-  'Palestine State', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines',
-  'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda',
-  'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines',
-  'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal',
-  'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia',
-  'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan',
-  'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
-  'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga',
-  'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu', 'Uganda',
-  'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States of America',
-  'Uruguay', 'Uzbekistan', 'Vanuatu', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia',
-  'Zimbabwe'
+const COUNTRY_ISO_DATA_URL = 'https://countriesnow.space/api/v0.1/countries/iso'
+const FALLBACK_COUNTRY_OPTIONS = [
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'FR', name: 'France' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'US', name: 'United States' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'NZ', name: 'New Zealand' },
+  { code: 'JP', name: 'Japan' }
 ]
-
 const REGION_DATA_URL = 'https://countriesnow.space/api/v0.1/countries/states'
 let cachedRegionDataset = null
 let cachedRegionPromise = null
+let cachedCountryIsoDataset = null
+let cachedCountryIsoPromise = null
 
 async function fetchRegionDataset() {
   if (cachedRegionDataset) return cachedRegionDataset
@@ -260,6 +245,37 @@ async function fetchRegionDataset() {
   return cachedRegionPromise
 }
 
+async function fetchCountryIsoDataset() {
+  if (cachedCountryIsoDataset) return cachedCountryIsoDataset
+  if (cachedCountryIsoPromise) return cachedCountryIsoPromise
+
+  cachedCountryIsoPromise = fetch(COUNTRY_ISO_DATA_URL)
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to load country codes (${response.status})`)
+      }
+      const payload = await response.json()
+      const entries = payload?.data || []
+      cachedCountryIsoDataset = entries
+        .map((entry) => ({
+          name: entry?.name || '',
+          code: (entry?.Iso2 || entry?.iso2 || '').toUpperCase()
+        }))
+        .filter((entry) => entry.name && /^[A-Z]{2}$/.test(entry.code))
+        .sort((a, b) => a.name.localeCompare(b.name))
+      return cachedCountryIsoDataset
+    })
+    .catch(() => {
+      cachedCountryIsoDataset = []
+      return cachedCountryIsoDataset
+    })
+    .finally(() => {
+      cachedCountryIsoPromise = null
+    })
+
+  return cachedCountryIsoPromise
+}
+
 export default {
   name: 'BasicIdentificationSection',
   props: {
@@ -268,10 +284,19 @@ export default {
       default: () => defaultForm()
     }
   },
+  watch: {
+    'modelValue.country': {
+      immediate: true,
+      handler(newVal) {
+        this.syncCountryInputWithIso(newVal)
+      }
+    }
+  },
   emits: ['update:modelValue'],
   data() {
     return {
-      countryOptions: COUNTRY_LIST,
+      countryOptions: [],
+      countryLabelCache: {},
       countryListId: `country-options-${Math.random().toString(36).slice(2)}`,
       regionListId: `region-options-${Math.random().toString(36).slice(2)}`,
       regionDataset: {},
@@ -283,11 +308,13 @@ export default {
       addressSuggestions: [],
       addressDetailsLoading: false,
       replacementQueue: [],
-      activeReplacement: null
+      activeReplacement: null,
+      countryInputValue: ''
     }
   },
   created() {
     this.loadRegionDataset()
+    this.loadCountryIsoDataset()
   },
   mounted() {
     this.$nextTick(() => {
@@ -343,7 +370,8 @@ export default {
         return this.modelValue?.country || ''
       },
       set(value) {
-        this.updateField('country', value)
+        const next = typeof value === 'string' ? value.toUpperCase() : value
+        this.updateField('country', next)
       }
     },
     region: {
@@ -364,10 +392,10 @@ export default {
     },
     pinAccuracy: {
       get() {
-        return this.modelValue?.pinAccuracy || ''
+        return this.modelValue?.pinAccuracy || 'exact'
       },
       set(value) {
-        this.updateField('pinAccuracy', value)
+        this.updateField('pinAccuracy', value || 'exact')
       }
     },
     latitude: {
@@ -390,8 +418,14 @@ export default {
       return this.summary?.length || 0
     },
     regionOptions() {
-      const key = (this.country || '').trim()
+      const isoCode = (this.country || '').trim().toUpperCase()
+      const key = this.getCountryNameFromCode(isoCode)
+      if (!key) return []
       return this.regionDataset[key] || []
+    },
+    selectedCountryName() {
+      const isoCode = (this.country || '').trim().toUpperCase()
+      return this.getCountryNameFromCode(isoCode)
     }
   },
   methods: {
@@ -405,6 +439,44 @@ export default {
         ...patch
       })
     },
+    async loadCountryIsoDataset() {
+      try {
+        const dataset = await fetchCountryIsoDataset()
+        if (Array.isArray(dataset) && dataset.length) {
+          this.countryOptions = dataset
+          dataset.forEach((entry) => this.cacheCountryLabel(entry.code, entry.name))
+          this.syncCountryInputWithIso()
+          return
+        }
+      } catch (error) {
+        void error
+      }
+      this.countryOptions = FALLBACK_COUNTRY_OPTIONS
+      FALLBACK_COUNTRY_OPTIONS.forEach((entry) => this.cacheCountryLabel(entry.code, entry.name))
+      this.syncCountryInputWithIso()
+    },
+    cacheCountryLabel(code, name) {
+      if (!code || !name) return
+      this.countryLabelCache = {
+        ...this.countryLabelCache,
+        [code.toUpperCase()]: name
+      }
+    },
+    getCountryNameFromCode(code) {
+      if (!code) return ''
+      return this.countryLabelCache[code.toUpperCase()] || ''
+    },
+    findIsoCodeForCountryName(name) {
+      if (!name) return ''
+      const value = name.trim().toLowerCase()
+      const directMatch =
+        this.countryOptions.find((option) => option.name.toLowerCase() === value)?.code || ''
+      if (directMatch) {
+        this.cacheCountryLabel(directMatch, name.trim())
+        return directMatch
+      }
+      return ''
+    },
     async loadRegionDataset() {
       if (Object.keys(this.regionDataset || {}).length) return
       this.regionLoading = true
@@ -415,6 +487,29 @@ export default {
         void error
       } finally {
         this.regionLoading = false
+      }
+    },
+    handleCountryInput(event) {
+      this.countryInputValue = event?.target?.value ?? ''
+    },
+    handleCountryBlur(event) {
+      const value = (event?.target?.value || '').trim()
+      if (!value) {
+        this.countryInputValue = ''
+        this.updateField('country', '')
+        return
+      }
+      let isoCode = ''
+      if (/^[A-Za-z]{2}$/.test(value)) {
+        isoCode = value.toUpperCase()
+      } else {
+        isoCode = this.findIsoCodeForCountryName(value)
+      }
+      if (isoCode) {
+        this.updateField('country', isoCode)
+        this.syncCountryInputWithIso(isoCode)
+      } else {
+        this.countryInputValue = value
       }
     },
     initializePlaceHelpers() {
@@ -503,14 +598,20 @@ export default {
       const countryComponent = this.getAddressComponent(components, ['country'])
       if (countryComponent) {
         const countryName = countryComponent.long_name || countryComponent.short_name
+        const isoCode = this.findIsoCodeForCountryName(countryName)
+        if (isoCode) {
+          this.cacheCountryLabel(isoCode, countryName)
+        }
+        const sanitizedCode = isoCode || (countryName || '').slice(0, 2).toUpperCase()
         if (!this.country) {
-          patch.country = countryName
-        } else if (this.country !== countryName) {
+          patch.country = sanitizedCode
+        } else if (this.country !== sanitizedCode) {
           this.enqueueReplacement({
             field: 'country',
             label: 'country',
-            currentValue: this.country,
-            newValue: countryName
+            currentValue: this.countryInputValue || this.getCountryNameFromCode(this.country) || this.country,
+            newValue: sanitizedCode,
+            displayNewValue: this.getCountryNameFromCode(sanitizedCode) || countryName || sanitizedCode
           })
         }
       }
@@ -552,11 +653,41 @@ export default {
         this.updateFields({
           [this.activeReplacement.field]: this.activeReplacement.newValue
         })
+        if (this.activeReplacement.field === 'country') {
+          this.syncCountryInputWithIso(this.activeReplacement.newValue)
+        }
       }
       this.activeReplacement = null
       if (this.replacementQueue.length) {
         this.processReplacementQueue()
       }
+    },
+    syncCountryInputWithIso(overrideIso) {
+      const iso = (overrideIso || this.country || '').trim().toUpperCase()
+      if (!iso) {
+        this.countryInputValue = ''
+        return
+      }
+      this.countryInputValue = this.getCountryNameFromCode(iso) || iso
+    },
+    getActiveReplacementCurrentLabel() {
+      if (!this.activeReplacement) return ''
+      if (this.activeReplacement.field === 'country') {
+        const iso = (this.activeReplacement.currentValue || '').trim().toUpperCase()
+        return this.getCountryNameFromCode(iso) || this.activeReplacement.currentValue
+      }
+      return this.activeReplacement.currentValue
+    },
+    getActiveReplacementNewLabel() {
+      if (!this.activeReplacement) return ''
+      if (this.activeReplacement.field === 'country') {
+        return (
+          this.activeReplacement.displayNewValue ||
+          this.getCountryNameFromCode(this.activeReplacement.newValue) ||
+          this.activeReplacement.newValue
+        )
+      }
+      return this.activeReplacement.newValue
     }
   }
 }
@@ -627,6 +758,16 @@ textarea {
   text-align: right;
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
+}
+
+.helper-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+}
+
+.helper-text.subtle {
+  color: var(--text-light);
 }
 
 .actions-row {

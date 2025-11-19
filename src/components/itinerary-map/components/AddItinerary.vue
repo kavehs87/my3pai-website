@@ -81,6 +81,42 @@
     @save="handlePOISave"
     @save-and-add="handlePOISaveAndAddAnother"
   />
+  <transition name="fade">
+    <div v-if="submissionState.active" class="submission-overlay">
+      <div class="submission-card" role="status" aria-live="polite">
+        <div
+          class="submission-spinner"
+          :class="{
+            success: submissionState.success,
+            error: !!submissionState.error
+          }"
+        >
+          <span v-if="submissionState.success" class="spinner-icon">
+            <i class="fas fa-check"></i>
+          </span>
+          <span v-else class="spinner-circle"></span>
+        </div>
+        <div class="submission-copy">
+          <p class="submission-eyebrow">{{ submissionState.heading }}</p>
+          <h3>{{ submissionState.message }}</h3>
+          <p v-if="submissionState.detail">{{ submissionState.detail }}</p>
+          <p v-if="submissionState.poiProgress" class="submission-progress">
+            {{ submissionState.poiProgress }}
+          </p>
+          <p v-if="submissionState.error" class="submission-error">
+            {{ submissionState.error }}
+          </p>
+        </div>
+        <button
+          v-if="submissionState.error"
+          class="btn btn-outline submission-dismiss"
+          @click="dismissSubmissionOverlay"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </transition>
   </div>
 </template>
 
@@ -88,6 +124,8 @@
 import PlaceField from './add-itineraries/components/PlaceField.vue'
 import ThumbnailUpload from './add-itineraries/components/ThumbnailUpload.vue'
 import POIAccordion from './add-itineraries/components/POIAccordion.vue'
+import apiService from '../../../services/api.js'
+import { toast } from '../../../utils/toast.js'
 
 const ITINERARY_DRAFT_STORAGE_KEY = 'my3pai-itinerary-map-draft'
 
@@ -117,7 +155,19 @@ export default {
       editingPoiIndex: null,
       titleError: '',
       draftSaveTimeout: null,
-      isRestoringDraft: false
+      isRestoringDraft: false,
+      remoteItineraryId: null,
+      pendingPoiDeletions: [],
+      submissionState: {
+        active: false,
+        mode: null,
+        heading: '',
+        message: '',
+        detail: '',
+        poiProgress: '',
+        error: null,
+        success: false
+      }
     }
   },
   mounted() {
@@ -144,11 +194,15 @@ export default {
     },
     editingPoiIndex() {
       this.scheduleDraftSave()
+    },
+    remoteItineraryId() {
+      this.scheduleDraftSave()
     }
   },
   methods: {
     createEmptyPOIForm() {
       return {
+        remoteId: null,
         basic: {
           name: '',
           tagline: '',
@@ -173,16 +227,13 @@ export default {
     handleClose() {
       this.$emit('close')
     },
-    handlePublish() {
-      if (!this.formData.title.trim()) {
-        this.titleError = 'Title is required'
-        return
-      }
-      this.titleError = ''
-      this.$emit('publish')
+    async handlePublish() {
+      if (!this.ensureTitleIsPresent()) return
+      await this.submitItinerary({ mode: 'publish' })
     },
-    handleSaveDraft() {
-      this.$emit('save-draft')
+    async handleSaveDraft() {
+      if (!this.ensureTitleIsPresent()) return
+      await this.submitItinerary({ mode: 'draft' })
     },
     handleShare() {
       this.$emit('share')
@@ -234,7 +285,10 @@ export default {
     removePOI(index) {
       if (index < 0 || index >= this.formData.pointsOfInterest.length) return
 
-      this.formData.pointsOfInterest.splice(index, 1)
+      const [removedPoi] = this.formData.pointsOfInterest.splice(index, 1)
+      if (removedPoi?.remoteId) {
+        this.enqueuePoiDeletion(removedPoi.remoteId)
+      }
       if (this.editingPoiIndex === index) {
         this.editingPoiIndex = null
       } else if (this.editingPoiIndex !== null && index < this.editingPoiIndex) {
@@ -262,6 +316,265 @@ export default {
     resetPOIForm() {
       this.poiForm = this.clonePOIData()
     },
+    ensureTitleIsPresent() {
+      if (!this.formData.title.trim()) {
+        this.titleError = 'Title is required'
+        return false
+      }
+      this.titleError = ''
+      return true
+    },
+    startSubmission(mode) {
+      Object.assign(this.submissionState, {
+        active: true,
+        mode,
+        heading: mode === 'publish' ? 'Publishing itinerary' : 'Saving draft',
+        message: 'Preparing your itinerary…',
+        detail: '',
+        poiProgress: '',
+        error: null,
+        success: false
+      })
+    },
+    updateSubmission(message, detail = '', poiProgress = '') {
+      this.submissionState.message = message
+      this.submissionState.detail = detail
+      this.submissionState.poiProgress = poiProgress
+    },
+    dismissSubmissionOverlay() {
+      Object.assign(this.submissionState, {
+        active: false,
+        mode: null,
+        heading: '',
+        message: '',
+        detail: '',
+        poiProgress: '',
+        error: null,
+        success: false
+      })
+    },
+    handleSubmissionError(error) {
+      const message = error?.message || 'Unable to save itinerary. Please try again.'
+      Object.assign(this.submissionState, {
+        error: message,
+        detail: '',
+        poiProgress: '',
+        success: false
+      })
+      toast.error(message)
+    },
+    finishSubmission(mode) {
+      const heading = mode === 'publish' ? 'Itinerary published' : 'Draft saved'
+      const detail =
+        mode === 'publish'
+          ? 'Your itinerary and POIs are synced with My3PAI.'
+          : 'We saved your progress. You can continue editing anytime.'
+      Object.assign(this.submissionState, {
+        success: true,
+        message: heading,
+        detail,
+        poiProgress: '',
+        error: null
+      })
+      toast.success(heading)
+      if (mode === 'publish') {
+        this.clearDraftStorage()
+      }
+      setTimeout(() => {
+        this.dismissSubmissionOverlay()
+      }, 1200)
+    },
+    async submitItinerary({ mode }) {
+      if (this.submissionState.active) return false
+      const trimmedTitle = (this.formData.title || '').trim()
+      if (!trimmedTitle) {
+        this.titleError = 'Title is required'
+        return false
+      }
+      if (mode === 'publish' && !this.formData.pointsOfInterest.length) {
+        toast.error('Add at least one point of interest before publishing.')
+        return false
+      }
+      this.startSubmission(mode)
+      try {
+        const itineraryId = await this.ensureItineraryRecord(mode, trimmedTitle)
+        await this.uploadItineraryThumbnailIfNeeded(itineraryId)
+        await this.savePointsOfInterest(itineraryId)
+        await this.flushPendingPoiDeletions()
+        this.finishSubmission(mode)
+        const payload = {
+          itineraryId,
+          mode,
+          poiCount: this.formData.pointsOfInterest.length
+        }
+        this.$emit(mode === 'publish' ? 'publish' : 'save-draft', payload)
+        return true
+      } catch (error) {
+        this.handleSubmissionError(error)
+        return false
+      }
+    },
+    async ensureItineraryRecord(mode, title) {
+      const payload = { title }
+      if (mode === 'publish') {
+        payload.isPublished = true
+      }
+      if (!this.remoteItineraryId) {
+        this.updateSubmission('Creating itinerary', 'Sending itinerary details')
+        const response = await apiService.createItinerary(payload)
+        const itinerary = this.extractItineraryFromResponse(response)
+        if (!itinerary?.id) {
+          throw new Error('Unable to create itinerary. Missing identifier.')
+        }
+        this.remoteItineraryId = itinerary.id
+        return itinerary.id
+      }
+      this.updateSubmission(
+        mode === 'publish' ? 'Publishing itinerary' : 'Updating itinerary',
+        'Syncing itinerary details'
+      )
+      const response = await apiService.updateItinerary(this.remoteItineraryId, payload)
+      const itinerary = this.extractItineraryFromResponse(response)
+      if (!itinerary?.id) {
+        throw new Error('Unable to update itinerary. Missing identifier.')
+      }
+      this.remoteItineraryId = itinerary.id
+      return itinerary.id
+    },
+    async uploadItineraryThumbnailIfNeeded(itineraryId) {
+      if (!(this.formData.thumbnail instanceof File)) {
+        return
+      }
+      this.updateSubmission('Uploading thumbnail', 'Sending featured image')
+      const response = await apiService.uploadItineraryThumbnail(itineraryId, this.formData.thumbnail)
+      const itinerary = this.extractItineraryFromResponse(response)
+      if (itinerary?.thumbnailUrl) {
+        this.formData.thumbnail = itinerary.thumbnailUrl
+      }
+    },
+    async savePointsOfInterest(itineraryId) {
+      const points = this.formData.pointsOfInterest || []
+      if (!points.length) return
+      for (let index = 0; index < points.length; index += 1) {
+        const poi = points[index]
+        const label = this.formatPOITitle(poi)
+        this.updateSubmission(
+          `Saving ${label}`,
+          'Syncing point of interest details',
+          this.formatPoiProgressLabel(index + 1, points.length)
+        )
+        const payload = this.buildPoiPayload(poi)
+        const response = await apiService.savePoi(itineraryId, payload)
+        const remotePoi = this.extractPoiFromResponse(response)
+        if (!remotePoi?.id) {
+          throw new Error(`Unable to save ${label}. Missing identifier.`)
+        }
+        this.formData.pointsOfInterest[index].remoteId = remotePoi.id
+        await this.uploadPoiMediaIfNeeded(this.formData.pointsOfInterest[index])
+      }
+    },
+    buildPoiPayload(poi) {
+      const source = this.clonePOIData(poi)
+      const { id: _clientId, remoteId, ...rest } = source
+      const payload = {
+        ...rest,
+        basic: this.normalizeBasicSection(rest.basic || {}),
+        media: this.normalizeMediaSection(rest.media || {})
+      }
+      if (!Object.keys(payload.media || {}).length) {
+        delete payload.media
+      }
+      if (remoteId) {
+        payload.poiId = remoteId
+        payload.id = remoteId
+      } else {
+        delete payload.remoteId
+      }
+      return payload
+    },
+    normalizeBasicSection(basic = {}) {
+      const next = { ...basic }
+      if ('latitude' in next) {
+        next.latitude = this.toNullableNumber(next.latitude)
+      }
+      if ('longitude' in next) {
+        next.longitude = this.toNullableNumber(next.longitude)
+      }
+      if (!next.pinAccuracy) {
+        next.pinAccuracy = 'exact'
+      }
+      return next
+    },
+    normalizeMediaSection(media = {}) {
+      const { images, ...rest } = media || {}
+      return rest
+    },
+    toNullableNumber(value) {
+      if (value === null || value === undefined || value === '') return null
+      const number = Number(value)
+      return Number.isFinite(number) ? number : null
+    },
+    formatPoiProgressLabel(current, total) {
+      return `POI ${current} of ${total}`
+    },
+    async uploadPoiMediaIfNeeded(poi) {
+      const files = this.getPoiMediaFiles(poi)
+      if (!files.length || !poi.remoteId) {
+        return
+      }
+      this.updateSubmission(
+        `Uploading media for ${this.formatPOITitle(poi)}`,
+        'Sending media assets'
+      )
+      const response = await apiService.uploadPoiMedia(poi.remoteId, files)
+      this.ensureApiSuccess(response, 'Unable to upload media for this POI.')
+    },
+    getPoiMediaFiles(poi) {
+      const images = poi?.media?.images || []
+      return images.filter((file) => this.isFileLikeValue(file))
+    },
+    async flushPendingPoiDeletions() {
+      if (!this.pendingPoiDeletions.length) return
+      const queue = [...this.pendingPoiDeletions]
+      this.pendingPoiDeletions = []
+      for (let index = 0; index < queue.length; index += 1) {
+        const poiId = queue[index]
+        this.updateSubmission(
+          'Removing POI',
+          'Cleaning up deleted points of interest',
+          `Deleting ${index + 1} of ${queue.length}`
+        )
+        const response = await apiService.deletePoi(poiId)
+        if (!response?.success) {
+          this.pendingPoiDeletions.push(...queue.slice(index))
+          throw new Error(response?.error || 'Unable to delete point of interest.')
+        }
+      }
+    },
+    enqueuePoiDeletion(remoteId) {
+      if (!remoteId) return
+      if (!this.pendingPoiDeletions.includes(remoteId)) {
+        this.pendingPoiDeletions.push(remoteId)
+      }
+    },
+    extractItineraryFromResponse(response) {
+      if (!response?.success) {
+        throw new Error(response?.error || 'Itinerary request failed.')
+      }
+      const payload = response.data || {}
+      return payload.data?.itinerary || payload.itinerary || payload.data || payload
+    },
+    extractPoiFromResponse(response) {
+      if (!response?.success) {
+        throw new Error(response?.error || 'POI request failed.')
+      }
+      const payload = response.data || {}
+      return payload.data?.poi || payload.poi || payload.data || payload
+    },
+    ensureApiSuccess(response, fallbackMessage) {
+      if (response?.success) return response.data
+      throw new Error(response?.error || fallbackMessage)
+    },
     scheduleDraftSave() {
       if (this.isRestoringDraft || !this.canUseDraftStorage()) {
         return
@@ -287,14 +600,23 @@ export default {
         }
       }
     },
+    clearDraftStorage() {
+      if (!this.canUseDraftStorage()) return
+      try {
+        window.localStorage.removeItem(ITINERARY_DRAFT_STORAGE_KEY)
+      } catch (error) {
+        console.warn('Unable to clear itinerary draft storage', error)
+      }
+    },
     buildDraftPayload() {
       return {
-        version: 1,
+        version: 2,
         timestamp: Date.now(),
         formData: this.sanitizeFormDataForStorage(this.formData),
         poiForm: this.sanitizePOIForStorage(this.poiForm),
         editingPoiIndex: this.editingPoiIndex,
-        showPOIForm: this.showPOIForm
+        showPOIForm: this.showPOIForm,
+        remoteItineraryId: this.remoteItineraryId
       }
     },
     sanitizeFormDataForStorage(source) {
@@ -304,7 +626,7 @@ export default {
         : []
       return {
         title: stripped.title || '',
-        thumbnail: null,
+        thumbnail: typeof stripped.thumbnail === 'string' ? stripped.thumbnail : null,
         pointsOfInterest: points
       }
     },
@@ -325,7 +647,8 @@ export default {
       }, {})
       return {
         ...sanitized,
-        id: stripped.id || poi?.id || Date.now()
+        id: stripped.id || poi?.id || Date.now(),
+        remoteId: typeof stripped.remoteId === 'number' ? stripped.remoteId : stripped.remoteId || null
       }
     },
     stripFileLikeValues(value) {
@@ -372,6 +695,9 @@ export default {
         }
         if (typeof parsed.showPOIForm === 'boolean') {
           this.showPOIForm = parsed.showPOIForm
+        }
+        if (parsed.remoteItineraryId) {
+          this.remoteItineraryId = parsed.remoteItineraryId
         }
       } catch (error) {
         console.warn('Unable to restore itinerary draft', error)
@@ -662,6 +988,120 @@ export default {
 .btn-primary:hover {
   filter: brightness(0.95);
   transform: translateY(-1px);
+}
+
+/* Submission overlay */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.submission-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 20, 0.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  z-index: 12000;
+}
+
+.submission-card {
+  width: min(420px, 100%);
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45);
+}
+
+.submission-spinner {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  margin: 0 auto;
+}
+
+.submission-spinner .spinner-circle {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: submission-spin 0.9s linear infinite;
+}
+
+.submission-spinner.success {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.submission-spinner.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.submission-spinner .spinner-icon {
+  font-size: 24px;
+}
+
+.submission-copy h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+}
+
+.submission-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.submission-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: var(--font-size-2xs);
+  color: var(--text-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.submission-progress {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: var(--spacing-sm);
+}
+
+.submission-error {
+  color: var(--error-color, #ef4444);
+  font-weight: 600;
+  margin-top: var(--spacing-sm);
+}
+
+.submission-dismiss {
+  align-self: flex-end;
+}
+
+@keyframes submission-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {

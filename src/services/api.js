@@ -441,6 +441,52 @@ class ApiService {
     })
   }
 
+  // Itineraries & POIs
+  async createItinerary(itineraryData) {
+    return this.request('/itineraries', {
+      method: 'POST',
+      body: itineraryData
+    })
+  }
+
+  async updateItinerary(itineraryId, itineraryData) {
+    return this.request(`/itineraries/${itineraryId}`, {
+      method: 'PUT',
+      body: itineraryData
+    })
+  }
+
+  async uploadItineraryThumbnail(itineraryId, file) {
+    const formData = new FormData()
+    formData.append('thumbnail', file)
+    return this.request(`/itineraries/${itineraryId}/thumbnail`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  async savePoi(itineraryId, poiData) {
+    return this.request(`/itineraries/${itineraryId}/pois`, {
+      method: 'POST',
+      body: poiData
+    })
+  }
+
+  async uploadPoiMedia(poiId, files = []) {
+    const formData = new FormData()
+    files.forEach((file) => formData.append('images[]', file))
+    return this.request(`/pois/${poiId}/media`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  async deletePoi(poiId) {
+    return this.request(`/pois/${poiId}`, {
+      method: 'DELETE'
+    })
+  }
+
   // Change password
   async changePassword(passwordData) {
     return this.request('/profile/change-password', {
