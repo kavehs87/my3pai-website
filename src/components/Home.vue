@@ -16,8 +16,6 @@ import HeroSection from './HeroSection.vue'
 import VideoShorts from './VideoShorts.vue'
 import VideoPlans from './VideoPlans.vue'
 import CTA from './CTA.vue'
-import DestinationCard from './DestinationCard.vue'
-import CategoriesSection from './CategoriesSection.vue'
 import Footer from './Footer.vue'
 
 export default {
@@ -29,8 +27,6 @@ export default {
     VideoShorts,
     VideoPlans,
     CTA,
-    DestinationCard,
-    CategoriesSection,
     Footer
   },
   data() {
