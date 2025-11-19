@@ -53,7 +53,6 @@ src/
 │   ├── HeroSection.vue         # AI prompt bar with suggestions
 │   ├── VideoPlans.vue          # Grid layout video content
 │   ├── VideoShorts.vue         # Vertical shorts/reels format
-│   ├── PopularCreators.vue     # Creator profiles and stats
 │   ├── CTA.vue                 # Call-to-action section
 │   ├── Footer.vue              # Footer with links and newsletter
 │   └── Home.vue                # Main page orchestrator
@@ -177,12 +176,6 @@ The project uses a centralized design system with CSS variables:
 - **Swipe Navigation** - Touch-friendly interactions
 - **Full-screen Support** - Immersive viewing experience
 
-### PopularCreators
-- **Creator Cards** - Profile information and stats
-- **Featured Content** - Highlighted creator plans
-- **Recent Plans** - Latest creator uploads
-- **Follow System** - User engagement features
-
 ## 🔮 Future Backend Integration
 
 ### Node.js/Express Backend
@@ -219,7 +212,6 @@ The project uses a centralized design system with CSS variables:
 ## 📝 Recent Updates
 
 - ✅ **AI-Powered Search** - Smart prompt bar with live suggestions
-- ✅ **Creator Economy** - Popular creators section with profiles
 - ✅ **Video Content** - Two display formats for video plans
 - ✅ **Responsive Design** - Mobile-optimized layouts
 - ✅ **CSS Variables** - Centralized design system

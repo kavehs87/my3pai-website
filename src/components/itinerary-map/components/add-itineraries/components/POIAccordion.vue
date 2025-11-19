@@ -166,16 +166,23 @@ const FIELD_LABELS = {
   'experience.experience': 'Personal experience'
 }
 
+const isNonEmptyNumber = (value) => {
+  if (value === null || value === undefined) return false
+  const normalized = String(value).trim()
+  if (normalized === '') return false
+  return Number.isFinite(Number(normalized))
+}
+
 const CUSTOM_VALIDATORS = {
   'basic.country': (value) => /^[A-Za-z]{2}$/.test(String(value || '').trim()),
-  'basic.latitude': (value) => isFinite(Number(value)),
-  'basic.longitude': (value) => isFinite(Number(value))
+  'basic.latitude': (value) => isNonEmptyNumber(value),
+  'basic.longitude': (value) => isNonEmptyNumber(value)
 }
 
 const VALIDATION_MESSAGES = {
   'basic.country': 'Country must be a two-letter ISO code (e.g., CH).',
-  'basic.latitude': 'Latitude must be a valid number.',
-  'basic.longitude': 'Longitude must be a valid number.'
+  'basic.latitude': 'Latitude is required and must be a valid number.',
+  'basic.longitude': 'Longitude is required and must be a valid number.'
 }
 
 const defaultPOIValue = () => ({

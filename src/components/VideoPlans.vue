@@ -30,9 +30,7 @@
             <div class="creator-info">
               <img :src="plan.creator.avatar" :alt="plan.creator.name" class="creator-avatar" />
               <div class="creator-details">
-                <router-link :to="{ name: 'creator-profile', params: { id: plan.creator.id } }" class="creator-name">
-                  {{ plan.creator.name }}
-                </router-link>
+                <span class="creator-name">{{ plan.creator.name }}</span>
                 <span class="creator-followers">{{ plan.creator.followers }} followers</span>
               </div>
               <button class="clone-btn">Customize</button>
@@ -304,6 +302,11 @@ export default {
   color: var(--text-primary);
   margin: 0 0 var(--spacing-sm) 0;
   line-height: 1.4;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .video-description {
@@ -312,6 +315,7 @@ export default {
   line-height: 1.5;
   margin: 0 0 var(--spacing-md) 0;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;

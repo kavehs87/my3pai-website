@@ -27,23 +27,7 @@
       <ProfileOverview
         v-if="activeTab === 'overview'"
         :stats="profileData.stats"
-        :trips="profileData.recentTrips"
-        :saved-plans="profileData.savedPlans"
-        @view-all="handleViewAll"
-        @view-trip="handleViewTrip"
-        @view-plan="handleViewPlan"
       />
-      
-    <ProfileTrips
-      v-if="activeTab === 'trips'"
-      :trips="allTrips"
-      :loading="isLoadingTrips"
-      @create-trip="handleCreateTrip"
-      @view-trip="handleViewTrip"
-      @edit-trip="handleEditTrip"
-      @delete-trip="handleDeleteTrip"
-      @filter-change="loadTrips"
-    />
       
       <ProfileSettings
         ref="profileSettings"
@@ -52,8 +36,6 @@
         :user="profileData.user || {}"
         @save-profile="handleSaveProfile"
         @save-preferences="handleSavePreferences"
-        @save-social-links="handleSaveSocialLinks"
-        @save-languages="handleSaveLanguages"
         @change-password="handleChangePassword"
         @delete-account="handleDeleteAccount"
       />
@@ -205,7 +187,6 @@ import Header from '../Header.vue'
 import ProfileHeader from './components/ProfileHeader.vue'
 import ProfileTabs from './components/ProfileTabs.vue'
 import ProfileOverview from './components/ProfileOverview.vue'
-import ProfileTrips from './components/ProfileTrips.vue'
 import ProfileSettings from './components/ProfileSettings.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
@@ -218,7 +199,6 @@ export default {
     ProfileHeader,
     ProfileTabs,
     ProfileOverview,
-    ProfileTrips,
     ProfileSettings
   },
   data() {
@@ -227,17 +207,12 @@ export default {
       profileData: {
         user: {},
         stats: {},
-        recentTrips: [],
-        itineraries: [],
-        savedPlans: []
+        itineraries: []
       },
-      allTrips: [],
       isLoading: true,
-      isLoadingTrips: false,
       error: null,
       tabs: [
         { id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null },
-        { id: 'trips', label: 'Trips', icon: 'fas fa-map-marked-alt', count: 0 },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
       passwordModal: {
@@ -275,12 +250,8 @@ export default {
     '$route.query.tab': {
       immediate: true,
       handler(tab) {
-        if (tab && ['overview', 'trips', 'settings'].includes(tab)) {
+        if (tab && ['overview', 'settings'].includes(tab)) {
           this.activeTab = tab
-          // Load trips when trips tab is active
-          if (tab === 'trips') {
-            this.loadTrips()
-          }
         } else if (!tab) {
           // Default to overview if no tab specified
           this.activeTab = 'overview'
@@ -291,7 +262,7 @@ export default {
   mounted() {
     // Check if there's a tab query parameter
     const tab = this.$route.query.tab
-    if (tab && ['overview', 'trips', 'settings'].includes(tab)) {
+    if (tab && ['overview', 'settings'].includes(tab)) {
       this.activeTab = tab
     }
     
@@ -357,31 +328,11 @@ export default {
             )
           }
           
-          // Normalize trips (handle date field names)
-          const normalizeTrips = (trips) => {
-            return (trips || []).map(trip => ({
-              id: trip.id,
-              title: trip.title,
-              thumbnail: trip.thumbnail,
-              destination: trip.destination,
-              startDate: trip.startDate || trip.start_date,
-              endDate: trip.endDate || trip.end_date,
-              days: trip.days,
-              status: trip.status,
-              createdAt: trip.createdAt || trip.created_at
-            }))
-          }
-          
           this.profileData = {
             user: normalizedUser,
             stats: data.stats || {},
-            recentTrips: normalizeTrips(data.recentTrips || data.recent_trips),
-            itineraries: data.itineraries || [],
-            savedPlans: data.savedPlans || data.saved_plans || []
+            itineraries: data.itineraries || []
           }
-          
-          // Update trip count in tabs
-          this.tabs[1].count = this.profileData.recentTrips?.length || 0
           
           // Restore scroll position if requested
           if (preserveScroll && scrollY !== null) {
@@ -474,88 +425,6 @@ export default {
       }
       input.click()
     },
-    async loadTrips(status = null) {
-      this.isLoadingTrips = true
-      try {
-        const result = await apiService.getTrips(status)
-        if (result.success) {
-          // Handle possible nested shapes from backend
-          // result.data -> API service wrapper
-          // could be { data: { trips: [...] } } or directly array
-          const apiResponse = result.data
-          const payload = (apiResponse && (apiResponse.data || apiResponse)) || []
-          const tripsArray = Array.isArray(payload)
-            ? payload
-            : (payload.trips || payload.items || [])
-
-          this.allTrips = (tripsArray || []).map(trip => ({
-            id: trip.id,
-            title: trip.title,
-            thumbnail: trip.thumbnail,
-            destination: trip.destination,
-            startDate: trip.startDate || trip.start_date,
-            endDate: trip.endDate || trip.end_date,
-            days: trip.days,
-            status: trip.status,
-            createdAt: trip.createdAt || trip.created_at
-          }))
-        } else {
-          console.error('Failed to load trips:', result.error)
-        }
-      } catch (error) {
-        console.error('Error loading trips:', error)
-      } finally {
-        this.isLoadingTrips = false
-      }
-    },
-    handleViewAll(type) {
-      if (type === 'trips') {
-        this.activeTab = 'trips'
-        this.$router.replace({ query: { ...this.$route.query, tab: 'trips' } })
-        this.loadTrips()
-      } else if (type === 'saved') {
-        console.log('View all saved plans')
-        // TODO: Navigate to saved plans page
-      }
-    },
-    handleViewTrip(tripId) {
-      console.log('View trip:', tripId)
-      // TODO: Navigate to trip detail page
-    },
-    handleViewPlan(planId) {
-      console.log('View plan:', planId)
-      // TODO: Navigate to plan detail page
-    },
-    handleCreateTrip() {
-      this.$router.push({ name: 'trip-new' })
-    },
-    handleEditTrip(tripId) {
-      this.$router.push({ name: 'trip-edit', params: { id: tripId } })
-    },
-    async handleDeleteTrip(tripId) {
-      if (!confirm('Are you sure you want to delete this trip?')) return
-      
-      try {
-        const result = await apiService.deleteTrip(tripId)
-        if (result.success) {
-          toast.success('Trip deleted successfully!')
-          // Optimistically update the UI without full page refresh
-          this.allTrips = (this.allTrips || []).filter(t => t.id !== tripId)
-          // Also update recentTrips in the overview if present
-          if (this.profileData && Array.isArray(this.profileData.recentTrips)) {
-            this.profileData.recentTrips = this.profileData.recentTrips.filter(t => t.id !== tripId)
-          }
-          // Update Trips tab count
-          this.tabs[1].count = this.allTrips.length
-          // Optionally re-fetch trips in the background to stay in sync
-          this.loadTrips()
-        } else {
-          toast.error(`Failed to delete trip: ${result.error}`)
-        }
-      } catch (error) {
-        toast.error(`Error deleting trip: ${error.message}`)
-      }
-    },
     async handleSaveProfile(formData) {
       try {
         // Convert camelCase to snake_case for API
@@ -564,12 +433,7 @@ export default {
           lastName: formData.lastName,
           username: formData.username,
           bio: formData.bio,
-          location: formData.location,
-          displayName: formData.displayName,
-          tier: formData.tier,
-          specialties: Array.isArray(formData.specialties) ? formData.specialties : [],
-          countriesVisited: Array.isArray(formData.countriesVisited) ? formData.countriesVisited : [],
-          featuredPlanId: formData.featuredPlanId
+          location: formData.location
         }
         
         const result = await apiService.updateProfile(apiData)
@@ -606,25 +470,20 @@ export default {
             lastName: updatedUser.lastName || updatedUser.last_name || '',
             email: updatedUser.email || '',
             username: updatedUser.username || '',
-            displayName: updatedUser.displayName || updatedUser.display_name || '',
-            tier: updatedUser.tier || '',
             avatar: updatedUser.avatar || updatedUser.avatar_url || '',
             coverImage: updatedUser.coverImage || updatedUser.cover_image || '',
             bio: updatedUser.bio || '',
             location: updatedUser.location || '',
             joinedDate: updatedUser.joinedDate || updatedUser.created_at || updatedUser.joined_date || '',
             verified: updatedUser.verified || false,
-            specialties: Array.isArray(updatedUser.specialties)
-              ? updatedUser.specialties
-              : (typeof updatedUser.specialties === 'string'
-                  ? updatedUser.specialties.split(',').map(s => s.trim()).filter(Boolean)
-                  : []),
-            countriesVisited: Array.isArray(updatedUser.countriesVisited || updatedUser.countries_visited)
-              ? (updatedUser.countriesVisited || updatedUser.countries_visited).map(code => (code || '').toUpperCase())
-              : [],
-            featuredPlan: updatedUser.featuredPlan || updatedUser.featured_plan || null,
             preferences: normalizedPreferences,
-            socialLinks: updatedUser.socialLinks || updatedUser.social_links || []
+            hasPassword: Boolean(
+              updatedUser.hasPassword ??
+              updatedUser.has_password ??
+              updatedUser.password_set ??
+              updatedUser.password ??
+              updatedUser.password_hash
+            )
           }
           
           // Update user object with normalized data - use Object.assign to ensure reactivity
@@ -638,7 +497,6 @@ export default {
             firstName: normalizedUser.firstName,
             lastName: normalizedUser.lastName,
             username: normalizedUser.username,
-            displayName: normalizedUser.displayName,
             bio: normalizedUser.bio,
             location: normalizedUser.location
           })
@@ -718,293 +576,6 @@ export default {
         }
       } catch (error) {
         toast.error(`Error saving preferences: ${error.message}`)
-      }
-    },
-    async handleSaveLanguages(languages) {
-      const settingsComponent = this.$refs.profileSettings
-      if (settingsComponent) {
-        settingsComponent.isSavingLanguages = true
-      }
-      try {
-        const result = await apiService.updateLanguages(languages)
-        if (result.success) {
-          const apiResponse = result.data
-          const data = apiResponse.data || apiResponse
-          const updatedLanguages = Array.isArray(data.languages) ? data.languages : []
-          if (this.profileData?.user) {
-            this.profileData.user.languages = updatedLanguages
-          }
-          toast.success('Languages updated successfully!')
-        } else {
-          toast.error(result.error || 'Failed to update languages')
-        }
-      } catch (error) {
-        toast.error(`Error updating languages: ${error.message}`)
-      } finally {
-        if (settingsComponent) {
-          settingsComponent.isSavingLanguages = false
-        }
-      }
-    },
-    async handleSaveSocialLinks({ current, original }) {
-      // Reset saving state in child component via event or ref
-      const settingsComponent = this.$refs.profileSettings
-      if (settingsComponent) {
-        settingsComponent.isSavingSocialLinks = true
-      }
-      
-      try {
-        // Identify changes:
-        // 1. Links to delete (in original but not in current)
-        // 2. Links to update (in both but changed)
-        // 3. Links to create (in current but not in original)
-        
-        const originalMap = new Map(original.map(link => [link.id, link]))
-        
-        // Find links to delete (have ID but not in current)
-        const toDelete = original.filter(link => 
-          link.id && !current.some(cl => cl.id === link.id)
-        )
-        
-        // Find links to create (no ID)
-        const toCreate = current.filter(link => !link.id)
-        
-        // Find links to update (have ID and exist in both, but changed)
-        const toUpdate = current.filter(link => {
-          if (!link.id) return false
-          const origLink = originalMap.get(link.id)
-          if (!origLink) return false
-          return origLink.platform !== link.platform || 
-                 origLink.url !== link.url || 
-                 origLink.public !== link.public
-        })
-        
-        // Execute deletions
-        for (const link of toDelete) {
-          const result = await apiService.deleteSocialLink(link.id)
-          if (!result.success) {
-            toast.error(`Failed to delete ${link.platform} link`)
-            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
-            return
-          }
-        }
-        
-        // Execute updates
-        for (const link of toUpdate) {
-          // Validate URL is not empty
-          if (!link.url || !link.url.trim()) {
-            toast.error(`Please enter a URL for ${link.platform}`)
-            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
-            return
-          }
-          
-          // Format URL - handle both full URLs and usernames
-          let formattedUrl = link.url.trim()
-          
-          // Check if it's just a username (no dots/slashes/http) - alphanumeric with underscores/dots/dashes
-          const isUsername = /^[\w.\-]+$/.test(formattedUrl) && !formattedUrl.includes('/') && !formattedUrl.includes('.')
-          
-          if (isUsername) {
-            // Construct platform-specific URL from username
-            const platformUrls = {
-              'Instagram': `https://instagram.com/${formattedUrl}`,
-              'Twitter': `https://twitter.com/${formattedUrl}`,
-              'Facebook': `https://facebook.com/${formattedUrl}`,
-              'YouTube': `https://youtube.com/@${formattedUrl}`,
-              'TikTok': `https://tiktok.com/@${formattedUrl}`,
-              'LinkedIn': `https://linkedin.com/in/${formattedUrl}`,
-              'Pinterest': `https://pinterest.com/${formattedUrl}`,
-              'Snapchat': `https://snapchat.com/add/${formattedUrl}`,
-              'Website': `https://${formattedUrl}`,
-              'Other': `https://${formattedUrl}`
-            }
-            formattedUrl = platformUrls[link.platform] || `https://${formattedUrl}`
-          } else {
-            // It's a URL - ensure it has a protocol
-            if (!/^https?:\/\//i.test(formattedUrl)) {
-              formattedUrl = `https://${formattedUrl}`
-            }
-          }
-          
-          // Basic URL validation
-          try {
-            new URL(formattedUrl)
-          } catch (e) {
-            toast.error(`Please enter a valid URL or username for ${link.platform}`)
-            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
-            return
-          }
-          
-          // Convert to snake_case for Laravel backend
-          const result = await apiService.updateSocialLink(link.id, {
-            platform: link.platform,
-            url: formattedUrl,
-            is_public: link.public !== undefined ? link.public : true
-          })
-          if (!result.success) {
-            const errorMsg = result.error || `Failed to update ${link.platform} link`
-            toast.error(errorMsg)
-            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
-            return
-          }
-        }
-        
-        // Execute creations
-        for (const link of toCreate) {
-          // Validate URL is not empty
-          if (!link.url || !link.url.trim()) {
-            toast.error(`Please enter a URL for ${link.platform}`)
-            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
-            return
-          }
-          
-          // Format URL - handle both full URLs and usernames
-          let formattedUrl = link.url.trim()
-          
-          // Check if it's just a username (no dots/slashes/http) - alphanumeric with underscores/dots/dashes
-          const isUsername = /^[\w.\-]+$/.test(formattedUrl) && !formattedUrl.includes('/') && !formattedUrl.includes('.')
-          
-          if (isUsername) {
-            // Construct platform-specific URL from username
-            const platformUrls = {
-              'Instagram': `https://instagram.com/${formattedUrl}`,
-              'Twitter': `https://twitter.com/${formattedUrl}`,
-              'Facebook': `https://facebook.com/${formattedUrl}`,
-              'YouTube': `https://youtube.com/@${formattedUrl}`,
-              'TikTok': `https://tiktok.com/@${formattedUrl}`,
-              'LinkedIn': `https://linkedin.com/in/${formattedUrl}`,
-              'Pinterest': `https://pinterest.com/${formattedUrl}`,
-              'Snapchat': `https://snapchat.com/add/${formattedUrl}`,
-              'Website': `https://${formattedUrl}`,
-              'Other': `https://${formattedUrl}`
-            }
-            formattedUrl = platformUrls[link.platform] || `https://${formattedUrl}`
-          } else {
-            // It's a URL - ensure it has a protocol
-            if (!/^https?:\/\//i.test(formattedUrl)) {
-              formattedUrl = `https://${formattedUrl}`
-            }
-          }
-          
-          // Basic URL validation
-          try {
-            new URL(formattedUrl)
-          } catch (e) {
-            toast.error(`Please enter a valid URL or username for ${link.platform}`)
-            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
-            return
-          }
-          
-          // Convert to snake_case for Laravel backend
-          const result = await apiService.createSocialLink({
-            platform: link.platform,
-            url: formattedUrl,
-            is_public: link.public !== undefined ? link.public : true
-          })
-          if (!result.success) {
-            const errorMsg = result.error || `Failed to create ${link.platform} link`
-            toast.error(errorMsg)
-            console.error('Social link creation error:', result)
-            if (settingsComponent) settingsComponent.isSavingSocialLinks = false
-            return
-          }
-        }
-        
-        // Success!
-        if (toDelete.length > 0 || toUpdate.length > 0 || toCreate.length > 0) {
-          toast.success('Social links saved successfully!')
-          
-          // Store scroll position before reload
-          const scrollYBefore = window.scrollY || window.pageYOffset || document.documentElement.scrollTop
-          
-          // Reload profile data to get updated social links with IDs
-          // Skip loading overlay to prevent scroll jump
-          const wasLoading = this.isLoading
-          this.isLoading = false // Prevent overlay from showing
-          try {
-            const result = await apiService.getProfile()
-            if (result.success) {
-              const apiResponse = result.data
-              const data = apiResponse.data || apiResponse
-              const user = data.user || {}
-              const prefs = user.preferences || {}
-              const normalizedPreferences = {
-                currency: prefs.currency || 'USD',
-                language: prefs.language || 'en',
-                timezone: prefs.timezone || 'America/Los_Angeles',
-                notifications: {
-                  email: prefs.notifications?.email ?? prefs.notifications_email ?? true,
-                  push: prefs.notifications?.push ?? prefs.notifications_push ?? true,
-                  marketing: prefs.notifications?.marketing ?? prefs.notifications_marketing ?? false
-                }
-              }
-              const normalizedUser = {
-                id: user.id,
-                firstName: user.firstName || user.first_name || '',
-                lastName: user.lastName || user.last_name || '',
-                email: user.email || '',
-                username: user.username || '',
-                avatar: user.avatar || user.avatar_url || '',
-                coverImage: user.coverImage || user.cover_image || '',
-                bio: user.bio || '',
-                location: user.location || '',
-                joinedDate: user.joinedDate || user.created_at || '',
-                verified: user.verified || false,
-                preferences: normalizedPreferences,
-                socialLinks: user.socialLinks || user.social_links || [],
-                hasPassword: Boolean(
-                  user.hasPassword ??
-                  user.has_password ??
-                  user.password_set ??
-                  user.password ??
-                  user.password_hash
-                )
-              }
-              this.profileData.user = normalizedUser
-            }
-          } catch (error) {
-            console.error('Error reloading profile:', error)
-          }
-          // Update originalSocialLinks in ProfileSettings to match new state
-          if (settingsComponent && this.profileData.user) {
-            const links = this.profileData.user.socialLinks || this.profileData.user.social_links || []
-            settingsComponent.originalSocialLinks = links.map(link => ({ ...link }))
-            settingsComponent.form.socialLinks = links.map(link => ({ ...link }))
-          }
-          
-          // Restore scroll position immediately to prevent jump
-          window.scrollTo(0, scrollYBefore)
-          
-          // Wait for DOM to fully update and then scroll to Social Links section
-          await this.$nextTick()
-          // Use double requestAnimationFrame to ensure DOM is ready
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              const socialLinksSection = document.getElementById('social-links-section')
-              if (socialLinksSection) {
-                // Calculate element position
-                const rect = socialLinksSection.getBoundingClientRect()
-                const elementTop = rect.top + window.scrollY || window.pageYOffset || document.documentElement.scrollTop
-                const offset = 100 // Header offset
-                
-                // Scroll to the section smoothly
-                window.scrollTo({
-                  top: Math.max(0, elementTop - offset),
-                  behavior: 'smooth'
-                })
-              }
-            })
-          })
-        } else {
-          toast.info('No changes to save')
-        }
-      } catch (error) {
-        toast.error(`Error saving social links: ${error.message}`)
-      } finally {
-        // Reset saving state
-        if (settingsComponent) {
-          settingsComponent.isSavingSocialLinks = false
-        }
       }
     },
     handleChangePassword() {

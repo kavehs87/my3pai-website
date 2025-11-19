@@ -1,6 +1,6 @@
 # My3PAI API Reference
 
-_Last updated: 2025-01-27_
+_Last updated: 2025-01-27 (Updated with itinerary update endpoint and POI publishing behavior)_
 
 This document captures every HTTP endpoint defined in the Laravel API (`routes/api.php` and `routes/web.php`), how they are authenticated, required payloads, and the shapes of the most important responses. The API currently relies on Laravel Sanctum for token-based auth and uses JSON throughout.
 
@@ -22,8 +22,7 @@ This document captures every HTTP endpoint defined in the Laravel API (`routes/a
   - Public map endpoint (`/map/pois`): 60 requests per minute per IP
   - Rate limit exceeded returns HTTP 429
 - **Middleware**:
-  - `auth:sanctum`: Protects user/profile/itinerary/POI/admin routes.
-  - `admin`: Additional guard for `/api/admin/*`; user must have `role === 'admin'`.
+  - `auth:sanctum`: Protects user/profile/itinerary/POI routes.
 
 ---
 
@@ -37,6 +36,9 @@ This document captures every HTTP endpoint defined in the Laravel API (`routes/a
 - `GET /map/pois`
 - **Purpose**: Retrieve published POIs with optional filters and pagination (default `per_page=50`, max 100).
 - **Rate limiting**: 60 requests per minute per IP address.
+- **POI Visibility**: Returns POIs that are either:
+  - Published individually (`status='published'`), OR
+  - Belong to a published itinerary (even if POI status is draft)
 - **Query parameters**:
   | Param | Type | Notes |
   | --- | --- | --- |
@@ -67,6 +69,7 @@ This document captures every HTTP endpoint defined in the Laravel API (`routes/a
   }
   ```
 - Each POI matches the schema from [PoiResource](#poiresource).
+- **Note**: POIs from published itineraries are included even if their individual `status` is `draft`. This allows publishing entire itineraries at once.
 
 ### Google OAuth (browser flow)
 - `GET /api/auth/google` – redirects to Google OAuth (web route).
@@ -207,6 +210,31 @@ This document captures every HTTP endpoint defined in the Laravel API (`routes/a
 - Accessible to owner or to the public if `is_published === true`.
 - Loads POIs with associations for activities, audiences, terrains, amenities, accessibilities, tags, media, and social posts.
 
+### Update Itinerary
+- `PUT /itineraries/{itinerary}`
+- **Auth**: Bearer token. Owner-only.
+- **Body** (all fields optional):
+  ```json
+  {
+    "title": "Updated Itinerary Title",
+    "isPublished": true
+  }
+  ```
+- **Field naming**: Accepts both `isPublished` (camelCase) and `is_published` (snake_case).
+- **POI Publishing Behavior**:
+  - When an itinerary is published (`isPublished: true`), all POIs in that itinerary are automatically published (`status='published'`).
+  - When an itinerary is unpublished (`isPublished: false`), all POIs are automatically set to draft (`status='draft'`).
+- **Response 200**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "itinerary": { ...ItineraryResource }
+    },
+    "message": "Itinerary updated successfully"
+  }
+  ```
+
 ### Add or Update POIs in an Itinerary
 - `POST /itineraries/{itinerary}/pois`
 - Request is validated by `StorePoiRequest`:
@@ -249,61 +277,6 @@ This document captures every HTTP endpoint defined in the Laravel API (`routes/a
 
 ---
 
-## Admin APIs (auth:sanctum + admin)
-
-### Dashboard Stats
-- `GET /admin/stats`
-- Returns aggregate counts for users (`total`, `verified`, `admins`, `this_month`).
-
-### Recent Activity (placeholder)
-- `GET /admin/activity`
-- Currently returns `{ "activities": [], "message": "Activity logs coming soon" }`.
-
-### User Directory
-- `GET /admin/users`
-  - Query params: `search` (validated to prevent SQL injection, alphanumeric + @ . _ - only), `role` (`user|admin|all`), `verified` (`true|false` or `1|0`), `per_page` (1–100, capped at 100 if higher).
-  - **Security**: Search input is validated and sanitized to prevent SQL injection attacks.
-  - Response includes `users` array plus pagination meta (current page, last page, per page, total).
-
-### Create User
-- `POST /admin/users`
-- **Body**:
-  ```json
-  {
-    "first_name": "Amy",
-    "last_name": "Adams",
-    "email": "amy@example.com",
-    "password": "secret123",
-    "username": "amy",
-    "bio": "...",
-    "location": "Zurich",
-    "verified": true,
-    "role": "admin"
-  }
-  ```
-- Auto-creates default preferences. Response 201 returns the full user (with preferences) plus success message.
-
-### Show User
-- `GET /admin/users/{id}` → returns user with preferences.
-
-### Update User
-- `PUT /admin/users/{id}`
-- Accepts partial updates for first/last name, email, username, bio, location, verified, role.
-
-### Delete User
-- `DELETE /admin/users/{id}`
-- Guard against deleting yourself (`Auth::id()`).
-
-### Toggle Verification
-- `POST /admin/users/{id}/verify`
-- Flips `verified` flag and aligns `email_verified_at`.
-
-### Change User Password
-- `POST /admin/users/{id}/change-password`
-- Body: `{ "password": "newSecret", "password_confirmation": "newSecret" }`
-
----
-
 ## Data Models
 
 ### User Profile Payload
@@ -334,7 +307,7 @@ This document captures every HTTP endpoint defined in the Laravel API (`routes/a
 ## Error Handling
 
 - **Validation errors**: HTTP 422 with `{ "success": false, "message"|"error": "...", "errors": { field: [messages] } }`.
-- **Unauthorized**: 401 when missing/invalid token or when hitting admin routes without a valid user.
+- **Unauthorized**: 401 when missing/invalid token.
 - **Forbidden**: 403 for resource ownership breaches (e.g., editing another user's itinerary/POI).
 - **Not Found**: 404 when resource IDs do not match route bindings (e.g., deleting media that does not belong to the POI).
 - **Rate limit exceeded**: HTTP 429 when rate limits are exceeded. Includes retry information in headers.

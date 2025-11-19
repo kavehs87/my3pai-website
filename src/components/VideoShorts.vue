@@ -38,9 +38,9 @@
               <div class="creator-section">
                 <img :src="plan.creator.avatar" :alt="plan.creator.name" class="creator-avatar" />
                 <div class="creator-info">
-                  <router-link :to="{ name: 'creator-profile', params: { id: plan.creator.id } }" class="creator-name">
+                  <span class="creator-name">
                     {{ plan.creator.name }}
-                  </router-link>
+                  </span>
                   <span class="creator-followers">{{ plan.creator.followers }}</span>
                 </div>
                 <button class="clone-btn" @click.stop="clonePlan(plan)">

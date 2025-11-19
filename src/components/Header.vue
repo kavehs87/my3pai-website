@@ -43,7 +43,6 @@
               <div class="dropdown-divider"></div>
               <a href="#" class="dropdown-item" @click.prevent="navigateToProfile('overview')">Profile</a>
               <a href="#" class="dropdown-item" @click.prevent="navigateToProfile('settings')">Settings</a>
-              <a href="#" class="dropdown-item" @click.prevent="navigateToProfile('trips')">My Trips</a>
               <div class="dropdown-divider"></div>
               <button class="dropdown-item logout-btn" @click="logout" :disabled="isLoggingOut">
                 <span v-if="isLoggingOut" class="loading-spinner"></span>

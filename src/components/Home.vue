@@ -9,18 +9,6 @@
     <!-- Video Plans Section -->
     <!-- <VideoPlans /> -->
 
-    <!-- Trips Plans (API) -->
-    <TripPlans />
-
-    <!-- Video Shorts Section -->
-    <!-- <VideoShorts /> -->
-
-    <!-- Trip Shorts Section -->
-    <TripShorts />
-
-    <!-- Popular Creators Section -->
-    <PopularCreators />
-
     <!-- CTA Section -->
     <CTA />
 
@@ -33,16 +21,10 @@
 import Header from './Header.vue'
 import AIHeroSection from './AIHeroSection.vue'
 import HeroSection from './HeroSection.vue'
-import VideoPlans from './VideoPlans.vue'
-import TripPlans from './TripPlans.vue'
-import VideoShorts from './VideoShorts.vue'
-import TripShorts from './TripShorts.vue'
-import PopularCreators from './PopularCreators.vue'
 import CTA from './CTA.vue'
 import DestinationCard from './DestinationCard.vue'
 import CategoriesSection from './CategoriesSection.vue'
 import Footer from './Footer.vue'
-import TripsSection from './TripsSection.vue'
 
 export default {
   name: 'Home',
@@ -50,11 +32,6 @@ export default {
     Header,
     AIHeroSection,
     HeroSection,
-    VideoPlans,
-    TripPlans,
-    VideoShorts,
-    TripShorts,
-    PopularCreators,
     CTA,
     DestinationCard,
     CategoriesSection,
