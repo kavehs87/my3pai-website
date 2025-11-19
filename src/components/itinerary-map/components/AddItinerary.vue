@@ -127,8 +127,6 @@ import POIAccordion from './add-itineraries/components/POIAccordion.vue'
 import apiService from '../../../services/api.js'
 import { toast } from '../../../utils/toast.js'
 
-const ITINERARY_DRAFT_STORAGE_KEY = 'my3pai-itinerary-map-draft'
-
 export default {
   name: 'AddItinerary',
   components: {
@@ -154,8 +152,6 @@ export default {
       poiForm: this.createEmptyPOIForm(),
       editingPoiIndex: null,
       titleError: '',
-      draftSaveTimeout: null,
-      isRestoringDraft: false,
       remoteItineraryId: null,
       pendingPoiDeletions: [],
       submissionState: {
@@ -168,35 +164,6 @@ export default {
         error: null,
         success: false
       }
-    }
-  },
-  mounted() {
-    this.restoreDraftFromStorage()
-  },
-  beforeUnmount() {
-    this.persistDraftToStorage()
-  },
-  watch: {
-    formData: {
-      deep: true,
-      handler() {
-        this.scheduleDraftSave()
-      }
-    },
-    poiForm: {
-      deep: true,
-      handler() {
-        this.scheduleDraftSave()
-      }
-    },
-    showPOIForm() {
-      this.scheduleDraftSave()
-    },
-    editingPoiIndex() {
-      this.scheduleDraftSave()
-    },
-    remoteItineraryId() {
-      this.scheduleDraftSave()
     }
   },
   methods: {
@@ -378,7 +345,7 @@ export default {
       })
       toast.success(heading)
       if (mode === 'publish') {
-        this.clearDraftStorage()
+        this.resetStateAfterPublish()
       }
       setTimeout(() => {
         this.dismissSubmissionOverlay()
@@ -575,138 +542,17 @@ export default {
       if (response?.success) return response.data
       throw new Error(response?.error || fallbackMessage)
     },
-    scheduleDraftSave() {
-      if (this.isRestoringDraft || !this.canUseDraftStorage()) {
-        return
+    resetStateAfterPublish() {
+      this.formData = {
+        title: '',
+        thumbnail: null,
+        pointsOfInterest: []
       }
-      if (this.draftSaveTimeout) {
-        clearTimeout(this.draftSaveTimeout)
-      }
-      this.draftSaveTimeout = window.setTimeout(() => {
-        this.persistDraftToStorage()
-      }, 400)
-    },
-    persistDraftToStorage() {
-      if (!this.canUseDraftStorage()) return
-      try {
-        const payload = this.buildDraftPayload()
-        window.localStorage.setItem(ITINERARY_DRAFT_STORAGE_KEY, JSON.stringify(payload))
-      } catch (error) {
-        console.warn('Unable to save itinerary draft', error)
-      } finally {
-        if (this.draftSaveTimeout) {
-          clearTimeout(this.draftSaveTimeout)
-          this.draftSaveTimeout = null
-        }
-      }
-    },
-    clearDraftStorage() {
-      if (!this.canUseDraftStorage()) return
-      try {
-        window.localStorage.removeItem(ITINERARY_DRAFT_STORAGE_KEY)
-      } catch (error) {
-        console.warn('Unable to clear itinerary draft storage', error)
-      }
-    },
-    buildDraftPayload() {
-      return {
-        version: 2,
-        timestamp: Date.now(),
-        formData: this.sanitizeFormDataForStorage(this.formData),
-        poiForm: this.sanitizePOIForStorage(this.poiForm),
-        editingPoiIndex: this.editingPoiIndex,
-        showPOIForm: this.showPOIForm,
-        remoteItineraryId: this.remoteItineraryId
-      }
-    },
-    sanitizeFormDataForStorage(source) {
-      const stripped = this.stripFileLikeValues(source || {}) || {}
-      const points = Array.isArray(stripped.pointsOfInterest)
-        ? stripped.pointsOfInterest.map((poi) => this.sanitizePOIForStorage(poi))
-        : []
-      return {
-        title: stripped.title || '',
-        thumbnail: typeof stripped.thumbnail === 'string' ? stripped.thumbnail : null,
-        pointsOfInterest: points
-      }
-    },
-    sanitizePOIForStorage(poi) {
-      const stripped = this.stripFileLikeValues(poi || {}) || {}
-      const base = this.createEmptyPOIForm()
-      const sanitized = Object.keys(base).reduce((acc, key) => {
-        const baseSection = base[key]
-        const nextValue = stripped[key]
-        if (Array.isArray(baseSection)) {
-          acc[key] = Array.isArray(nextValue) ? nextValue : []
-        } else if (baseSection && typeof baseSection === 'object') {
-          acc[key] = { ...baseSection, ...(nextValue || {}) }
-        } else {
-          acc[key] = nextValue ?? baseSection
-        }
-        return acc
-      }, {})
-      return {
-        ...sanitized,
-        id: stripped.id || poi?.id || Date.now(),
-        remoteId: typeof stripped.remoteId === 'number' ? stripped.remoteId : stripped.remoteId || null
-      }
-    },
-    stripFileLikeValues(value) {
-      if (value === null || value === undefined) return value
-      if (this.isFileLikeValue(value)) {
-        return undefined
-      }
-      if (Array.isArray(value)) {
-        return value
-          .map((entry) => this.stripFileLikeValues(entry))
-          .filter((entry) => entry !== undefined)
-      }
-      if (typeof value === 'object') {
-        const result = {}
-        Object.keys(value).forEach((key) => {
-          const sanitized = this.stripFileLikeValues(value[key])
-          if (sanitized !== undefined) {
-            result[key] = sanitized
-          }
-        })
-        return result
-      }
-      return value
-    },
-    restoreDraftFromStorage() {
-      if (!this.canUseDraftStorage()) return
-      try {
-        const raw = window.localStorage.getItem(ITINERARY_DRAFT_STORAGE_KEY)
-        if (!raw) return
-        const parsed = JSON.parse(raw)
-        if (!parsed || typeof parsed !== 'object') return
-        this.isRestoringDraft = true
-        if (parsed.formData) {
-          this.formData = {
-            ...this.formData,
-            ...this.sanitizeFormDataForStorage(parsed.formData)
-          }
-        }
-        if (parsed.poiForm) {
-          this.poiForm = this.sanitizePOIForStorage(parsed.poiForm)
-        }
-        if (typeof parsed.editingPoiIndex === 'number') {
-          this.editingPoiIndex = parsed.editingPoiIndex
-        }
-        if (typeof parsed.showPOIForm === 'boolean') {
-          this.showPOIForm = parsed.showPOIForm
-        }
-        if (parsed.remoteItineraryId) {
-          this.remoteItineraryId = parsed.remoteItineraryId
-        }
-      } catch (error) {
-        console.warn('Unable to restore itinerary draft', error)
-      } finally {
-        this.isRestoringDraft = false
-      }
-    },
-    canUseDraftStorage() {
-      return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+      this.remoteItineraryId = null
+      this.pendingPoiDeletions = []
+      this.editingPoiIndex = null
+      this.showPOIForm = false
+      this.resetPOIForm()
     },
     deepClonePreservingFiles(value) {
       if (value === null || typeof value !== 'object') {
