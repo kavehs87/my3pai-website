@@ -253,8 +253,9 @@ export default {
     clonePOIData(poi) {
       const source = poi || this.createEmptyPOIForm()
       try {
-        return JSON.parse(JSON.stringify(source))
+        return this.deepClonePreservingFiles(source)
       } catch (error) {
+        console.warn('Unable to clone POI data', error)
         return this.createEmptyPOIForm()
       }
     },
@@ -329,10 +330,7 @@ export default {
     },
     stripFileLikeValues(value) {
       if (value === null || value === undefined) return value
-      const isFileLike =
-        (typeof File !== 'undefined' && value instanceof File) ||
-        (typeof Blob !== 'undefined' && value instanceof Blob)
-      if (isFileLike) {
+      if (this.isFileLikeValue(value)) {
         return undefined
       }
       if (Array.isArray(value)) {
@@ -383,6 +381,28 @@ export default {
     },
     canUseDraftStorage() {
       return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+    },
+    deepClonePreservingFiles(value) {
+      if (value === null || typeof value !== 'object') {
+        return value
+      }
+      if (this.isFileLikeValue(value)) {
+        return value
+      }
+      if (Array.isArray(value)) {
+        return value.map((entry) => this.deepClonePreservingFiles(entry))
+      }
+      const result = {}
+      Object.keys(value || {}).forEach((key) => {
+        result[key] = this.deepClonePreservingFiles(value[key])
+      })
+      return result
+    },
+    isFileLikeValue(value) {
+      return (
+        (typeof File !== 'undefined' && value instanceof File) ||
+        (typeof Blob !== 'undefined' && value instanceof Blob)
+      )
     }
   }
 }
