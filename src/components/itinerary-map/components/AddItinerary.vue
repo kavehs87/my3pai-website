@@ -192,7 +192,7 @@ export default {
     },
     handleAddPOI() {
       this.editingPoiIndex = null
-      // this.poiForm = this.clonePOIData()
+      this.resetPOIForm()
       this.showPOIForm = true
     },
     handlePOIModalClose() {
@@ -257,6 +257,9 @@ export default {
       } catch (error) {
         return this.createEmptyPOIForm()
       }
+    },
+    resetPOIForm() {
+      this.poiForm = this.clonePOIData()
     },
     scheduleDraftSave() {
       if (this.isRestoringDraft || !this.canUseDraftStorage()) {
