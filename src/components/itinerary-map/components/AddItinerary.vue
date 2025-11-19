@@ -89,6 +89,8 @@ import PlaceField from './add-itineraries/components/PlaceField.vue'
 import ThumbnailUpload from './add-itineraries/components/ThumbnailUpload.vue'
 import POIAccordion from './add-itineraries/components/POIAccordion.vue'
 
+const ITINERARY_DRAFT_STORAGE_KEY = 'my3pai-itinerary-map-draft'
+
 export default {
   name: 'AddItinerary',
   components: {
@@ -113,7 +115,35 @@ export default {
       showPOIForm: false,
       poiForm: this.createEmptyPOIForm(),
       editingPoiIndex: null,
-      titleError: ''
+      titleError: '',
+      draftSaveTimeout: null,
+      isRestoringDraft: false
+    }
+  },
+  mounted() {
+    this.restoreDraftFromStorage()
+  },
+  beforeUnmount() {
+    this.persistDraftToStorage()
+  },
+  watch: {
+    formData: {
+      deep: true,
+      handler() {
+        this.scheduleDraftSave()
+      }
+    },
+    poiForm: {
+      deep: true,
+      handler() {
+        this.scheduleDraftSave()
+      }
+    },
+    showPOIForm() {
+      this.scheduleDraftSave()
+    },
+    editingPoiIndex() {
+      this.scheduleDraftSave()
     }
   },
   methods: {
@@ -227,6 +257,129 @@ export default {
       } catch (error) {
         return this.createEmptyPOIForm()
       }
+    },
+    scheduleDraftSave() {
+      if (this.isRestoringDraft || !this.canUseDraftStorage()) {
+        return
+      }
+      if (this.draftSaveTimeout) {
+        clearTimeout(this.draftSaveTimeout)
+      }
+      this.draftSaveTimeout = window.setTimeout(() => {
+        this.persistDraftToStorage()
+      }, 400)
+    },
+    persistDraftToStorage() {
+      if (!this.canUseDraftStorage()) return
+      try {
+        const payload = this.buildDraftPayload()
+        window.localStorage.setItem(ITINERARY_DRAFT_STORAGE_KEY, JSON.stringify(payload))
+      } catch (error) {
+        console.warn('Unable to save itinerary draft', error)
+      } finally {
+        if (this.draftSaveTimeout) {
+          clearTimeout(this.draftSaveTimeout)
+          this.draftSaveTimeout = null
+        }
+      }
+    },
+    buildDraftPayload() {
+      return {
+        version: 1,
+        timestamp: Date.now(),
+        formData: this.sanitizeFormDataForStorage(this.formData),
+        poiForm: this.sanitizePOIForStorage(this.poiForm),
+        editingPoiIndex: this.editingPoiIndex,
+        showPOIForm: this.showPOIForm
+      }
+    },
+    sanitizeFormDataForStorage(source) {
+      const stripped = this.stripFileLikeValues(source || {}) || {}
+      const points = Array.isArray(stripped.pointsOfInterest)
+        ? stripped.pointsOfInterest.map((poi) => this.sanitizePOIForStorage(poi))
+        : []
+      return {
+        title: stripped.title || '',
+        thumbnail: null,
+        pointsOfInterest: points
+      }
+    },
+    sanitizePOIForStorage(poi) {
+      const stripped = this.stripFileLikeValues(poi || {}) || {}
+      const base = this.createEmptyPOIForm()
+      const sanitized = Object.keys(base).reduce((acc, key) => {
+        const baseSection = base[key]
+        const nextValue = stripped[key]
+        if (Array.isArray(baseSection)) {
+          acc[key] = Array.isArray(nextValue) ? nextValue : []
+        } else if (baseSection && typeof baseSection === 'object') {
+          acc[key] = { ...baseSection, ...(nextValue || {}) }
+        } else {
+          acc[key] = nextValue ?? baseSection
+        }
+        return acc
+      }, {})
+      return {
+        ...sanitized,
+        id: stripped.id || poi?.id || Date.now()
+      }
+    },
+    stripFileLikeValues(value) {
+      if (value === null || value === undefined) return value
+      const isFileLike =
+        (typeof File !== 'undefined' && value instanceof File) ||
+        (typeof Blob !== 'undefined' && value instanceof Blob)
+      if (isFileLike) {
+        return undefined
+      }
+      if (Array.isArray(value)) {
+        return value
+          .map((entry) => this.stripFileLikeValues(entry))
+          .filter((entry) => entry !== undefined)
+      }
+      if (typeof value === 'object') {
+        const result = {}
+        Object.keys(value).forEach((key) => {
+          const sanitized = this.stripFileLikeValues(value[key])
+          if (sanitized !== undefined) {
+            result[key] = sanitized
+          }
+        })
+        return result
+      }
+      return value
+    },
+    restoreDraftFromStorage() {
+      if (!this.canUseDraftStorage()) return
+      try {
+        const raw = window.localStorage.getItem(ITINERARY_DRAFT_STORAGE_KEY)
+        if (!raw) return
+        const parsed = JSON.parse(raw)
+        if (!parsed || typeof parsed !== 'object') return
+        this.isRestoringDraft = true
+        if (parsed.formData) {
+          this.formData = {
+            ...this.formData,
+            ...this.sanitizeFormDataForStorage(parsed.formData)
+          }
+        }
+        if (parsed.poiForm) {
+          this.poiForm = this.sanitizePOIForStorage(parsed.poiForm)
+        }
+        if (typeof parsed.editingPoiIndex === 'number') {
+          this.editingPoiIndex = parsed.editingPoiIndex
+        }
+        if (typeof parsed.showPOIForm === 'boolean') {
+          this.showPOIForm = parsed.showPOIForm
+        }
+      } catch (error) {
+        console.warn('Unable to restore itinerary draft', error)
+      } finally {
+        this.isRestoringDraft = false
+      }
+    },
+    canUseDraftStorage() {
+      return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
     }
   }
 }
