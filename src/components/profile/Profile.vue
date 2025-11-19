@@ -29,6 +29,10 @@
         :stats="profileData.stats"
       />
       
+      <ProfileMaps
+        v-if="activeTab === 'maps'"
+      />
+      
       <ProfileSettings
         ref="profileSettings"
         v-if="activeTab === 'settings'"
@@ -188,6 +192,7 @@ import ProfileHeader from './components/ProfileHeader.vue'
 import ProfileTabs from './components/ProfileTabs.vue'
 import ProfileOverview from './components/ProfileOverview.vue'
 import ProfileSettings from './components/ProfileSettings.vue'
+import ProfileMaps from './components/profile-maps/ProfileMaps.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
 import eventBus from '../../utils/eventBus.js'
@@ -199,7 +204,8 @@ export default {
     ProfileHeader,
     ProfileTabs,
     ProfileOverview,
-    ProfileSettings
+    ProfileSettings,
+    ProfileMaps
   },
   data() {
     return {
@@ -213,6 +219,7 @@ export default {
       error: null,
       tabs: [
         { id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null },
+        { id: 'maps', label: 'Maps', icon: 'fas fa-map-marked-alt', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
       passwordModal: {
@@ -250,7 +257,7 @@ export default {
     '$route.query.tab': {
       immediate: true,
       handler(tab) {
-        if (tab && ['overview', 'settings'].includes(tab)) {
+        if (tab && ['overview', 'maps', 'settings'].includes(tab)) {
           this.activeTab = tab
         } else if (!tab) {
           // Default to overview if no tab specified
@@ -262,7 +269,7 @@ export default {
   mounted() {
     // Check if there's a tab query parameter
     const tab = this.$route.query.tab
-    if (tab && ['overview', 'settings'].includes(tab)) {
+    if (tab && ['overview', 'maps', 'settings'].includes(tab)) {
       this.activeTab = tab
     }
     

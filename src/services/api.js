@@ -131,6 +131,27 @@ class ApiService {
     }
   }
 
+  buildQueryString(params = {}) {
+    const query = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item === undefined || item === null || item === '') return
+          query.append(key, item)
+        })
+        return
+      }
+      if (typeof value === 'object') {
+        query.append(key, JSON.stringify(value))
+        return
+      }
+      query.append(key, value)
+    })
+    const queryString = query.toString()
+    return queryString ? `?${queryString}` : ''
+  }
+
   getXsrfToken() {
     const raw = this.getCookie(XSRF_COOKIE_NAME)
     return raw ? decodeURIComponent(raw) : null
@@ -289,6 +310,11 @@ class ApiService {
     })
   }
 
+  async getItineraries(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/itineraries${queryString}`)
+  }
+
   async updateItinerary(itineraryId, itineraryData) {
     return this.request(`/itineraries/${itineraryId}`, {
       method: 'PUT',
@@ -323,6 +349,12 @@ class ApiService {
 
   async deletePoi(poiId) {
     return this.request(`/pois/${poiId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async deleteItinerary(itineraryId) {
+    return this.request(`/itineraries/${itineraryId}`, {
       method: 'DELETE'
     })
   }
