@@ -33,9 +33,9 @@
 
       <footer class="card-footer">
         <div class="meta-row">
-          <div class="meta-item" title="Number of POIs">
-            <i class="fas fa-location-dot"></i>
-            <span>{{ itinerary.poiCount }} POIs</span>
+          <div class="meta-item" :title="poiTitle">
+            <i :class="poiIconClass"></i>
+            <span>{{ poiLabel }}</span>
           </div>
           <div class="meta-divider"></div>
           <div class="meta-item" title="Last updated">
@@ -120,6 +120,21 @@ export default {
     subtitle() {
       return this.itinerary.isPublished ? 'Live Itinerary' : 'Draft Map'
     },
+    poiCountNumber() {
+      return Number.isFinite(this.itinerary.poiCount)
+        ? this.itinerary.poiCount
+        : 0
+    },
+    poiIconClass() {
+      return this.poiCountNumber === 0
+        ? 'fas fa-triangle-exclamation'
+        : 'fas fa-location-dot'
+    },
+    poiTitle() {
+      return this.poiCountNumber === 0
+        ? 'Empty itinerary — add some POIs to bring this map to life.'
+        : 'Number of POIs'
+    },
     formattedUpdated() {
       if (!this.itinerary.lastUpdated) return 'New'
       try {
@@ -138,6 +153,19 @@ export default {
       } catch (e) {
         return 'Recently'
       }
+    },
+    poiLabel() {
+      const count = this.poiCountNumber
+
+      if (count === 0) {
+        return 'Empty!'
+      }
+
+      if (count === 1) {
+        return '1 POI'
+      }
+
+      return `${count} POIs`
     },
     initials() {
       if (!this.itinerary.title) return 'MAP'
