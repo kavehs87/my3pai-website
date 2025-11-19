@@ -12,7 +12,7 @@
       </div>
       <!-- First Place Prompt -->
       <FirstPlacePrompt 
-        :visible="showFirstPlacePrompt" 
+        :visible="showFirstPlacePrompt && !isEditingExisting" 
         @click="handleFirstPlaceClick"
       />
     </div>
@@ -23,6 +23,7 @@
     <!-- Add Itinerary Modal -->
     <AddItinerary 
       :visible="showAddItinerary" 
+      :initial-itinerary="editingItinerary"
       @close="showAddItinerary = false" 
       @publish="handlePublishItinerary"
       @save-draft="handleSaveDraftItinerary"
@@ -36,6 +37,7 @@ import Header from './Header.vue'
 import ThinFooter from './itinerary-map/components/ThinFooter.vue'
 import AddItinerary from './itinerary-map/components/AddItinerary.vue'
 import FirstPlacePrompt from './itinerary-map/components/FirstPlacePrompt.vue'
+import apiService from '../services/api.js'
 
 export default {
   name: 'ItineraryMap',
@@ -45,6 +47,11 @@ export default {
     AddItinerary,
     FirstPlacePrompt
   },
+  computed: {
+    isEditingExisting() {
+      return Boolean(this.$route?.query?.id)
+    }
+  },
   data() {
     return {
       map: null,
@@ -53,11 +60,15 @@ export default {
       useAdvanced: import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true',
       AdvancedMarkerElement: null,
       showAddItinerary: false,
-      showFirstPlacePrompt: true
+      showFirstPlacePrompt: true,
+      editingItinerary: null
     }
   },
   mounted() {
     this.initGoogleMaps()
+    if (this.isEditingExisting) {
+      this.fetchExistingItinerary()
+    }
     // Add resize listener to ensure map resizes properly
     window.addEventListener('resize', this.handleResize)
   },
@@ -70,6 +81,46 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    async fetchExistingItinerary() {
+      const rawId = this.$route?.query?.id
+      const itineraryId = Number(rawId)
+
+      if (!Number.isFinite(itineraryId) || itineraryId <= 0) {
+        console.warn('[ItineraryMap] Invalid itinerary id in route query:', rawId)
+        return
+      }
+
+      console.log('[ItineraryMap] Loading itinerary', itineraryId)
+      const response = await apiService.getItinerary(itineraryId)
+
+      if (!response?.success) {
+        console.error('[ItineraryMap] Failed to load itinerary', {
+          itineraryId,
+          error: response?.error,
+          status: response?.status
+        })
+        return
+      }
+
+      // Normalize itinerary payload similar to AddItinerary.extractItineraryFromResponse
+      const payload = response.data || {}
+      const itinerary =
+        payload.data?.itinerary ||
+        payload.itinerary ||
+        payload.data ||
+        payload
+
+      if (!itinerary || !itinerary.id) {
+        console.error('[ItineraryMap] Loaded itinerary response is missing itinerary data', payload)
+        return
+      }
+
+      console.log('[ItineraryMap] Loaded itinerary data', itinerary)
+
+      this.editingItinerary = itinerary
+      this.showFirstPlacePrompt = false
+      this.showAddItinerary = true
+    },
     initGoogleMaps() {
       // Check if Google Maps is already loaded
       if (window.google && window.google.maps && window.google.maps.Map) {

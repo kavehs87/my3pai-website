@@ -138,6 +138,10 @@ export default {
     visible: {
       type: Boolean,
       default: false
+    },
+    initialItinerary: {
+      type: Object,
+      default: null
     }
   },
   emits: ['close', 'publish', 'save-draft', 'share'],
@@ -166,6 +170,16 @@ export default {
       }
     }
   },
+  watch: {
+    initialItinerary: {
+      immediate: true,
+      handler(newValue) {
+        if (newValue && newValue.id) {
+          this.hydrateFromItinerary(newValue)
+        }
+      }
+    }
+  },
   methods: {
     createEmptyPOIForm() {
       return {
@@ -190,6 +204,38 @@ export default {
         media: {},
         experience: {}
       }
+    },
+    hydrateFromItinerary(itinerary = {}) {
+      const safeItinerary = itinerary || {}
+      const pois = Array.isArray(safeItinerary.pois) ? safeItinerary.pois : []
+
+      this.remoteItineraryId = safeItinerary.id || null
+      this.formData.title = safeItinerary.title || ''
+      this.formData.thumbnail = safeItinerary.thumbnailUrl || null
+      this.titleError = ''
+      this.pendingPoiDeletions = []
+      this.editingPoiIndex = null
+
+      this.formData.pointsOfInterest = pois.map((poi) => {
+        const safePoi = poi || {}
+        const cloneSection = (section) => this.deepClonePreservingFiles(section || {})
+
+        return {
+          id: safePoi.id,
+          remoteId: safePoi.id,
+          basic: cloneSection(safePoi.basic),
+          category: cloneSection(safePoi.category),
+          difficulty: cloneSection(safePoi.difficulty),
+          pricing: cloneSection(safePoi.pricing),
+          regions: cloneSection(safePoi.regions),
+          amenities: cloneSection(safePoi.amenities),
+          tips: cloneSection(safePoi.tips),
+          media: cloneSection(safePoi.media),
+          experience: cloneSection(safePoi.experience)
+        }
+      })
+
+      this.resetPOIForm()
     },
     handleClose() {
       this.$emit('close')
@@ -431,7 +477,10 @@ export default {
           this.formatPoiProgressLabel(index + 1, points.length)
         )
         const payload = this.buildPoiPayload(poi)
-        const response = await apiService.savePoi(itineraryId, payload)
+        const isExisting = Boolean(poi.remoteId)
+        const response = isExisting
+          ? await apiService.updatePoi(itineraryId, poi.remoteId, payload)
+          : await apiService.savePoi(itineraryId, payload)
         const remotePoi = this.extractPoiFromResponse(response)
         if (!remotePoi?.id) {
           throw new Error(`Unable to save ${label}. Missing identifier.`)
@@ -451,12 +500,7 @@ export default {
       if (!Object.keys(payload.media || {}).length) {
         delete payload.media
       }
-      if (remoteId) {
-        payload.poiId = remoteId
-        payload.id = remoteId
-      } else {
-        delete payload.remoteId
-      }
+      delete payload.remoteId
       return payload
     },
     normalizeBasicSection(basic = {}) {
@@ -502,6 +546,10 @@ export default {
     },
     async flushPendingPoiDeletions() {
       if (!this.pendingPoiDeletions.length) return
+      if (!this.remoteItineraryId) {
+        console.warn('Cannot delete POIs without a remote itinerary id.')
+        return
+      }
       const queue = [...this.pendingPoiDeletions]
       this.pendingPoiDeletions = []
       for (let index = 0; index < queue.length; index += 1) {
@@ -511,7 +559,7 @@ export default {
           'Cleaning up deleted points of interest',
           `Deleting ${index + 1} of ${queue.length}`
         )
-        const response = await apiService.deletePoi(poiId)
+        const response = await apiService.deletePoi(this.remoteItineraryId, poiId)
         if (!response?.success) {
           this.pendingPoiDeletions.push(...queue.slice(index))
           throw new Error(response?.error || 'Unable to delete point of interest.')

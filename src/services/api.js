@@ -310,6 +310,13 @@ class ApiService {
     })
   }
 
+  async getItinerary(itineraryId) {
+    if (!itineraryId) {
+      return { success: false, error: 'Missing itinerary identifier.' }
+    }
+    return this.request(`/itineraries/${itineraryId}`)
+  }
+
   async getItineraries(params = {}) {
     const queryString = this.buildQueryString(params)
     return this.request(`/itineraries${queryString}`)
@@ -338,6 +345,16 @@ class ApiService {
     })
   }
 
+  async updatePoi(itineraryId, poiId, poiData) {
+    if (!itineraryId || !poiId) {
+      return { success: false, error: 'Missing itinerary or POI identifier.' }
+    }
+    return this.request(`/itineraries/${itineraryId}/pois/${poiId}`, {
+      method: 'PUT',
+      body: poiData
+    })
+  }
+
   async uploadPoiMedia(poiId, files = []) {
     const formData = new FormData()
     files.forEach((file) => formData.append('images[]', file))
@@ -347,8 +364,11 @@ class ApiService {
     })
   }
 
-  async deletePoi(poiId) {
-    return this.request(`/pois/${poiId}`, {
+  async deletePoi(itineraryId, poiId) {
+    if (!itineraryId || !poiId) {
+      return { success: false, error: 'Missing itinerary or POI identifier.' }
+    }
+    return this.request(`/itineraries/${itineraryId}/pois/${poiId}`, {
       method: 'DELETE'
     })
   }
