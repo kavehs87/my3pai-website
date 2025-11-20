@@ -144,7 +144,7 @@ export default {
       default: null
     }
   },
-  emits: ['close', 'publish', 'save-draft', 'share'],
+  emits: ['close', 'publish', 'save-draft', 'share', 'pois-updated'],
   data() {
     return {
       formData: {
@@ -178,6 +178,13 @@ export default {
         if (newValue && newValue.id) {
           this.hydrateFromItinerary(newValue)
         }
+      }
+    },
+    'formData.pointsOfInterest': {
+      deep: true,
+      handler() {
+        // Emit POI updates to parent (ItineraryMap) so it can update markers
+        this.$emit('pois-updated', this.formData.pointsOfInterest)
       }
     }
   },
@@ -259,6 +266,11 @@ export default {
         }
       })
       this.resetPOIForm()
+      
+      // Emit POI update after hydrating
+      this.$nextTick(() => {
+        this.$emit('pois-updated', this.formData.pointsOfInterest)
+      })
     },
     preparePoiMediaSection(media = {}) {
       const base = this.createEmptyMediaSection()
@@ -419,6 +431,8 @@ export default {
       if (removedPoi?.remoteId) {
         this.enqueuePoiDeletion(removedPoi.remoteId)
       }
+      // Emit POI update
+      this.$emit('pois-updated', this.formData.pointsOfInterest)
       if (this.editingPoiIndex === index) {
         this.editingPoiIndex = null
       } else if (this.editingPoiIndex !== null && index < this.editingPoiIndex) {

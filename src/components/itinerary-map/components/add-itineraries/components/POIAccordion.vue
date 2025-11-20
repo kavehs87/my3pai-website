@@ -260,7 +260,7 @@ export default {
       handler(newVal, oldVal) {
         // Skip if this is the initial setup
         if (!oldVal && newVal) {
-          this.localValue = { ...defaultPOIValue(), ...(newVal || {}) }
+        this.localValue = { ...defaultPOIValue(), ...(newVal || {}) }
           return
         }
         // Don't overwrite if we have local changes (especially images)

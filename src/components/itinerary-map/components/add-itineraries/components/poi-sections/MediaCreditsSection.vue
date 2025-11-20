@@ -23,7 +23,7 @@
         @dragover.prevent="handleUploadDragOver"
         @dragleave.prevent="handleUploadDragLeave"
         @drop.prevent="handleUploadDrop"
-      >
+        >
         <div class="upload-content">
           <i class="fas fa-cloud-upload-alt"></i>
           <span>

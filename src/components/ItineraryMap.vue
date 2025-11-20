@@ -39,6 +39,16 @@
     <!-- Thin Footer -->
     <ThinFooter />
 
+    <!-- POI Markers on Map -->
+    <!-- Always render POIMarkers when map is ready, even if AdvancedMarkerElement is not available yet -->
+    <!-- It will create markers when AdvancedMarkerElement becomes available -->
+    <POIMarkers
+      v-if="map"
+      :pois="currentPOIs"
+      :map="map"
+      :AdvancedMarkerElement="AdvancedMarkerElement"
+    />
+
     <!-- Add Itinerary Modal -->
     <AddItinerary 
       :visible="showAddItinerary" 
@@ -47,6 +57,7 @@
       @publish="handlePublishItinerary"
       @save-draft="handleSaveDraftItinerary"
       @share="handleShareItinerary"
+      @pois-updated="handlePOIsUpdated"
     />
     </template>
   </div>
@@ -57,6 +68,7 @@ import Header from './Header.vue'
 import ThinFooter from './itinerary-map/components/ThinFooter.vue'
 import AddItinerary from './itinerary-map/components/AddItinerary.vue'
 import FirstPlacePrompt from './itinerary-map/components/FirstPlacePrompt.vue'
+import POIMarkers from './itinerary-map/components/POIMarkers.vue'
 import apiService from '../services/api.js'
 
 export default {
@@ -65,7 +77,8 @@ export default {
     Header,
     ThinFooter,
     AddItinerary,
-    FirstPlacePrompt
+    FirstPlacePrompt,
+    POIMarkers
   },
   computed: {
     isEditingExisting() {
@@ -74,7 +87,24 @@ export default {
   },
   data() {
     return {
-      map: null,
+      // ============================================================================
+      // IMPORTANT: map is NOT stored in data() - Vue's reactivity breaks AdvancedMarkerElement
+      // ============================================================================
+      // 
+      // ISSUE: When map is stored in data(), Vue 3 wraps it in a Proxy for reactivity.
+      // This Proxy wrapper breaks Google Maps AdvancedMarkerElement - markers are created
+      // but don't display on the map.
+      //
+      // SOLUTION: Store map as a non-reactive property (initialized in beforeCreate hook).
+      // This prevents Vue from wrapping it in a Proxy, allowing AdvancedMarkerElement to work.
+      //
+      // REFERENCE: https://stackoverflow.com/questions/75526094/advancedmarkerelement-do-not-display-on-the-map
+      // 
+      // For Vue 3 Composition API: Use shallowRef() instead of ref() for the map instance.
+      // For Vue 2 Options API: Don't store map in data(), use a non-reactive property instead.
+      //
+      // ============================================================================
+      
       loadError: false,
       mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null,
       useAdvanced: import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true',
@@ -83,12 +113,36 @@ export default {
       showFirstPlacePrompt: true,
       editingItinerary: null,
       isAuthChecking: true,
-      isAuthenticated: false
+      isAuthenticated: false,
+      currentPOIs: []
     }
+  },
+  beforeCreate() {
+    // Initialize map as a non-reactive property to avoid Vue's Proxy wrapping.
+    // This is REQUIRED for AdvancedMarkerElement to work correctly.
+    // Do NOT move this to data() - it will break marker visibility.
+    this.map = null
   },
   async mounted() {
     const authenticated = await this.ensureAuthenticated()
     if (!authenticated) return
+
+    // Log environment variables for debugging
+    console.log('[ItineraryMap] Environment check:', {
+      mapId: this.mapId,
+      useAdvanced: this.useAdvanced,
+      hasApiKey: !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    })
+
+    // Expose instance to window for manual testing in console
+    window.itineraryMapInstance = this
+    console.log('[ItineraryMap] Instance exposed to window.itineraryMapInstance for manual testing')
+    console.log('[ItineraryMap] Available methods:')
+    console.log('  - window.itineraryMapInstance.fitMapToPOIs()')
+    console.log('  - window.itineraryMapInstance.createTestMarker(lat, lng)')
+    console.log('  - window.itineraryMapInstance.map (map instance)')
+    console.log('  - window.itineraryMapInstance.currentPOIs (POIs array)')
+    console.log('  - window.itineraryMapInstance.AdvancedMarkerElement (AdvancedMarkerElement class)')
 
     this.initGoogleMaps()
     if (this.isEditingExisting) {
@@ -165,6 +219,52 @@ export default {
 
       this.editingItinerary = itinerary
       this.showFirstPlacePrompt = false
+      
+      // Extract POIs from itinerary and set currentPOIs immediately
+      // This allows markers to be displayed on the map even before opening the modal
+      if (itinerary.pointsOfInterest && Array.isArray(itinerary.pointsOfInterest)) {
+        // Use Vue.set or direct assignment to ensure reactivity
+        this.currentPOIs = [...itinerary.pointsOfInterest] // Create new array to trigger reactivity
+        console.log('[ItineraryMap] Set currentPOIs from itinerary:', this.currentPOIs.length, 'POIs')
+        console.log('[ItineraryMap] currentPOIs details:', this.currentPOIs.map(poi => ({
+          name: poi?.basic?.name,
+          lat: poi?.basic?.latitude,
+          lng: poi?.basic?.longitude
+        })))
+        
+        // Wait for map to be ready, then fit map FIRST, then wait before markers are created
+        this.$nextTick(() => {
+          if (this.map && this.currentPOIs.length > 0) {
+            console.log('[ItineraryMap] Map ready, fitting to POIs first')
+            // Fit map immediately
+            this.fitMapToPOIs()
+            
+            // Then wait before ensuring markers are created
+            setTimeout(() => {
+              console.log('[ItineraryMap] After map fit delay, ensuring markers are created')
+              // Force POIMarkers to update by triggering a reactive update
+              this.$forceUpdate()
+            }, 1000) // Delay after fitMapToPOIs, before ensuring markers
+          } else {
+            // Map not ready yet, wait for it
+            const checkMap = setInterval(() => {
+              if (this.map && this.currentPOIs.length > 0) {
+                clearInterval(checkMap)
+                console.log('[ItineraryMap] Map ready, fitting to POIs first')
+                this.fitMapToPOIs()
+                setTimeout(() => {
+                  console.log('[ItineraryMap] After map fit delay, ensuring markers are created')
+                  this.$forceUpdate()
+                }, 1000)
+              }
+            }, 100)
+            
+            // Timeout after 10 seconds
+            setTimeout(() => clearInterval(checkMap), 10000)
+          }
+        })
+      }
+      
       this.showAddItinerary = true
     },
     initGoogleMaps() {
@@ -230,12 +330,30 @@ export default {
             ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) 
             : null
           
+          console.log('[ItineraryMap] Map idle - AdvancedMarkerElement:', !!this.AdvancedMarkerElement, 'useAdvanced:', this.useAdvanced, 'mapId:', this.mapId)
+          
           // Trigger resize to ensure map fills container
           this.$nextTick(() => {
             if (this.map) {
               window.google.maps.event.trigger(this.map, 'resize')
             }
           })
+          
+          // If we have POIs loaded (e.g., from editing an existing itinerary), fit map to them
+          if (this.currentPOIs && this.currentPOIs.length > 0) {
+            this.$nextTick(() => {
+              console.log('[ItineraryMap] Map idle - fitting to existing POIs:', this.currentPOIs.length)
+              // Fit map immediately
+              this.fitMapToPOIs()
+              
+              // Then wait before ensuring markers are created
+              setTimeout(() => {
+                console.log('[ItineraryMap] After map fit delay, ensuring markers are created')
+                // Force POIMarkers to update
+                this.$forceUpdate()
+              }, 1000) // Delay after fitMapToPOIs, before ensuring markers
+            })
+          }
         })
       } catch (error) {
         this.loadError = true
@@ -273,6 +391,126 @@ export default {
     handleFirstPlaceClick() {
       this.showFirstPlacePrompt = false
       this.showAddItinerary = true
+    },
+    handlePOIsUpdated(pois) {
+      // Update current POIs when AddItinerary emits updates
+      this.currentPOIs = Array.isArray(pois) ? pois : []
+      console.log('[ItineraryMap] POIs updated:', this.currentPOIs.length, 'POIs', this.currentPOIs)
+      
+      // Log POI positions for debugging
+      this.currentPOIs.forEach((poi, index) => {
+        const lat = poi?.basic?.latitude
+        const lng = poi?.basic?.longitude
+        console.log(`[ItineraryMap] POI ${index + 1}:`, poi?.basic?.name, 'lat:', lat, 'lng:', lng, 'valid:', typeof lat === 'number' && typeof lng === 'number')
+      })
+      
+      // Fit map bounds to show all POIs if there are any
+      // Use nextTick to ensure markers are created first
+      if (this.currentPOIs.length > 0 && this.map) {
+        this.$nextTick(() => {
+          // Small delay to ensure AdvancedMarkerElement is ready and markers are created
+          setTimeout(() => {
+            this.fitMapToPOIs()
+          }, 500)
+        })
+      }
+    },
+    // Removed waitForMapAndMarkers - no longer needed with new approach
+    fitMapToPOIs() {
+      if (!this.map || !window.google || !window.google.maps) {
+        console.log('[ItineraryMap] fitMapToPOIs: map not ready')
+        return
+      }
+      
+      const validPOIs = this.currentPOIs.filter(poi => {
+        const lat = poi?.basic?.latitude
+        const lng = poi?.basic?.longitude
+        return (
+          typeof lat === 'number' &&
+          typeof lng === 'number' &&
+          !isNaN(lat) &&
+          !isNaN(lng)
+        )
+      })
+      
+      console.log('[ItineraryMap] fitMapToPOIs: validPOIs count:', validPOIs.length)
+      
+      if (validPOIs.length === 0) {
+        console.log('[ItineraryMap] fitMapToPOIs: no valid POIs, skipping')
+        return
+      }
+      
+      if (validPOIs.length === 1) {
+        // Single POI: center and zoom
+        const poi = validPOIs[0]
+        const center = {
+          lat: poi.basic.latitude,
+          lng: poi.basic.longitude
+        }
+        console.log('[ItineraryMap] fitMapToPOIs: centering on single POI:', center)
+        this.map.setCenter(center)
+        this.map.setZoom(14)
+      } else {
+        // Multiple POIs: fit bounds
+        const bounds = new window.google.maps.LatLngBounds()
+        validPOIs.forEach(poi => {
+          bounds.extend({
+            lat: poi.basic.latitude,
+            lng: poi.basic.longitude
+          })
+        })
+        console.log('[ItineraryMap] fitMapToPOIs: fitting bounds for', validPOIs.length, 'POIs')
+        this.map.fitBounds(bounds)
+      }
+    },
+    // Manual test method to create a marker at specific coordinates
+    createTestMarker(lat, lng, title = 'Test Marker') {
+      if (!this.map) {
+        console.error('[ItineraryMap] Map not ready')
+        return null
+      }
+      
+      if (!this.AdvancedMarkerElement) {
+        console.error('[ItineraryMap] AdvancedMarkerElement not available')
+        return null
+      }
+      
+      const position = { lat: Number(lat), lng: Number(lng) }
+      
+      // Create content element
+      const content = document.createElement('div')
+      content.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #ef4444;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 700;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        border: 3px solid white;
+      `
+      content.textContent = 'T'
+      content.title = title
+      
+      try {
+        const marker = new this.AdvancedMarkerElement({
+          map: this.map,
+          position: position,
+          title: title,
+          content: content,
+          zIndex: 2000
+        })
+        
+        console.log('[ItineraryMap] Test marker created:', marker, 'at', position)
+        return marker
+      } catch (error) {
+        console.error('[ItineraryMap] Failed to create test marker:', error)
+        return null
+      }
     }
   }
 }
