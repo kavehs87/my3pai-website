@@ -3,32 +3,52 @@
     <!-- Header -->
     <Header />
 
-    <!-- Google Map Container -->
-    <div class="map-container">
-      <div ref="mapEl" class="google-map"></div>
-      <div v-if="loadError" class="map-fallback">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>Google Maps failed to load. Please check your API key configuration.</span>
+    <div v-if="isAuthChecking" class="auth-guard">
+      <div class="auth-card">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Checking your session…</p>
       </div>
-      <!-- First Place Prompt -->
-      <FirstPlacePrompt 
-        :visible="showFirstPlacePrompt && !isEditingExisting" 
-        @click="handleFirstPlaceClick"
-      />
     </div>
 
-    <!-- Thin Footer -->
-    <ThinFooter />
+    <div v-else-if="!isAuthenticated" class="auth-guard">
+      <div class="auth-card">
+        <i class="fas fa-lock"></i>
+        <h2>Sign in required</h2>
+        <p>You need to be logged in to access the itinerary builder.</p>
+        <button class="auth-button" @click="redirectToLogin">
+          Go to homepage
+        </button>
+      </div>
+    </div>
 
-    <!-- Add Itinerary Modal -->
-    <AddItinerary 
-      :visible="showAddItinerary" 
-      :initial-itinerary="editingItinerary"
-      @close="showAddItinerary = false" 
-      @publish="handlePublishItinerary"
-      @save-draft="handleSaveDraftItinerary"
-      @share="handleShareItinerary"
-    />
+    <template v-else>
+      <!-- Google Map Container -->
+      <div class="map-container">
+        <div ref="mapEl" class="google-map"></div>
+        <div v-if="loadError" class="map-fallback">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Google Maps failed to load. Please check your API key configuration.</span>
+        </div>
+        <!-- First Place Prompt -->
+        <FirstPlacePrompt 
+          :visible="showFirstPlacePrompt && !isEditingExisting" 
+          @click="handleFirstPlaceClick"
+        />
+      </div>
+
+      <!-- Thin Footer -->
+      <ThinFooter />
+
+      <!-- Add Itinerary Modal -->
+      <AddItinerary 
+        :visible="showAddItinerary" 
+        :initial-itinerary="editingItinerary"
+        @close="showAddItinerary = false" 
+        @publish="handlePublishItinerary"
+        @save-draft="handleSaveDraftItinerary"
+        @share="handleShareItinerary"
+      />
+    </template>
   </div>
 </template>
 
@@ -61,10 +81,15 @@ export default {
       AdvancedMarkerElement: null,
       showAddItinerary: false,
       showFirstPlacePrompt: true,
-      editingItinerary: null
+      editingItinerary: null,
+      isAuthChecking: true,
+      isAuthenticated: false
     }
   },
-  mounted() {
+  async mounted() {
+    const authenticated = await this.ensureAuthenticated()
+    if (!authenticated) return
+
     this.initGoogleMaps()
     if (this.isEditingExisting) {
       this.fetchExistingItinerary()
@@ -81,6 +106,27 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
+    async ensureAuthenticated() {
+      this.isAuthChecking = true
+      try {
+        const response = await apiService.getCurrentUser()
+        this.isAuthenticated = Boolean(response?.success)
+        return this.isAuthenticated
+      } catch (error) {
+        console.warn('[ItineraryMap] Auth check failed', error)
+        this.isAuthenticated = false
+        return false
+      } finally {
+        this.isAuthChecking = false
+      }
+    },
+    redirectToLogin() {
+      if (this.$router) {
+        this.$router.push('/')
+      } else {
+        window.location.href = '/'
+      }
+    },
     async fetchExistingItinerary() {
       const rawId = this.$route?.query?.id
       const itineraryId = Number(rawId)
@@ -203,9 +249,18 @@ export default {
       }
     },
 
-    handlePublishItinerary() {
-      // Handle itinerary publish logic here
+    handlePublishItinerary(payload) {
       this.showAddItinerary = false
+      const query = { tab: 'maps' }
+      if (payload?.itineraryId) {
+        query.highlight = payload.itineraryId
+      }
+      if (this.$router) {
+        this.$router.push({ path: '/profile', query })
+      } else {
+        const params = new URLSearchParams(query)
+        window.location.href = `/profile?${params.toString()}`
+      }
     },
     handleSaveDraftItinerary() {
       // Handle save draft logic here
@@ -263,6 +318,60 @@ export default {
 .map-fallback i {
   font-size: 24px;
   color: var(--error-color, #ef4444);
+}
+
+.auth-guard {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  text-align: center;
+}
+
+.auth-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.auth-card i {
+  font-size: 32px;
+  color: var(--secondary-color);
+}
+
+.auth-card h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+}
+
+.auth-card p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.auth-button {
+  border: none;
+  background: var(--secondary-color);
+  color: #fff;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  transition: filter var(--transition-fast);
+}
+
+.auth-button:hover {
+  filter: brightness(1.05);
 }
 </style>
 

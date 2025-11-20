@@ -338,6 +338,15 @@ class ApiService {
     })
   }
 
+  async deleteItineraryThumbnail(itineraryId) {
+    if (!itineraryId) {
+      return { success: false, error: 'Missing itinerary identifier.' }
+    }
+    return this.request(`/itineraries/${itineraryId}/thumbnail`, {
+      method: 'DELETE'
+    })
+  }
+
   async savePoi(itineraryId, poiData) {
     return this.request(`/itineraries/${itineraryId}/pois`, {
       method: 'POST',
@@ -361,6 +370,25 @@ class ApiService {
     return this.request(`/pois/${poiId}/media`, {
       method: 'POST',
       body: formData
+    })
+  }
+
+  async deletePoiMedia(poiId, mediaId) {
+    if (!poiId || !mediaId) {
+      return { success: false, error: 'Missing POI or media identifier.' }
+    }
+    return this.request(`/pois/${poiId}/media/${mediaId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async reorderPoiMedia(poiId, order = []) {
+    if (!poiId || !Array.isArray(order) || !order.length) {
+      return { success: false, error: 'Missing POI identifier or media order.' }
+    }
+    return this.request(`/pois/${poiId}/media/reorder`, {
+      method: 'PATCH',
+      body: { order }
     })
   }
 

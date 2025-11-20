@@ -43,7 +43,8 @@
             <div v-if="openSection === section.id" class="accordion-body">
               <component
                 :is="section.component"
-                v-model="localValue[section.modelKey]"
+                :modelValue="localValue[section.modelKey]"
+                @update:modelValue="handleSectionUpdate(section.modelKey, $event)"
               />
             </div>
           </div>
@@ -227,7 +228,8 @@ export default {
   data() {
     return {
       openSection: null,
-      localValue: { ...defaultPOIValue(), ...(this.modelValue || {}) }
+      localValue: { ...defaultPOIValue(), ...(this.modelValue || {}) },
+      isUpdatingFromChild: false // Flag to prevent watcher from overwriting child updates
     }
   },
   computed: {
@@ -255,8 +257,38 @@ export default {
     modelValue: {
       deep: true,
       immediate: true,
-      handler(newVal) {
-        this.localValue = { ...defaultPOIValue(), ...(newVal || {}) }
+      handler(newVal, oldVal) {
+        // Skip if this is the initial setup
+        if (!oldVal && newVal) {
+          this.localValue = { ...defaultPOIValue(), ...(newVal || {}) }
+          return
+        }
+        // Don't overwrite if we have local changes (especially images)
+        // Only merge if the incoming value has actual new data
+        if (newVal && this.localValue) {
+          // Deep merge to preserve nested structures like media.images
+          Object.keys(newVal).forEach((key) => {
+            if (newVal[key] !== undefined) {
+              // Special handling for media to preserve images array
+              if (key === 'media' && newVal.media && this.localValue.media) {
+                // Merge media object but preserve images if they exist locally
+                const localImages = this.localValue.media.images || []
+                const newImages = newVal.media.images || []
+                // Only update if new images are actually provided and different
+                if (newImages.length > 0 && newImages.length !== localImages.length) {
+                  this.localValue.media = { ...this.localValue.media, ...newVal.media }
+                } else if (localImages.length > 0) {
+                  // Preserve local images, merge other media fields
+                  this.localValue.media = { ...this.localValue.media, ...newVal.media, images: localImages }
+                } else {
+                  this.localValue.media = { ...this.localValue.media, ...newVal.media }
+                }
+              } else {
+                this.localValue[key] = newVal[key]
+              }
+            }
+          })
+        }
       }
     },
     sectionsToRender: {
@@ -269,6 +301,73 @@ export default {
     }
   },
   methods: {
+    handleSectionUpdate(key, value) {
+      console.log('[POIAccordion] handleSectionUpdate:', key, 'value:', value)
+      if (key === 'media') {
+        console.log('[POIAccordion] handleSectionUpdate: incoming media.images:', value?.images?.length || 0)
+        console.log('[POIAccordion] handleSectionUpdate: current localValue.media.images:', this.localValue.media?.images?.length || 0)
+        console.log('[POIAccordion] handleSectionUpdate: incoming media.imagesToDelete:', value?.imagesToDelete)
+        console.log('[POIAccordion] handleSectionUpdate: current localValue.media.imagesToDelete:', this.localValue.media?.imagesToDelete)
+      }
+      // Set flag to prevent watcher from overwriting
+      this.isUpdatingFromChild = true
+      // For media, do a deep merge to preserve existing images with files (new uploads)
+      if (key === 'media' && this.localValue.media) {
+        const existingImages = this.localValue.media.images || []
+        const newImages = value?.images || []
+        
+        // If incoming value has images array, use it as source of truth (it's a full update from MediaCreditsSection)
+        // But preserve any images with files that might have been lost in the round trip
+        let finalImages = newImages.length > 0 ? newImages : existingImages
+        
+        // However, if incoming images array is missing images with files that we have locally,
+        // we need to preserve those (they might have been lost in serialization)
+        if (newImages.length > 0) {
+          const existingImagesWithFiles = existingImages.filter(img => img.type === 'new' && img.file)
+          const newImagesWithFiles = newImages.filter(img => img.type === 'new' && img.file)
+          
+          // Check if we're missing any files that existed before
+          const existingFileUids = new Set(existingImagesWithFiles.map(img => img.uid))
+          const newFileUids = new Set(newImagesWithFiles.map(img => img.uid))
+          
+          // If we have files that aren't in the new array, add them back
+          const missingFiles = existingImagesWithFiles.filter(img => !newFileUids.has(img.uid))
+          if (missingFiles.length > 0) {
+            console.log('[POIAccordion] handleSectionUpdate: preserving', missingFiles.length, 'images with files that were missing')
+            // Merge: new images first (source of truth), then add back missing files
+            const mergedImages = [...newImages]
+            const processedUids = new Set(newImages.map(img => img.uid))
+            missingFiles.forEach(img => {
+              if (!processedUids.has(img.uid)) {
+                mergedImages.push(img)
+                processedUids.add(img.uid)
+              }
+            })
+            finalImages = mergedImages
+          }
+        }
+        
+        const mergedMedia = {
+          ...this.localValue.media,
+          ...value,
+          images: finalImages,
+          // Explicitly preserve imagesToDelete and imagesOrder from incoming value if present
+          imagesToDelete: value?.imagesToDelete !== undefined ? value.imagesToDelete : this.localValue.media.imagesToDelete,
+          imagesOrder: value?.imagesOrder !== undefined ? value.imagesOrder : this.localValue.media.imagesOrder
+        }
+        this.localValue.media = mergedMedia
+        console.log('[POIAccordion] handleSectionUpdate: after merge, localValue.media.images:', this.localValue.media.images.length)
+        console.log('[POIAccordion] handleSectionUpdate: after merge, localValue.media.imagesToDelete:', this.localValue.media.imagesToDelete)
+      } else {
+        this.localValue[key] = value
+      }
+      // Also emit to parent to keep in sync
+      this.$emit('update:modelValue', { ...this.localValue })
+      // Reset flag after a tick to allow normal watcher behavior
+      this.$nextTick(() => {
+        this.isUpdatingFromChild = false
+      })
+    },
     toggleSection(id) {
       this.openSection = this.openSection === id ? null : id
     },

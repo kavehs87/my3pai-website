@@ -152,6 +152,7 @@ export default {
         thumbnail: null,
         pointsOfInterest: []
       },
+      originalThumbnailUrl: null,
       showPOIForm: false,
       poiForm: this.createEmptyPOIForm(),
       editingPoiIndex: null,
@@ -201,8 +202,22 @@ export default {
         regions: {},
         amenities: {},
         tips: {},
-        media: {},
+        media: this.createEmptyMediaSection(),
         experience: {}
+      }
+    },
+    createEmptyMediaSection() {
+      return {
+        images: [],
+        imagesToDelete: [],
+        imagesOrder: [],
+        originalImageOrder: [],
+        imageCredit: '',
+        videoUrl: '',
+        videoStart: '',
+        videoEnd: '',
+        videoCaption: '',
+        socialPosts: []
       }
     },
     hydrateFromItinerary(itinerary = {}) {
@@ -212,6 +227,7 @@ export default {
       this.remoteItineraryId = safeItinerary.id || null
       this.formData.title = safeItinerary.title || ''
       this.formData.thumbnail = safeItinerary.thumbnailUrl || null
+      this.originalThumbnailUrl = safeItinerary.thumbnailUrl || null
       this.titleError = ''
       this.pendingPoiDeletions = []
       this.editingPoiIndex = null
@@ -230,18 +246,103 @@ export default {
           regions: cloneSection(safePoi.regions),
           amenities: cloneSection(safePoi.amenities),
           tips: cloneSection(safePoi.tips),
-          media: cloneSection(safePoi.media),
+          media: this.preparePoiMediaSection(cloneSection(safePoi.media)),
           experience: cloneSection(safePoi.experience)
         }
       })
-
       this.resetPOIForm()
+    },
+    preparePoiMediaSection(media = {}) {
+      const base = this.createEmptyMediaSection()
+      const merged = { ...base, ...(media || {}) }
+      const remoteImages = Array.isArray(media?.images) ? media.images : []
+      merged.images = remoteImages
+        .map((image, index) => this.formatRemoteImageEntry(image, index))
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      merged.imagesToDelete = []
+      const orderedIds = merged.images
+        .filter((img) => img.type === 'existing' && img.id)
+        .map((img) => img.id)
+      merged.originalImageOrder = [...orderedIds]
+      merged.imagesOrder = [...orderedIds]
+      return merged
+    },
+    formatRemoteImageEntry(image = {}, fallbackIndex = 0) {
+      const remoteId = image.id ?? image.mediaId ?? image.remoteId ?? null
+      const previewUrl = image.url || image.previewUrl || ''
+      return {
+        uid: remoteId ? `remote-${remoteId}` : `remote-fallback-${fallbackIndex}`,
+        id: remoteId,
+        type: 'existing',
+        url: previewUrl,
+        previewUrl,
+        sortOrder: image.sort_order ?? image.sortOrder ?? fallbackIndex,
+        name:
+          image.name ||
+          image.original_name ||
+          image.filename ||
+          this.deriveImageNameFromUrl(previewUrl) ||
+          `Image ${fallbackIndex + 1}`
+      }
+    },
+    deriveImageNameFromUrl(url = '') {
+      if (!url) return ''
+      try {
+        const parsed = new URL(url)
+        const parts = parsed.pathname.split('/')
+        return parts.pop() || url
+      } catch (error) {
+        void error
+        const segments = url.split('/')
+        return segments.pop() || url
+      }
+    },
+    extractImagesFromMediaResponse(response) {
+      const payload = response?.data || {}
+      return (
+        payload?.images ||
+        response?.images ||
+        []
+      )
+    },
+    mergeImageEntries(existingEntries = [], uploadedImages = []) {
+      if (!uploadedImages?.length) {
+        return existingEntries
+      }
+      const uploadedEntries = uploadedImages.map((image, index) =>
+        this.formatRemoteImageEntry(image, existingEntries.length + index)
+      )
+      const map = new Map()
+      existingEntries.forEach((entry) => {
+        if (entry?.id) {
+          map.set(entry.id, entry)
+        } else if (entry?.uid) {
+          map.set(entry.uid, entry)
+        }
+      })
+      uploadedEntries.forEach((entry) => {
+        if (entry?.id) {
+          map.set(entry.id, entry)
+        } else if (entry?.uid) {
+          map.set(entry.uid, entry)
+        }
+      })
+      return Array.from(map.values()).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    },
+    haveSameOrder(a = [], b = []) {
+      if (a.length !== b.length) return false
+      return a.every((value, index) => value === b[index])
     },
     handleClose() {
       this.$emit('close')
     },
     async handlePublish() {
-      if (!this.ensureTitleIsPresent()) return
+      console.log('[AddItinerary] handlePublish called')
+      if (!this.ensureTitleIsPresent()) {
+        console.log('[AddItinerary] handlePublish: title check failed')
+        return
+      }
+      console.log('[AddItinerary] handlePublish: calling submitItinerary')
       await this.submitItinerary({ mode: 'publish' })
     },
     async handleSaveDraft() {
@@ -265,6 +366,11 @@ export default {
       // this.poiForm = this.clonePOIData()
     },
     handlePOISave(poiData = this.poiForm, options = {}) {
+      console.log('[AddItinerary] handlePOISave called')
+      console.log('[AddItinerary] handlePOISave: poiData.media:', poiData?.media)
+      console.log('[AddItinerary] handlePOISave: poiData.media?.images:', poiData?.media?.images)
+      console.log('[AddItinerary] handlePOISave: poiForm.media:', this.poiForm?.media)
+      console.log('[AddItinerary] handlePOISave: poiForm.media?.images:', this.poiForm?.media?.images)
       const { keepOpen = false } = options
       const isEdit = this.editingPoiIndex !== null
       const existingEntry = isEdit ? this.formData.pointsOfInterest[this.editingPoiIndex] : null
@@ -272,6 +378,9 @@ export default {
         id: existingEntry && existingEntry.id ? existingEntry.id : Date.now(),
         ...this.clonePOIData(poiData)
       }
+      console.log('[AddItinerary] handlePOISave: payload.media:', payload?.media)
+      console.log('[AddItinerary] handlePOISave: payload.media?.images:', payload?.media?.images)
+      console.log('[AddItinerary] handlePOISave: payload.media?.imagesToDelete:', payload?.media?.imagesToDelete)
 
       if (isEdit) {
         this.formData.pointsOfInterest.splice(this.editingPoiIndex, 1, payload)
@@ -398,31 +507,46 @@ export default {
       }, 1200)
     },
     async submitItinerary({ mode }) {
-      if (this.submissionState.active) return false
+      console.log('[AddItinerary] submitItinerary called, mode:', mode)
+      if (this.submissionState.active) {
+        console.log('[AddItinerary] submitItinerary: already active, returning')
+        return false
+      }
       const trimmedTitle = (this.formData.title || '').trim()
       if (!trimmedTitle) {
+        console.log('[AddItinerary] submitItinerary: no title')
         this.titleError = 'Title is required'
         return false
       }
       if (mode === 'publish' && !this.formData.pointsOfInterest.length) {
+        console.log('[AddItinerary] submitItinerary: no POIs for publish')
         toast.error('Add at least one point of interest before publishing.')
         return false
       }
+      console.log('[AddItinerary] submitItinerary: starting submission, POI count:', this.formData.pointsOfInterest.length)
       this.startSubmission(mode)
       try {
+        console.log('[AddItinerary] submitItinerary: calling ensureItineraryRecord')
         const itineraryId = await this.ensureItineraryRecord(mode, trimmedTitle)
+        console.log('[AddItinerary] submitItinerary: got itineraryId:', itineraryId)
+        console.log('[AddItinerary] submitItinerary: calling uploadItineraryThumbnailIfNeeded')
         await this.uploadItineraryThumbnailIfNeeded(itineraryId)
+        console.log('[AddItinerary] submitItinerary: calling savePointsOfInterest')
         await this.savePointsOfInterest(itineraryId)
+        console.log('[AddItinerary] submitItinerary: calling flushPendingPoiDeletions')
         await this.flushPendingPoiDeletions()
+        console.log('[AddItinerary] submitItinerary: finishing submission')
         this.finishSubmission(mode)
         const payload = {
           itineraryId,
           mode,
           poiCount: this.formData.pointsOfInterest.length
         }
+        console.log('[AddItinerary] submitItinerary: emitting event, payload:', payload)
         this.$emit(mode === 'publish' ? 'publish' : 'save-draft', payload)
         return true
       } catch (error) {
+        console.error('[AddItinerary] submitItinerary: ERROR caught:', error)
         this.handleSubmissionError(error)
         return false
       }
@@ -455,22 +579,54 @@ export default {
       return itinerary.id
     },
     async uploadItineraryThumbnailIfNeeded(itineraryId) {
-      if (!(this.formData.thumbnail instanceof File)) {
+      const hasNewFile = this.formData.thumbnail instanceof File
+      const shouldDelete =
+        !this.formData.thumbnail &&
+        this.originalThumbnailUrl &&
+        typeof this.originalThumbnailUrl === 'string'
+
+      if (!hasNewFile && !shouldDelete) {
         return
       }
-      this.updateSubmission('Uploading thumbnail', 'Sending featured image')
-      const response = await apiService.uploadItineraryThumbnail(itineraryId, this.formData.thumbnail)
-      const itinerary = this.extractItineraryFromResponse(response)
-      if (itinerary?.thumbnailUrl) {
-        this.formData.thumbnail = itinerary.thumbnailUrl
+
+      if (hasNewFile) {
+        this.updateSubmission('Uploading thumbnail', 'Sending featured image')
+        const response = await apiService.uploadItineraryThumbnail(itineraryId, this.formData.thumbnail)
+        const itinerary = this.extractItineraryFromResponse(response)
+        if (itinerary?.thumbnailUrl) {
+          this.formData.thumbnail = itinerary.thumbnailUrl
+          this.originalThumbnailUrl = itinerary.thumbnailUrl
+        }
+        return
+      }
+
+      if (shouldDelete) {
+        this.updateSubmission('Removing thumbnail', 'Clearing featured image')
+        await apiService.deleteItineraryThumbnail(itineraryId)
+        this.originalThumbnailUrl = null
+        this.formData.thumbnail = null
       }
     },
     async savePointsOfInterest(itineraryId) {
+      console.log('[AddItinerary] savePointsOfInterest reached, itineraryId:', itineraryId)
       const points = this.formData.pointsOfInterest || []
-      if (!points.length) return
+      console.log('[AddItinerary] savePointsOfInterest: POI count:', points.length)
+      if (!points.length) {
+        console.log('[AddItinerary] savePointsOfInterest: no POIs, returning early')
+        return
+      }
       for (let index = 0; index < points.length; index += 1) {
         const poi = points[index]
         const label = this.formatPOITitle(poi)
+        console.log(`[AddItinerary] savePointsOfInterest: processing POI ${index + 1}/${points.length}:`, label)
+        console.log(`[AddItinerary] savePointsOfInterest: POI media images count:`, poi?.media?.images?.length || 0)
+        if (poi?.media?.images?.length) {
+          console.log(`[AddItinerary] savePointsOfInterest: POI media images:`, poi.media.images.map(img => ({
+            type: img.type,
+            hasFile: !!img.file,
+            name: img.name
+          })))
+        }
         this.updateSubmission(
           `Saving ${label}`,
           'Syncing point of interest details',
@@ -478,16 +634,25 @@ export default {
         )
         const payload = this.buildPoiPayload(poi)
         const isExisting = Boolean(poi.remoteId)
+        console.log(`[AddItinerary] savePointsOfInterest: isExisting=${isExisting}, remoteId=${poi.remoteId}`)
         const response = isExisting
           ? await apiService.updatePoi(itineraryId, poi.remoteId, payload)
           : await apiService.savePoi(itineraryId, payload)
         const remotePoi = this.extractPoiFromResponse(response)
+        console.log('[AddItinerary] savePointsOfInterest: remotePoi response:', remotePoi)
         if (!remotePoi?.id) {
           throw new Error(`Unable to save ${label}. Missing identifier.`)
         }
+        console.log(`[AddItinerary] savePointsOfInterest: POI saved, remoteId=${remotePoi.id}`)
         this.formData.pointsOfInterest[index].remoteId = remotePoi.id
-        await this.uploadPoiMediaIfNeeded(this.formData.pointsOfInterest[index])
+        const poiRef = this.formData.pointsOfInterest[index]
+        console.log(`[AddItinerary] savePointsOfInterest: calling uploadPoiMediaIfNeeded for POI ${index + 1}`)
+        console.log(`[AddItinerary] savePointsOfInterest: poiRef.media?.imagesToDelete before operations:`, poiRef?.media?.imagesToDelete)
+        await this.uploadPoiMediaIfNeeded(poiRef)
+        await this.deletePoiMediaIfNeeded(poiRef)
+        await this.reorderPoiMediaIfNeeded(poiRef)
       }
+      console.log('[AddItinerary] savePointsOfInterest: completed all POIs')
     },
     buildPoiPayload(poi) {
       const source = this.clonePOIData(poi)
@@ -517,7 +682,13 @@ export default {
       return next
     },
     normalizeMediaSection(media = {}) {
-      const { images, ...rest } = media || {}
+      const {
+        images,
+        imagesToDelete,
+        imagesOrder,
+        originalImageOrder,
+        ...rest
+      } = media || {}
       return rest
     },
     toNullableNumber(value) {
@@ -529,20 +700,119 @@ export default {
       return `POI ${current} of ${total}`
     },
     async uploadPoiMediaIfNeeded(poi) {
+      console.log('[AddItinerary] uploadPoiMediaIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddItinerary] uploadPoiMediaIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddItinerary] uploadPoiMediaIfNeeded: poi.media?.images:', poi?.media?.images)
       const files = this.getPoiMediaFiles(poi)
-      if (!files.length || !poi.remoteId) {
+      console.log('[AddItinerary] uploadPoiMediaIfNeeded: extracted files count:', files.length)
+      if (!files.length || !poi?.remoteId) {
+        console.log('[AddItinerary] uploadPoiMediaIfNeeded: skipping upload - files.length:', files.length, 'remoteId:', poi?.remoteId)
         return
       }
+      console.log('[AddItinerary] uploadPoiMediaIfNeeded: calling API with', files.length, 'files')
       this.updateSubmission(
         `Uploading media for ${this.formatPOITitle(poi)}`,
         'Sending media assets'
       )
       const response = await apiService.uploadPoiMedia(poi.remoteId, files)
+      console.log('[AddItinerary] uploadPoiMediaIfNeeded: API response:', response)
       this.ensureApiSuccess(response, 'Unable to upload media for this POI.')
+      console.log('[AddItinerary] uploadPoiMediaIfNeeded: upload successful')
+      const uploadedImages = this.extractImagesFromMediaResponse(response)
+      const existingEntries = (poi.media?.images || []).filter((image) => image?.type === 'existing')
+      const mergedEntries = this.mergeImageEntries(existingEntries, uploadedImages)
+      poi.media.images = mergedEntries
+      poi.media.imagesOrder = mergedEntries
+        .filter((image) => image.type === 'existing' && image.id)
+        .map((image) => image.id)
+      poi.media.originalImageOrder = [...poi.media.imagesOrder]
+    },
+    async deletePoiMediaIfNeeded(poi) {
+      const ids = Array.isArray(poi?.media?.imagesToDelete) ? poi.media.imagesToDelete : []
+      console.log('[AddItinerary] deletePoiMediaIfNeeded: poi.media?.imagesToDelete:', poi?.media?.imagesToDelete)
+      console.log('[AddItinerary] deletePoiMediaIfNeeded: extracted ids:', ids)
+      console.log('[AddItinerary] deletePoiMediaIfNeeded: poi.remoteId:', poi?.remoteId)
+      if (!ids.length || !poi?.remoteId) {
+        console.log('[AddItinerary] deletePoiMediaIfNeeded: skipping - no ids to delete or no remoteId')
+        return
+      }
+      for (const mediaId of ids) {
+        console.log('[AddItinerary] deletePoiMediaIfNeeded: deleting media ID:', mediaId)
+        const response = await apiService.deletePoiMedia(poi.remoteId, mediaId)
+        this.ensureApiSuccess(response, 'Unable to delete media for this POI.')
+        poi.media.images = (poi.media.images || []).filter((image) => image.id !== mediaId)
+      }
+      // Don't clear imagesToDelete yet - reorderPoiMediaIfNeeded needs it
+      // We'll clear it after reordering is done
+      poi.media.imagesOrder = (poi.media.images || [])
+        .filter((image) => image.type === 'existing' && image.id)
+        .map((image) => image.id)
+      // Update originalImageOrder to reflect deletions, but don't clear imagesToDelete yet
+      poi.media.originalImageOrder = [...poi.media.imagesOrder]
+      console.log('[AddItinerary] deletePoiMediaIfNeeded: after deletion, imagesOrder:', poi.media.imagesOrder)
+    },
+    async reorderPoiMediaIfNeeded(poi) {
+      // Exclude images that are marked for deletion from the order
+      const idsToDelete = new Set(Array.isArray(poi?.media?.imagesToDelete) ? poi.media.imagesToDelete : [])
+      const desiredOrder = Array.isArray(poi?.media?.imagesOrder)
+        ? poi.media.imagesOrder.filter((id) => Boolean(id) && !idsToDelete.has(id))
+        : []
+      const originalOrder = Array.isArray(poi?.media?.originalImageOrder)
+        ? poi.media.originalImageOrder.filter((id) => !idsToDelete.has(id))
+        : []
+      console.log('[AddItinerary] reorderPoiMediaIfNeeded: desiredOrder:', desiredOrder, 'idsToDelete:', Array.from(idsToDelete))
+      console.log('[AddItinerary] reorderPoiMediaIfNeeded: originalOrder:', originalOrder)
+      if (!poi?.remoteId || !desiredOrder.length) {
+        console.log('[AddItinerary] reorderPoiMediaIfNeeded: skipping - no remoteId or no desiredOrder')
+        // Clear imagesToDelete if we're skipping
+        if (poi?.media) {
+          poi.media.imagesToDelete = []
+        }
+        return
+      }
+      if (this.haveSameOrder(desiredOrder, originalOrder)) {
+        console.log('[AddItinerary] reorderPoiMediaIfNeeded: skipping - order unchanged')
+        // Clear imagesToDelete if order is unchanged
+        if (poi?.media) {
+          poi.media.imagesToDelete = []
+        }
+        return
+      }
+      const response = await apiService.reorderPoiMedia(poi.remoteId, desiredOrder)
+      this.ensureApiSuccess(response, 'Unable to reorder media for this POI.')
+      poi.media.originalImageOrder = [...desiredOrder]
+      // Now we can safely clear imagesToDelete after all operations are complete
+      if (poi?.media) {
+        poi.media.imagesToDelete = []
+      }
+      console.log('[AddItinerary] reorderPoiMediaIfNeeded: completed successfully')
     },
     getPoiMediaFiles(poi) {
       const images = poi?.media?.images || []
-      return images.filter((file) => this.isFileLikeValue(file))
+      console.log('[AddItinerary] getPoiMediaFiles: images array length:', images.length)
+      const files = images
+        .map((image, idx) => {
+          console.log(`[AddItinerary] getPoiMediaFiles: image ${idx}:`, {
+            type: image?.type,
+            hasFile: !!image?.file,
+            isFileLike: this.isFileLikeValue(image),
+            isFileFileLike: image?.file ? this.isFileLikeValue(image.file) : false,
+            name: image?.name
+          })
+          if (image && image.type === 'new' && this.isFileLikeValue(image.file)) {
+            console.log(`[AddItinerary] getPoiMediaFiles: returning image.file for image ${idx}`)
+            return image.file
+          }
+          if (this.isFileLikeValue(image)) {
+            console.log(`[AddItinerary] getPoiMediaFiles: returning image itself for image ${idx}`)
+            return image
+          }
+          console.log(`[AddItinerary] getPoiMediaFiles: skipping image ${idx}`)
+          return null
+        })
+        .filter(Boolean)
+      console.log('[AddItinerary] getPoiMediaFiles: final files count:', files.length)
+      return files
     },
     async flushPendingPoiDeletions() {
       if (!this.pendingPoiDeletions.length) return
@@ -596,6 +866,7 @@ export default {
         thumbnail: null,
         pointsOfInterest: []
       }
+      this.originalThumbnailUrl = null
       this.remoteItineraryId = null
       this.pendingPoiDeletions = []
       this.editingPoiIndex = null
