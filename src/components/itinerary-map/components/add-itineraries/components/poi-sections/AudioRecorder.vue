@@ -112,7 +112,7 @@ export default {
       recordingTimer: null,
       mediaRecorder: null,
       audioChunks: [],
-      audioFile: null,
+      internalAudioFile: null, // Internal state for audio file/URL
       audioFileName: '',
       audioElement: null,
       isPlaying: false,
@@ -126,6 +126,13 @@ export default {
       waveformData: []
     }
   },
+  computed: {
+    audioFile() {
+      // Use modelValue as source of truth for reactivity
+      // Return the value directly - it can be File, URL string, or null
+      return this.modelValue
+    }
+  },
   watch: {
     modelValue: {
       immediate: true,
@@ -134,10 +141,12 @@ export default {
           this.loadAudioFile(newValue)
         } else if (typeof newValue === 'string' && newValue) {
           // URL string - for existing audio
-          this.audioFile = newValue
+          this.internalAudioFile = newValue
           this.audioFileName = 'Audio recording'
           this.loadAudioFromUrl(newValue)
-        } else if (!newValue) {
+        } else if (!newValue || newValue === null || newValue === undefined) {
+          // Explicitly handle null/undefined/empty values
+          this.internalAudioFile = null
           this.resetAudio()
         }
       }
@@ -227,18 +236,17 @@ export default {
       }
     },
     loadAudioFile(file) {
-      this.audioFile = file
+      this.internalAudioFile = file
       this.audioFileName = file.name
       this.createAudioElement(URL.createObjectURL(file))
       this.$emit('update:modelValue', file)
     },
     async loadAudioFromUrl(url) {
       try {
-        const response = await fetch(url)
-        const blob = await response.blob()
-        const file = new File([blob], 'audio-recording', { type: blob.type })
+        // Just create the audio element for playback, but keep the URL string
+        // Don't emit a File object - we want to preserve the URL to avoid re-uploading
         this.createAudioElement(url)
-        this.$emit('update:modelValue', file)
+        // Don't emit update - keep the URL string as the modelValue
       } catch (error) {
         console.error('Error loading audio from URL:', error)
       }
@@ -316,7 +324,7 @@ export default {
         this.audioElement.removeEventListener('ended', this.onAudioEnded)
         this.audioElement = null
       }
-      this.audioFile = null
+      this.internalAudioFile = null
       this.audioFileName = ''
       this.isPlaying = false
       this.currentTime = 0

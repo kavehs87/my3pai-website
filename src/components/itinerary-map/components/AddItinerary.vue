@@ -235,18 +235,26 @@ export default {
       this.formData.pointsOfInterest = pois.map((poi) => {
         const safePoi = poi || {}
         const cloneSection = (section) => this.deepClonePreservingFiles(section || {})
+        const basicSection = cloneSection(safePoi.basic)
+        const mediaSection = cloneSection(safePoi.media)
+
+        // Extract audio URL from media.audio if it exists
+        if (mediaSection?.audio?.url) {
+          basicSection.audioFile = mediaSection.audio.url
+          basicSection.audioId = mediaSection.audio.id // Store ID to track if it needs to be replaced
+        }
 
         return {
           id: safePoi.id,
           remoteId: safePoi.id,
-          basic: cloneSection(safePoi.basic),
+          basic: basicSection,
           category: cloneSection(safePoi.category),
           difficulty: cloneSection(safePoi.difficulty),
           pricing: cloneSection(safePoi.pricing),
           regions: cloneSection(safePoi.regions),
           amenities: cloneSection(safePoi.amenities),
           tips: cloneSection(safePoi.tips),
-          media: this.preparePoiMediaSection(cloneSection(safePoi.media)),
+          media: this.preparePoiMediaSection(mediaSection),
           experience: cloneSection(safePoi.experience)
         }
       })
@@ -651,6 +659,8 @@ export default {
         await this.uploadPoiMediaIfNeeded(poiRef)
         await this.deletePoiMediaIfNeeded(poiRef)
         await this.reorderPoiMediaIfNeeded(poiRef)
+        await this.deletePoiAudioIfNeeded(poiRef)
+        await this.uploadPoiAudioIfNeeded(poiRef)
       }
       console.log('[AddItinerary] savePointsOfInterest: completed all POIs')
     },
@@ -669,7 +679,8 @@ export default {
       return payload
     },
     normalizeBasicSection(basic = {}) {
-      const next = { ...basic }
+      const { audioFile, audioId, ...rest } = basic || {}
+      const next = { ...rest }
       if ('latitude' in next) {
         next.latitude = this.toNullableNumber(next.latitude)
       }
@@ -786,6 +797,80 @@ export default {
         poi.media.imagesToDelete = []
       }
       console.log('[AddItinerary] reorderPoiMediaIfNeeded: completed successfully')
+    },
+    async uploadPoiAudioIfNeeded(poi) {
+      const audioFile = poi?.basic?.audioFile
+      console.log('[AddItinerary] uploadPoiAudioIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddItinerary] uploadPoiAudioIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddItinerary] uploadPoiAudioIfNeeded: audioFile:', audioFile)
+      
+      if (!audioFile || !poi?.remoteId) {
+        console.log('[AddItinerary] uploadPoiAudioIfNeeded: skipping - no audio file or no remoteId')
+        return
+      }
+
+      // Check if it's a File object (new upload) or a string URL (existing)
+      if (!this.isFileLikeValue(audioFile)) {
+        console.log('[AddItinerary] uploadPoiAudioIfNeeded: skipping - audioFile is not a File object')
+        return
+      }
+
+      console.log('[AddItinerary] uploadPoiAudioIfNeeded: calling API with audio file')
+      this.updateSubmission(
+        `Uploading audio for ${this.formatPOITitle(poi)}`,
+        'Sending audio file'
+      )
+      
+      const response = await apiService.uploadPoiAudio(poi.remoteId, audioFile)
+      console.log('[AddItinerary] uploadPoiAudioIfNeeded: API response:', response)
+      this.ensureApiSuccess(response, 'Unable to upload audio for this POI.')
+      console.log('[AddItinerary] uploadPoiAudioIfNeeded: upload successful')
+      
+      // Update the audioFile with the URL from the response if provided
+      if (response?.data?.audio?.url) {
+        poi.basic.audioFile = response.data.audio.url
+        poi.basic.audioId = response.data.audio.id // Store the new audio ID
+      }
+    },
+    async deletePoiAudioIfNeeded(poi) {
+      const audioFile = poi?.basic?.audioFile
+      const audioId = poi?.basic?.audioId
+      console.log('[AddItinerary] deletePoiAudioIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddItinerary] deletePoiAudioIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddItinerary] deletePoiAudioIfNeeded: audioFile:', audioFile, 'type:', typeof audioFile)
+      console.log('[AddItinerary] deletePoiAudioIfNeeded: audioId:', audioId)
+      
+      // If audioFile is null/undefined/empty but audioId exists, it means user deleted the audio
+      // audioFile can be null, undefined, empty string, or falsy - all mean "deleted"
+      const hasNoAudioFile = !audioFile || audioFile === null || audioFile === undefined || audioFile === ''
+      if (hasNoAudioFile && audioId && poi?.remoteId) {
+        console.log('[AddItinerary] deletePoiAudioIfNeeded: deleting audio with ID:', audioId)
+        this.updateSubmission(
+          `Deleting audio for ${this.formatPOITitle(poi)}`,
+          'Removing audio file'
+        )
+        
+        const response = await apiService.deletePoiMedia(poi.remoteId, audioId)
+        console.log('[AddItinerary] deletePoiAudioIfNeeded: API response:', response)
+        this.ensureApiSuccess(response, 'Unable to delete audio for this POI.')
+        console.log('[AddItinerary] deletePoiAudioIfNeeded: deletion successful')
+        
+        // Verify deletion from response - audio should be null in the response
+        const deletedAudio = response?.data?.audio
+        console.log('[AddItinerary] deletePoiAudioIfNeeded: response audio:', deletedAudio)
+        
+        // Clear both audioId and audioFile after successful deletion
+        if (poi.basic) {
+          poi.basic.audioId = null
+          poi.basic.audioFile = null
+          // Force reactivity update by reassigning the basic object
+          poi.basic = { ...poi.basic }
+        }
+        console.log('[AddItinerary] deletePoiAudioIfNeeded: cleared audioId and audioFile')
+        return
+      }
+      
+      console.log('[AddItinerary] deletePoiAudioIfNeeded: skipping - no deletion needed')
     },
     getPoiMediaFiles(poi) {
       const images = poi?.media?.images || []

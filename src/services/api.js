@@ -392,6 +392,18 @@ class ApiService {
     })
   }
 
+  async uploadPoiAudio(poiId, audioFile) {
+    if (!poiId || !audioFile) {
+      return { success: false, error: 'Missing POI identifier or audio file.' }
+    }
+    const formData = new FormData()
+    formData.append('audio', audioFile)
+    return this.request(`/pois/${poiId}/audio`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
   async deletePoi(itineraryId, poiId) {
     if (!itineraryId || !poiId) {
       return { success: false, error: 'Missing itinerary or POI identifier.' }

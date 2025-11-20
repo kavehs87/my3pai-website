@@ -708,7 +708,15 @@ export default {
       return this.activeReplacement.newValue
     },
     handleAudioUpdate(file) {
-      this.updateField('audioFile', file)
+      // When deleting (file is null), preserve audioId so we can delete it on the server
+      // When uploading new file, audioId will be updated after upload
+      const currentAudioId = this.modelValue?.audioId
+      if (file === null && currentAudioId) {
+        // Preserve audioId when deleting so we know which audio to delete
+        this.updateFields({ audioFile: null, audioId: currentAudioId })
+      } else {
+        this.updateField('audioFile', file)
+      }
     },
     handleAudioError(message) {
       // You can add toast notification here if needed
