@@ -401,17 +401,28 @@ export default {
       this.currentPOIs.forEach((poi, index) => {
         const lat = poi?.basic?.latitude
         const lng = poi?.basic?.longitude
-        console.log(`[ItineraryMap] POI ${index + 1}:`, poi?.basic?.name, 'lat:', lat, 'lng:', lng, 'valid:', typeof lat === 'number' && typeof lng === 'number')
+        const latNum = Number(lat)
+        const lngNum = Number(lng)
+        const isValid = !isNaN(latNum) && !isNaN(lngNum) && 
+                       latNum >= -90 && latNum <= 90 && 
+                       lngNum >= -180 && lngNum <= 180
+        console.log(`[ItineraryMap] POI ${index + 1}:`, poi?.basic?.name, 'lat:', lat, 'lng:', lng, 'latNum:', latNum, 'lngNum:', lngNum, 'valid:', isValid)
       })
       
       // Fit map bounds to show all POIs if there are any
-      // Use nextTick to ensure markers are created first
+      // Use the same approach as when loading existing itinerary: fit map first, then wait for markers
       if (this.currentPOIs.length > 0 && this.map) {
         this.$nextTick(() => {
-          // Small delay to ensure AdvancedMarkerElement is ready and markers are created
+          console.log('[ItineraryMap] Fitting map to POIs after POI update')
+          // Fit map immediately
+          this.fitMapToPOIs()
+          
+          // Then wait before ensuring markers are created
           setTimeout(() => {
-            this.fitMapToPOIs()
-          }, 500)
+            console.log('[ItineraryMap] After map fit delay, ensuring markers are created')
+            // Force POIMarkers to update
+            this.$forceUpdate()
+          }, 1000) // Delay after fitMapToPOIs, before ensuring markers
         })
       }
     },
@@ -425,12 +436,24 @@ export default {
       const validPOIs = this.currentPOIs.filter(poi => {
         const lat = poi?.basic?.latitude
         const lng = poi?.basic?.longitude
-        return (
-          typeof lat === 'number' &&
-          typeof lng === 'number' &&
-          !isNaN(lat) &&
-          !isNaN(lng)
-        )
+        // Convert to numbers and validate
+        const latNum = Number(lat)
+        const lngNum = Number(lng)
+        const isValid = !isNaN(latNum) && !isNaN(lngNum) && 
+                       latNum >= -90 && latNum <= 90 && 
+                       lngNum >= -180 && lngNum <= 180
+        if (!isValid) {
+          console.log('[ItineraryMap] fitMapToPOIs: Invalid POI coordinates:', {
+            name: poi?.basic?.name,
+            lat: lat,
+            lng: lng,
+            latNum: latNum,
+            lngNum: lngNum,
+            latType: typeof lat,
+            lngType: typeof lng
+          })
+        }
+        return isValid
       })
       
       console.log('[ItineraryMap] fitMapToPOIs: validPOIs count:', validPOIs.length)
@@ -444,8 +467,8 @@ export default {
         // Single POI: center and zoom
         const poi = validPOIs[0]
         const center = {
-          lat: poi.basic.latitude,
-          lng: poi.basic.longitude
+          lat: Number(poi.basic.latitude),
+          lng: Number(poi.basic.longitude)
         }
         console.log('[ItineraryMap] fitMapToPOIs: centering on single POI:', center)
         this.map.setCenter(center)
@@ -455,8 +478,8 @@ export default {
         const bounds = new window.google.maps.LatLngBounds()
         validPOIs.forEach(poi => {
           bounds.extend({
-            lat: poi.basic.latitude,
-            lng: poi.basic.longitude
+            lat: Number(poi.basic.latitude),
+            lng: Number(poi.basic.longitude)
           })
         })
         console.log('[ItineraryMap] fitMapToPOIs: fitting bounds for', validPOIs.length, 'POIs')

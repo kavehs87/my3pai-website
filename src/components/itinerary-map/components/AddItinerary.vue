@@ -408,6 +408,12 @@ export default {
         this.formData.pointsOfInterest.push(payload)
       }
 
+      // Emit POIs update after POI is saved so map can show markers
+      this.$nextTick(() => {
+        console.log('[AddItinerary] Emitting pois-updated after POI save:', this.formData.pointsOfInterest.length, 'POIs')
+        this.$emit('pois-updated', this.formData.pointsOfInterest)
+      })
+
       this.editingPoiIndex = null
       this.poiForm = this.clonePOIData()
       this.showPOIForm = keepOpen
