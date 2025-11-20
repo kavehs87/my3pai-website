@@ -583,6 +583,8 @@ export default {
       const payload = { title }
       if (mode === 'publish') {
         payload.isPublished = true
+      } else if (mode === 'draft') {
+        payload.isPublished = false
       }
       if (!this.remoteItineraryId) {
         this.updateSubmission('Creating itinerary', 'Sending itinerary details')
