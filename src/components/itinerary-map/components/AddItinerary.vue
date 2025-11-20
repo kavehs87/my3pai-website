@@ -590,11 +590,11 @@ export default {
       }
 
       if (hasNewFile) {
-        this.updateSubmission('Uploading thumbnail', 'Sending featured image')
-        const response = await apiService.uploadItineraryThumbnail(itineraryId, this.formData.thumbnail)
-        const itinerary = this.extractItineraryFromResponse(response)
-        if (itinerary?.thumbnailUrl) {
-          this.formData.thumbnail = itinerary.thumbnailUrl
+      this.updateSubmission('Uploading thumbnail', 'Sending featured image')
+      const response = await apiService.uploadItineraryThumbnail(itineraryId, this.formData.thumbnail)
+      const itinerary = this.extractItineraryFromResponse(response)
+      if (itinerary?.thumbnailUrl) {
+        this.formData.thumbnail = itinerary.thumbnailUrl
           this.originalThumbnailUrl = itinerary.thumbnailUrl
         }
         return
@@ -665,7 +665,7 @@ export default {
       if (!Object.keys(payload.media || {}).length) {
         delete payload.media
       }
-      delete payload.remoteId
+        delete payload.remoteId
       return payload
     },
     normalizeBasicSection(basic = {}) {

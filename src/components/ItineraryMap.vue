@@ -22,32 +22,32 @@
     </div>
 
     <template v-else>
-      <!-- Google Map Container -->
-      <div class="map-container">
-        <div ref="mapEl" class="google-map"></div>
-        <div v-if="loadError" class="map-fallback">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span>Google Maps failed to load. Please check your API key configuration.</span>
-        </div>
-        <!-- First Place Prompt -->
-        <FirstPlacePrompt 
-          :visible="showFirstPlacePrompt && !isEditingExisting" 
-          @click="handleFirstPlaceClick"
-        />
+    <!-- Google Map Container -->
+    <div class="map-container">
+      <div ref="mapEl" class="google-map"></div>
+      <div v-if="loadError" class="map-fallback">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>Google Maps failed to load. Please check your API key configuration.</span>
       </div>
-
-      <!-- Thin Footer -->
-      <ThinFooter />
-
-      <!-- Add Itinerary Modal -->
-      <AddItinerary 
-        :visible="showAddItinerary" 
-        :initial-itinerary="editingItinerary"
-        @close="showAddItinerary = false" 
-        @publish="handlePublishItinerary"
-        @save-draft="handleSaveDraftItinerary"
-        @share="handleShareItinerary"
+      <!-- First Place Prompt -->
+      <FirstPlacePrompt 
+          :visible="showFirstPlacePrompt && !isEditingExisting" 
+        @click="handleFirstPlaceClick"
       />
+    </div>
+
+    <!-- Thin Footer -->
+    <ThinFooter />
+
+    <!-- Add Itinerary Modal -->
+    <AddItinerary 
+      :visible="showAddItinerary" 
+        :initial-itinerary="editingItinerary"
+      @close="showAddItinerary = false" 
+      @publish="handlePublishItinerary"
+      @save-draft="handleSaveDraftItinerary"
+      @share="handleShareItinerary"
+    />
     </template>
   </div>
 </template>

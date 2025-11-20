@@ -156,6 +156,15 @@
       </div>
     </div>
 
+    <div class="field-group">
+      <label>Audio Recording</label>
+      <AudioRecorder
+        :modelValue="audioFile"
+        @update:modelValue="handleAudioUpdate"
+        @error="handleAudioError"
+      />
+    </div>
+
   </div>
 
   <div v-if="activeReplacement" class="replacement-overlay">
@@ -179,6 +188,8 @@
 </template>
 
 <script>
+import AudioRecorder from './AudioRecorder.vue'
+
 const defaultForm = () => ({
   name: '',
   tagline: '',
@@ -189,7 +200,8 @@ const defaultForm = () => ({
   landmark: '',
   pinAccuracy: 'exact',
   latitude: '',
-  longitude: ''
+  longitude: '',
+  audioFile: null
 })
 
 const COUNTRY_ISO_DATA_URL = 'https://countriesnow.space/api/v0.1/countries/iso'
@@ -278,6 +290,9 @@ async function fetchCountryIsoDataset() {
 
 export default {
   name: 'BasicIdentificationSection',
+  components: {
+    AudioRecorder
+  },
   props: {
     modelValue: {
       type: Object,
@@ -416,6 +431,9 @@ export default {
     },
     summaryLength() {
       return this.summary?.length || 0
+    },
+    audioFile() {
+      return this.modelValue?.audioFile || null
     },
     regionOptions() {
       const isoCode = (this.country || '').trim().toUpperCase()
@@ -688,6 +706,13 @@ export default {
         )
       }
       return this.activeReplacement.newValue
+    },
+    handleAudioUpdate(file) {
+      this.updateField('audioFile', file)
+    },
+    handleAudioError(message) {
+      // You can add toast notification here if needed
+      console.error('Audio error:', message)
     }
   }
 }
