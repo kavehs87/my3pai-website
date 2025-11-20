@@ -143,7 +143,7 @@ export default {
     // The createMarker method will check conditions internally
     if (this.map && this.AdvancedMarkerElement && this.position) {
       console.log('[AdvancedMarker] All conditions met, creating marker immediately')
-      this.createMarker()
+    this.createMarker()
     } else {
       console.log('[AdvancedMarker] Waiting for conditions - will create when ready', {
         map: !!this.map,

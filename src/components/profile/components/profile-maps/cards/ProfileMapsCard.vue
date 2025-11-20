@@ -42,11 +42,35 @@
             <i class="far fa-clock"></i>
             <span>{{ formattedUpdated }}</span>
           </div>
+          <template v-if="hasIndicators">
+            <div class="meta-divider"></div>
+            <div class="meta-item" v-if="itinerary.hasAudio" title="Has audio recordings">
+              <i class="fas fa-microphone"></i>
+              <span>Audio</span>
+            </div>
+            <div class="meta-divider" v-if="itinerary.hasAudio && itinerary.poisWithImages > 0"></div>
+            <div class="meta-item" v-if="itinerary.poisWithImages > 0" :title="`${itinerary.poisWithImages} POI${itinerary.poisWithImages > 1 ? 's' : ''} with images`">
+              <i class="fas fa-images"></i>
+              <span>{{ itinerary.poisWithImages }}</span>
+            </div>
+          </template>
         </div>
         
         <div class="location-row" v-if="itinerary.locationLabel">
             <i class="fas fa-globe-americas"></i>
           <span class="location-text">{{ itinerary.locationLabel }}</span>
+        </div>
+        
+        <!-- Tags Row -->
+        <div class="tags-row" v-if="hasTags">
+          <span 
+            v-for="tag in itinerary.tags" 
+            :key="tag" 
+            class="tag-badge"
+            :title="tag"
+          >
+            {{ tag }}
+          </span>
         </div>
       </footer>
 
@@ -175,6 +199,12 @@ export default {
         .map(w => w[0])
         .join('')
         .toUpperCase()
+    },
+    hasIndicators() {
+      return this.itinerary.hasAudio || (this.itinerary.poisWithImages > 0)
+    },
+    hasTags() {
+      return Array.isArray(this.itinerary.tags) && this.itinerary.tags.length > 0
     }
   }
 }
@@ -381,6 +411,38 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+}
+
+/* Tags */
+.tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2xs);
+  padding-top: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  border-top: 1px solid var(--border-light);
+}
+
+.tag-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-2xs);
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all var(--transition-fast);
+}
+
+.tag-badge:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
 }
 
 /* Card Actions */

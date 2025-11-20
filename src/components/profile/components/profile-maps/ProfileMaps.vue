@@ -235,7 +235,12 @@ export default {
     },
     normalizeItinerary(raw) {
       if (!raw) return null
-      const pois = Array.isArray(raw.pois) ? raw.pois : []
+      // Handle both 'pois' and 'pointsOfInterest' naming conventions
+      const pois = Array.isArray(raw.pois) 
+        ? raw.pois 
+        : Array.isArray(raw.pointsOfInterest) 
+          ? raw.pointsOfInterest 
+          : []
       const firstPoi = pois.find(Boolean)
       const summarySource = raw.summary || raw.description || firstPoi?.basic?.summary
       const locationBits = [
@@ -243,6 +248,36 @@ export default {
         firstPoi?.basic?.region,
         firstPoi?.basic?.country
       ].filter(Boolean)
+      
+      // Calculate indicators
+      const hasAudio = pois.some(poi => {
+        // Check multiple possible audio locations
+        const audioUrl = poi?.media?.audio?.url || poi?.basic?.audioFile
+        return Boolean(audioUrl)
+      })
+      
+      const poisWithImages = pois.filter(poi => {
+        const images = poi?.media?.images || []
+        return Array.isArray(images) && images.length > 0
+      }).length
+      
+      // Extract interesting tags from POIs
+      const tags = new Set()
+      pois.forEach(poi => {
+        if (poi?.category?.placeType) {
+          tags.add(poi.category.placeType)
+        }
+        if (poi?.difficulty?.level) {
+          tags.add(poi.difficulty.level)
+        }
+        if (poi?.pricing?.budget) {
+          tags.add(poi.pricing.budget)
+        }
+        if (poi?.regions?.primaryRegion) {
+          tags.add(poi.regions.primaryRegion)
+        }
+      })
+      
       return {
         id: raw.id,
         title: raw.title || 'Untitled map',
@@ -252,7 +287,10 @@ export default {
         isPublished: raw.isPublished ?? raw.is_published ?? false,
         thumbnail: raw.thumbnailUrl || raw.thumbnail_url || raw.thumbnail || '',
         poiCount: raw.poiCount ?? raw.poi_count ?? pois.length,
-        lastUpdated: raw.updatedAt || raw.updated_at || raw.created_at || null
+        lastUpdated: raw.updatedAt || raw.updated_at || raw.created_at || null,
+        hasAudio,
+        poisWithImages,
+        tags: Array.from(tags).slice(0, 5) // Limit to 5 tags
       }
     },
     handleEdit(itinerary) {

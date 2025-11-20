@@ -40,6 +40,10 @@ export default {
       default: null
     }
   },
+  data() {
+    return {
+    }
+  },
   created() {
     console.log('[POIMarkers] Component created', {
       poisCount: this.pois?.length || 0,
@@ -131,6 +135,10 @@ export default {
     getPOIPosition(poi) {
       const lat = poi?.basic?.latitude
       const lng = poi?.basic?.longitude
+      // Use LatLng object if available for precision, otherwise plain object
+      if (window.google?.maps?.LatLng) {
+        return new window.google.maps.LatLng(Number(lat), Number(lng))
+      }
       return {
         lat: Number(lat),
         lng: Number(lng)
@@ -143,46 +151,68 @@ export default {
       // Create a simple marker content with POI number
       const poiNumber = index + 1
       const poiName = poi?.basic?.name || `POI ${poiNumber}`
+      // Normalize pinAccuracy: lowercase and trim
+      const rawPinAccuracy = poi?.basic?.pinAccuracy || 'exact'
+      const pinAccuracy = String(rawPinAccuracy).toLowerCase().trim()
       
-      // Try PinElement first (recommended for AdvancedMarkerElement)
+      console.log('[POIMarkers] getPOIContent - pinAccuracy:', {
+        raw: rawPinAccuracy,
+        normalized: pinAccuracy,
+        poiName,
+        poiBasic: poi?.basic
+      })
+      
+      // Get marker style based on pin accuracy
+      const markerStyle = this.getMarkerStyle(pinAccuracy, poiNumber)
+      
+      // For estimated and approximate, skip PinElement and create simple circles with numbers
+      if (pinAccuracy === 'estimated' || pinAccuracy === 'estimate') {
+        // Create a simple circular dot with number and accuracy range indicator
+        const dot = document.createElement('div')
+        dot.className = 'poi-marker-estimated' // Add class for CSS targeting
+        dot.style.cssText = markerStyle.cssText
+        dot.textContent = String(poiNumber) // Add number inside the dot
+        dot.title = `${poiName} (${pinAccuracy})`
+        console.log('[POIMarkers] Created simple dot marker with number for estimated POI:', poiName)
+        return dot
+      }
+      
+      if (pinAccuracy === 'approximate') {
+        // Create a simple circular dot with number and accuracy range indicator (orange)
+        const dot = document.createElement('div')
+        dot.className = 'poi-marker-approximate' // Add class for CSS targeting
+        dot.style.cssText = markerStyle.cssText
+        dot.textContent = String(poiNumber) // Add number inside the dot
+        dot.title = `${poiName} (${pinAccuracy})`
+        console.log('[POIMarkers] Created simple dot marker with number for approximate POI:', poiName)
+        return dot
+      }
+      
+      // Try PinElement first (recommended for AdvancedMarkerElement) - only for exact now
       if (window.google?.maps?.marker?.PinElement) {
         try {
           const PinElement = window.google.maps.marker.PinElement
           const pinElement = new PinElement({
-            background: '#3b82f6',
-            borderColor: '#1e40af',
-            glyphColor: '#ffffff',
-            glyphText: String(poiNumber), // Use glyphText (not deprecated glyph)
-            scale: 1.5 // Make it larger
+            background: markerStyle.background,
+            borderColor: markerStyle.borderColor,
+            glyphColor: markerStyle.glyphColor,
+            glyphText: String(poiNumber),
+            scale: 1
           })
-          console.log('[POIMarkers] Using PinElement for POI:', poiName, pinElement)
+          console.log('[POIMarkers] Using PinElement for POI:', poiName, 'pinAccuracy:', pinAccuracy, pinElement)
           return pinElement.element
         } catch (error) {
           console.warn('[POIMarkers] PinElement creation failed, falling back to custom div:', error)
         }
       }
       
-      // Fallback to custom div - match the EXACT style from MapPanel which works
+      // Fallback to custom div with pin accuracy styling
       const content = document.createElement('div')
-      // EXACT same styling as MapPanel line 416-429
-      content.style.cssText = `
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #3b82f6;
-        color: #fff;
-        font-size: 16px;
-        font-weight: 700;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        border: 3px solid white;
-      `
-      content.textContent = String(poiNumber) // Use String() like MapPanel line 430
-      content.title = poiName
+      content.style.cssText = markerStyle.cssText
+      content.textContent = String(poiNumber)
+      content.title = `${poiName} (${pinAccuracy})`
       
-      console.log('[POIMarkers] Created marker content for POI:', poiName, {
+      console.log('[POIMarkers] Created marker content for POI:', poiName, 'pinAccuracy:', pinAccuracy, {
         element: content,
         textContent: content.textContent,
         style: content.style.cssText,
@@ -191,6 +221,85 @@ export default {
       })
       
       return content
+    },
+    getMarkerStyle(pinAccuracy, poiNumber) {
+      const baseSize = 30
+      const baseFontSize = 14
+      
+      console.log('[POIMarkers] getMarkerStyle called with pinAccuracy:', pinAccuracy, 'type:', typeof pinAccuracy)
+      
+      switch (pinAccuracy) {
+        case 'exact':
+          // Exact: Solid blue circle with solid border
+          return {
+            background: '#3b82f6', // Blue
+            borderColor: '#1e40af', // Darker blue
+            glyphColor: '#ffffff',
+            cssText: `
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: ${baseSize}px;
+              height: ${baseSize}px;
+              border-radius: 50%;
+              background: #3b82f6;
+              color: #fff;
+              font-size: ${baseFontSize}px;
+              font-weight: 700;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              border: 3px solid white;
+            `
+          }
+        
+        case 'approximate':
+          // Approximate: Orange/yellow circle with solid border (like estimated but orange)
+          return {
+            background: '#f59e0b', // Amber/Orange
+            borderColor: '#d97706', // Darker orange
+            glyphColor: '#ffffff',
+            cssText: `
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: ${baseSize}px;
+              height: ${baseSize}px;
+              border-radius: 50%;
+              background: #f59e0b;
+              color: #fff;
+              font-size: ${baseFontSize}px;
+              font-weight: 700;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              border: 3px solid white;
+            `
+          }
+        
+        case 'estimated':
+        case 'estimate': // Handle both 'estimated' and 'estimate' (without 'd')
+          // Estimated: Simple gray circle with number (no pin shape, same size as others)
+          return {
+            background: '#6b7280', // Gray
+            borderColor: '#4b5563', // Darker gray
+            glyphColor: '#ffffff',
+            cssText: `
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: ${baseSize}px;
+              height: ${baseSize}px;
+              border-radius: 50%;
+              background: #6b7280;
+              color: #fff;
+              font-size: ${baseFontSize}px;
+              font-weight: 700;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              border: 3px solid white;
+            `
+          }
+        
+        default:
+          // Default to exact style
+          return this.getMarkerStyle('exact', poiNumber)
+      }
     },
     getPOIKey(poi, index) {
       // Use remoteId if available, otherwise use id, otherwise use index
@@ -259,8 +368,8 @@ export default {
 }
 
 .poi-marker-number {
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: 400;
+  font-size: 8px;
   color: var(--secondary-color, #3b82f6);
   line-height: 1;
   margin-top: 2px;
@@ -275,5 +384,51 @@ export default {
   text-overflow: ellipsis;
   max-width: 120px;
 }
+
+/* Estimated marker with accuracy range indicator */
+.poi-marker-estimated {
+  position: relative;
+  z-index: 10; /* Ensure marker is above the range circles */
+}
+
+/* Outer accuracy range circle (larger, more transparent) */
+.poi-marker-estimated::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px; /* 2x the marker size for outer range */
+  height: 100px;
+  border-radius: 50%;
+  border: 1px solid rgba(107, 114, 128, 0.4); /* Gray with transparency */
+  background: rgba(107, 114, 128, 0.1); /* Very light gray fill */
+  pointer-events: none; /* Don't interfere with marker clicks */
+  z-index: -1;
+}
+
+
+/* Approximate marker with accuracy range indicator */
+.poi-marker-approximate {
+  position: relative;
+  z-index: 10; /* Ensure marker is above the range circles */
+}
+
+/* Outer accuracy range circle (smaller than estimated, indicating better accuracy) - Orange */
+.poi-marker-approximate::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 65px; /* Smaller than estimated (80px) - 1.625x marker size */
+  height: 65px;
+  border-radius: 50%;
+  border: 2px solid rgba(245, 158, 11, 0.4); /* Orange with transparency */
+  background: rgba(245, 158, 11, 0.1); /* Very light orange fill */
+  pointer-events: none; /* Don't interfere with marker clicks */
+  z-index: -1;
+}
+
 </style>
 
