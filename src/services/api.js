@@ -317,6 +317,16 @@ class ApiService {
     return this.request(`/itineraries/${itineraryId}`)
   }
 
+  async getPublicItinerary(username, slug) {
+    if (!username || !slug) {
+      return { success: false, error: 'Missing username or slug.' }
+    }
+    // Public endpoint - no auth required, skip CSRF for public endpoints
+    return this.request(`/u/${username}/${slug}`, {
+      requireCsrf: false
+    })
+  }
+
   async getItineraries(params = {}) {
     const queryString = this.buildQueryString(params)
     return this.request(`/itineraries${queryString}`)

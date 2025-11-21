@@ -8,6 +8,7 @@ import Studio from './components/studio/Studio.vue'
 import Profile from './components/profile/Profile.vue'
 import OAuthCallback from './components/OAuthCallback.vue'
 import ItineraryMap from './components/ItineraryMap.vue'
+import PublishedItinerary from './components/published-itinerary/PublishedItinerary.vue'
 import './style.css'
 
 const routes = [
@@ -19,6 +20,12 @@ const routes = [
     path: '/auth/callback', 
     component: OAuthCallback, 
     name: 'oauth-callback',
+    props: true
+  },
+  {
+    path: '/u/:username/:slug',
+    component: PublishedItinerary,
+    name: 'published-itinerary',
     props: true
   },
 ]

@@ -24,12 +24,12 @@
     <div class="card-content">
       <header class="card-header">
         <div class="header-top">
-          <p class="eyebrow">{{ subtitle }}</p>
+        <p class="eyebrow">{{ subtitle }}</p>
           <a 
-            v-if="itinerary.isPublished" 
-            href="#" 
+            v-if="itinerary.isPublished && itinerary.slug && username" 
+            :href="`/u/${username}/${itinerary.slug}`"
             class="view-as-link"
-            @click.prevent
+            @click.prevent="handlePreview"
             title="View as public"
           >
             Preview
@@ -128,6 +128,10 @@ export default {
     itinerary: {
       type: Object,
       required: true
+    },
+    username: {
+      type: String,
+      default: null
     }
   },
   emits: ['edit', 'publish', 'unpublish', 'delete'],
@@ -216,6 +220,24 @@ export default {
     },
     hasTags() {
       return Array.isArray(this.itinerary.tags) && this.itinerary.tags.length > 0
+    }
+  },
+  methods: {
+    handlePreview(event) {
+      if (!this.itinerary.slug || !this.username) {
+        return
+      }
+      if (this.$router) {
+        this.$router.push({
+          name: 'published-itinerary',
+          params: {
+            username: this.username,
+            slug: this.itinerary.slug
+          }
+        })
+      } else {
+        window.location.href = `/u/${this.username}/${this.itinerary.slug}`
+      }
     }
   }
 }

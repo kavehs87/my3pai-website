@@ -87,6 +87,7 @@
             v-for="itinerary in paginatedItineraries"
             :key="itinerary.id"
             :itinerary="itinerary"
+            :username="username"
             @edit="handleEdit"
             @publish="handlePublish"
             @unpublish="handleUnpublish"
@@ -129,6 +130,12 @@ export default {
   name: 'ProfileMaps',
   components: {
     ProfileMapsCard
+  },
+  props: {
+    username: {
+      type: String,
+      default: null
+    }
   },
   emits: ['create-itinerary'],
   data() {

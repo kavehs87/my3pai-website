@@ -30,6 +30,7 @@
       />
       
       <ProfileMaps
+        :username="profileData.user.username"
         v-if="activeTab === 'maps'"
       />
       
