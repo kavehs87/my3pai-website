@@ -404,6 +404,18 @@ class ApiService {
     })
   }
 
+  async uploadPoiPdf(poiId, pdfFile) {
+    if (!poiId || !pdfFile) {
+      return { success: false, error: 'Missing POI identifier or PDF file.' }
+    }
+    const formData = new FormData()
+    formData.append('pdf', pdfFile)
+    return this.request(`/pois/${poiId}/pdf`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
   async deletePoi(itineraryId, poiId) {
     if (!itineraryId || !poiId) {
       return { success: false, error: 'Missing itinerary or POI identifier.' }

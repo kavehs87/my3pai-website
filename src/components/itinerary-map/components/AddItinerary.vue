@@ -196,7 +196,11 @@ export default {
           landmark: '',
           pinAccuracy: '',
           latitude: '',
-          longitude: ''
+          longitude: '',
+          audioFile: null,
+          audioId: null,
+          pdfFile: null,
+          pdfId: null
         },
         category: {},
         difficulty: {},
@@ -244,6 +248,12 @@ export default {
         if (mediaSection?.audio?.url) {
           basicSection.audioFile = mediaSection.audio.url
           basicSection.audioId = mediaSection.audio.id // Store ID to track if it needs to be replaced
+        }
+
+        // Extract PDF URL from media.pdf if it exists
+        if (mediaSection?.pdf?.url) {
+          basicSection.pdfFile = mediaSection.pdf.url
+          basicSection.pdfId = mediaSection.pdf.id // Store ID to track if it needs to be replaced
         }
 
         return {
@@ -675,6 +685,8 @@ export default {
         await this.reorderPoiMediaIfNeeded(poiRef)
         await this.deletePoiAudioIfNeeded(poiRef)
         await this.uploadPoiAudioIfNeeded(poiRef)
+        await this.deletePoiPdfIfNeeded(poiRef)
+        await this.uploadPoiPdfIfNeeded(poiRef)
       }
       console.log('[AddItinerary] savePointsOfInterest: completed all POIs')
     },
@@ -693,7 +705,7 @@ export default {
       return payload
     },
     normalizeBasicSection(basic = {}) {
-      const { audioFile, audioId, ...rest } = basic || {}
+      const { audioFile, audioId, pdfFile, pdfId, ...rest } = basic || {}
       const next = { ...rest }
       if ('latitude' in next) {
         next.latitude = this.toNullableNumber(next.latitude)
@@ -885,6 +897,75 @@ export default {
       }
       
       console.log('[AddItinerary] deletePoiAudioIfNeeded: skipping - no deletion needed')
+    },
+    async uploadPoiPdfIfNeeded(poi) {
+      const pdfFile = poi?.basic?.pdfFile
+      console.log('[AddItinerary] uploadPoiPdfIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddItinerary] uploadPoiPdfIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddItinerary] uploadPoiPdfIfNeeded: pdfFile:', pdfFile)
+      
+      if (!pdfFile || !poi?.remoteId) {
+        console.log('[AddItinerary] uploadPoiPdfIfNeeded: skipping - no PDF file or no remoteId')
+        return
+      }
+
+      // Check if it's a File object (new upload) or a string URL (existing)
+      if (!this.isFileLikeValue(pdfFile)) {
+        console.log('[AddItinerary] uploadPoiPdfIfNeeded: skipping - pdfFile is not a File object')
+        return
+      }
+
+      console.log('[AddItinerary] uploadPoiPdfIfNeeded: calling API with PDF file')
+      this.updateSubmission(
+        `Uploading PDF for ${this.formatPOITitle(poi)}`,
+        'Sending PDF file'
+      )
+      
+      const response = await apiService.uploadPoiPdf(poi.remoteId, pdfFile)
+      console.log('[AddItinerary] uploadPoiPdfIfNeeded: API response:', response)
+      this.ensureApiSuccess(response, 'Unable to upload PDF for this POI.')
+      console.log('[AddItinerary] uploadPoiPdfIfNeeded: upload successful')
+      
+      // Update the pdfFile with the URL from the response if provided
+      if (response?.data?.pdf?.url) {
+        poi.basic.pdfFile = response.data.pdf.url
+        poi.basic.pdfId = response.data.pdf.id // Store the new PDF ID
+      }
+    },
+    async deletePoiPdfIfNeeded(poi) {
+      const pdfFile = poi?.basic?.pdfFile
+      const pdfId = poi?.basic?.pdfId
+      console.log('[AddItinerary] deletePoiPdfIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddItinerary] deletePoiPdfIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddItinerary] deletePoiPdfIfNeeded: pdfFile:', pdfFile, 'type:', typeof pdfFile)
+      console.log('[AddItinerary] deletePoiPdfIfNeeded: pdfId:', pdfId)
+      
+      // If pdfFile is null/undefined/empty but pdfId exists, it means user deleted the PDF
+      const hasNoPdfFile = !pdfFile || pdfFile === null || pdfFile === undefined || pdfFile === ''
+      if (hasNoPdfFile && pdfId && poi?.remoteId) {
+        console.log('[AddItinerary] deletePoiPdfIfNeeded: deleting PDF with ID:', pdfId)
+        this.updateSubmission(
+          `Deleting PDF for ${this.formatPOITitle(poi)}`,
+          'Removing PDF file'
+        )
+        
+        const response = await apiService.deletePoiMedia(poi.remoteId, pdfId)
+        console.log('[AddItinerary] deletePoiPdfIfNeeded: API response:', response)
+        this.ensureApiSuccess(response, 'Unable to delete PDF for this POI.')
+        console.log('[AddItinerary] deletePoiPdfIfNeeded: deletion successful')
+        
+        // Clear both pdfId and pdfFile after successful deletion
+        if (poi.basic) {
+          poi.basic.pdfId = null
+          poi.basic.pdfFile = null
+          // Force reactivity update by reassigning the basic object
+          poi.basic = { ...poi.basic }
+        }
+        console.log('[AddItinerary] deletePoiPdfIfNeeded: cleared pdfId and pdfFile')
+        return
+      }
+      
+      console.log('[AddItinerary] deletePoiPdfIfNeeded: skipping - no deletion needed')
     },
     getPoiMediaFiles(poi) {
       const images = poi?.media?.images || []

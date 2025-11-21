@@ -47,11 +47,84 @@
       </div>
 
       <div class="pdf-preview">
-        <div class="preview-box">
-          <span>PDF Preview</span>
+        <div v-if="pdfFile" class="preview-box has-pdf">
+          <button 
+            v-if="!showPdfPreview"
+            class="preview-pdf-button" 
+            type="button"
+            @click="togglePdfPreview"
+            aria-label="Preview PDF"
+            title="Preview PDF"
+          >
+            <i class="fas fa-eye"></i>
+          </button>
+          <div v-if="showPdfPreview" class="pdf-preview-canvas-container">
+            <button 
+              class="preview-pdf-button close-preview" 
+              type="button"
+              @click="togglePdfPreview"
+              aria-label="Close Preview"
+              title="Close Preview"
+            >
+              <i class="fas fa-eye-slash"></i>
+            </button>
+            <iframe
+              v-if="pdfFileUrl"
+              :src="pdfFileUrl"
+              class="pdf-preview-iframe"
+              frameborder="0"
+            ></iframe>
+            <div v-if="!pdfFileUrl" class="pdf-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Loading PDF...</span>
+            </div>
+          </div>
         </div>
-        <button class="btn ghost" type="button">
+        <div v-else class="preview-box">
           <i class="fas fa-file-pdf"></i>
+          <span>No PDF uploaded</span>
+        </div>
+        <input
+          ref="pdfInput"
+          type="file"
+          accept=".pdf"
+          @change="handlePdfChange"
+          style="display: none"
+        />
+        <div v-if="pdfFile" class="pdf-actions-row">
+          <button 
+            class="btn ghost" 
+            type="button"
+            @click="triggerPdfUpload"
+          >
+            <i class="fas fa-file-pdf"></i>
+            Replace
+          </button>
+          <button 
+            class="btn ghost delete-pdf-btn" 
+            type="button"
+            @click="removePdf"
+          >
+            <i class="fas fa-trash-alt"></i>
+            Delete
+          </button>
+        </div>
+        <button 
+          v-else
+          class="btn ghost" 
+          type="button"
+          @click="triggerPdfUpload"
+        >
+          <i class="fas fa-file-pdf"></i>
+          Upload PDF
+        </button>
+        <button 
+          v-if="pdfFile && pdfFileUrl" 
+          class="btn ghost" 
+          type="button"
+          @click="openPdf"
+        >
+          <i class="fas fa-external-link-alt"></i>
           Open PDF
         </button>
       </div>
@@ -221,7 +294,9 @@ const defaultForm = () => ({
   pinAccuracy: 'exact',
   latitude: '',
   longitude: '',
-  audioFile: null
+  audioFile: null,
+  pdfFile: null,
+  pdfId: null
 })
 
 const COUNTRY_ISO_DATA_URL = 'https://countriesnow.space/api/v0.1/countries/iso'
@@ -326,6 +401,16 @@ export default {
       handler(newVal) {
         this.syncCountryInputWithIso(newVal)
       }
+    },
+    showPdfPreview(newVal) {
+      // Preview is handled via iframe, no need for loading logic
+    },
+    'modelValue.pdfFile': {
+      handler() {
+        // Reset preview when PDF changes
+        this.showPdfPreview = false
+      },
+      deep: true
     }
   },
   emits: ['update:modelValue'],
@@ -346,7 +431,8 @@ export default {
       replacementQueue: [],
       activeReplacement: null,
       countryInputValue: '',
-      showMapPicker: false
+      showMapPicker: false,
+      showPdfPreview: false
     }
   },
   created() {
@@ -368,6 +454,15 @@ export default {
       input.removeEventListener('input', this.addressInputListener)
     }
     this.addressInputListener = null
+    
+    // Clean up PDF object URL if it was created
+    const pdf = this.pdfFile
+    if (pdf && (pdf instanceof File || pdf instanceof Blob)) {
+      const url = this.pdfFileUrl
+      if (url && url.startsWith('blob:')) {
+        URL.revokeObjectURL(url)
+      }
+    }
   },
   computed: {
     name: {
@@ -456,6 +551,41 @@ export default {
     },
     audioFile() {
       return this.modelValue?.audioFile || null
+    },
+    pdfFile() {
+      return this.modelValue?.pdfFile || null
+    },
+    pdfFileUrl() {
+      const pdf = this.pdfFile
+      if (!pdf) return null
+      // If it's a File object, create object URL
+      if (pdf instanceof File || pdf instanceof Blob) {
+        return URL.createObjectURL(pdf)
+      }
+      // If it's a string URL, return it
+      if (typeof pdf === 'string') {
+        return pdf
+      }
+      return null
+    },
+    pdfFileName() {
+      const pdf = this.pdfFile
+      if (!pdf) return ''
+      // If it's a File object, use its name
+      if (pdf instanceof File) {
+        return pdf.name
+      }
+      // If it's a URL, extract filename from URL
+      if (typeof pdf === 'string') {
+        try {
+          const url = new URL(pdf)
+          const pathname = url.pathname
+          return pathname.split('/').pop() || 'PDF Document'
+        } catch {
+          return 'PDF Document'
+        }
+      }
+      return 'PDF Document'
     },
     regionOptions() {
       const isoCode = (this.country || '').trim().toUpperCase()
@@ -758,6 +888,55 @@ export default {
         })
       }
       this.closeMapPicker()
+    },
+    triggerPdfUpload() {
+      this.$refs.pdfInput?.click()
+    },
+    handlePdfChange(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+
+      // Validate file type
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        console.error('Invalid file type. Please select a PDF file.')
+        // You could add a toast notification here
+        return
+      }
+
+      // Validate file size (max 20MB as per API)
+      const maxSize = 20 * 1024 * 1024 // 20MB
+      if (file.size > maxSize) {
+        console.error('PDF file is too large. Maximum size is 20MB.')
+        // You could add a toast notification here
+        return
+      }
+
+      // Update the PDF file
+      const currentPdfId = this.modelValue?.pdfId
+      this.updateFields({ 
+        pdfFile: file,
+        pdfId: currentPdfId // Preserve ID if replacing existing PDF
+      })
+
+      // Reset input to allow selecting the same file again
+      event.target.value = ''
+    },
+    removePdf() {
+      const currentPdfId = this.modelValue?.pdfId
+      // Preserve pdfId when deleting so we can delete it on the server
+      this.updateFields({ 
+        pdfFile: null, 
+        pdfId: currentPdfId 
+      })
+    },
+    openPdf() {
+      const url = this.pdfFileUrl
+      if (url) {
+        window.open(url, '_blank')
+      }
+    },
+    togglePdfPreview() {
+      this.showPdfPreview = !this.showPdfPreview
     }
   }
 }
@@ -881,6 +1060,10 @@ textarea {
   align-items: stretch;
 }
 
+.pdf-preview .btn {
+  width: 100%;
+}
+
 .preview-box {
   flex: 1;
   border: 1px dashed var(--border-light);
@@ -891,6 +1074,134 @@ textarea {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
   background: var(--bg-secondary);
+  min-height: 120px;
+  padding: var(--spacing-md);
+  position: relative;
+}
+
+.preview-box.has-pdf {
+  border-color: var(--border-medium);
+  border-style: solid;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  min-height: 120px;
+  position: relative;
+}
+
+.preview-box.has-pdf:has(.pdf-preview-canvas-container) {
+  min-height: 300px;
+}
+
+.pdf-actions-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.pdf-actions-row .btn {
+  flex: 1;
+}
+
+.delete-pdf-btn {
+  color: var(--error-color, #ef4444);
+  border-color: var(--error-color, #ef4444);
+}
+
+.delete-pdf-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error-color, #ef4444);
+}
+
+.preview-pdf-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-primary);
+  border: 2px solid var(--primary-color);
+  border-radius: var(--radius-md);
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--primary-color);
+  transition: all var(--transition-normal);
+  padding: 0;
+  font-size: var(--font-size-xl);
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-pdf-button:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.preview-pdf-button:active {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+.preview-pdf-button.close-preview {
+  top: var(--spacing-sm);
+  right: auto;
+  left: var(--spacing-sm);
+  transform: none;
+  width: 40px;
+  height: 40px;
+  font-size: var(--font-size-md);
+}
+
+.preview-pdf-button.close-preview:hover {
+  transform: scale(1.05);
+}
+
+.preview-pdf-button.close-preview:active {
+  transform: scale(0.95);
+}
+
+.pdf-preview-canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 10;
+  padding: var(--spacing-sm);
+}
+
+.pdf-preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: white;
+}
+
+.pdf-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.pdf-loading i {
+  font-size: 24px;
+  color: var(--primary-color);
 }
 
 .btn.ghost {
