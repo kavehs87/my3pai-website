@@ -35,6 +35,11 @@ export default {
   },
   computed: {
     totalPOIs() {
+      // Use publishedPoisCount from user object
+      if (this.user && typeof this.user.publishedPoisCount === 'number') {
+        return this.user.publishedPoisCount
+      }
+      // Fallback to current POIs length if count not available
       return this.pois.length || 0
     },
     mapsCount() {
