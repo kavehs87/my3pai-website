@@ -3,7 +3,7 @@
   <div class="add-itinerary-panel">
     <div class="panel-header">
       <h2 class="panel-title">Add Itinerary</h2>
-    </div>
+      </div>
 
       <div class="panel-content">
         <!-- Add itinerary form content -->
@@ -67,8 +67,8 @@
           <i class="fas fa-paper-plane"></i>
           Publish
         </button>
-      </div>
     </div>
+  </div>
   <POIAccordion
     v-model="poiForm"
     :visible="showPOIForm"

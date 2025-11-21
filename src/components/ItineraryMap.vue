@@ -41,12 +41,12 @@
 
         <!-- Right Side: Map Container (70%) -->
         <div class="map-side">
-          <div class="map-container">
-            <div ref="mapEl" class="google-map"></div>
-            <div v-if="loadError" class="map-fallback">
-              <i class="fas fa-exclamation-triangle"></i>
-              <span>Google Maps failed to load. Please check your API key configuration.</span>
-            </div>
+    <div class="map-container">
+      <div ref="mapEl" class="google-map"></div>
+      <div v-if="loadError" class="map-fallback">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>Google Maps failed to load. Please check your API key configuration.</span>
+      </div>
           </div>
 
           <!-- POI Markers on Map -->

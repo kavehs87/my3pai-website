@@ -23,7 +23,18 @@
 
     <div class="card-content">
       <header class="card-header">
-        <p class="eyebrow">{{ subtitle }}</p>
+        <div class="header-top">
+          <p class="eyebrow">{{ subtitle }}</p>
+          <a 
+            v-if="itinerary.isPublished" 
+            href="#" 
+            class="view-as-link"
+            @click.prevent
+            title="View as public"
+          >
+            Preview
+          </a>
+        </div>
         <h3 class="title" :title="itinerary.title">{{ itinerary.title }}</h3>
       </header>
 
@@ -327,13 +338,45 @@ export default {
   margin-bottom: var(--spacing-sm);
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
 .eyebrow {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--secondary-color);
   font-weight: 700;
-  margin: 0 0 4px 0;
+  margin: 0;
+}
+
+.view-as-link {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secondary-color);
+  font-weight: 700;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.view-as-link:hover {
+  color: var(--secondary-color);
+  background: var(--bg-tertiary);
+  border-color: var(--secondary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .title {
