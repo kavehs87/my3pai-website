@@ -157,6 +157,16 @@
     </div>
 
     <div class="field-group">
+      <button type="button" class="pick-on-map-button" @click="openMapPicker">
+        <i class="fas fa-map-marker-alt"></i>
+        Pick on map
+      </button>
+      <p class="helper-text subtle">
+        Click to select coordinates interactively on the map
+      </p>
+    </div>
+
+    <div class="field-group">
       <label>Audio Recording</label>
       <AudioRecorder
         :modelValue="audioFile"
@@ -185,10 +195,20 @@
       </div>
     </div>
   </div>
+
+  <!-- Map Picker Modal -->
+  <MapPickerModal
+    :visible="showMapPicker"
+    :initialLatitude="latitude"
+    :initialLongitude="longitude"
+    @close="closeMapPicker"
+    @confirm="handleMapPickerConfirm"
+  />
 </template>
 
 <script>
 import AudioRecorder from './AudioRecorder.vue'
+import MapPickerModal from '../MapPickerModal.vue'
 
 const defaultForm = () => ({
   name: '',
@@ -291,7 +311,8 @@ async function fetchCountryIsoDataset() {
 export default {
   name: 'BasicIdentificationSection',
   components: {
-    AudioRecorder
+    AudioRecorder,
+    MapPickerModal
   },
   props: {
     modelValue: {
@@ -324,7 +345,8 @@ export default {
       addressDetailsLoading: false,
       replacementQueue: [],
       activeReplacement: null,
-      countryInputValue: ''
+      countryInputValue: '',
+      showMapPicker: false
     }
   },
   created() {
@@ -721,6 +743,21 @@ export default {
     handleAudioError(message) {
       // You can add toast notification here if needed
       console.error('Audio error:', message)
+    },
+    openMapPicker() {
+      this.showMapPicker = true
+    },
+    closeMapPicker() {
+      this.showMapPicker = false
+    },
+    handleMapPickerConfirm(coordinates) {
+      if (coordinates && coordinates.latitude && coordinates.longitude) {
+        this.updateFields({
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude
+        })
+      }
+      this.closeMapPicker()
     }
   }
 }
@@ -999,6 +1036,34 @@ textarea {
 
 .dialog-btn.primary:hover {
   filter: brightness(0.95);
+}
+
+.pick-on-map-button {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--primary-color);
+  background: transparent;
+  color: var(--primary-color);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.pick-on-map-button:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.pick-on-map-button i {
+  font-size: var(--font-size-sm);
 }
 
 @media (max-width: 768px) {
