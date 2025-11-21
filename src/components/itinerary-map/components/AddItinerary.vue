@@ -1,15 +1,11 @@
 <template>
   <div class="add-itinerary-root">
-  <div v-if="visible" class="add-place-overlay" @click.self="handleOverlayClick">
-    <div class="add-place-modal">
-      <div class="modal-header">
-        <h2 class="modal-title">Add Itinerary</h2>
-        <button class="close-button" @click="handleClose" aria-label="Close">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+  <div class="add-itinerary-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Add Itinerary</h2>
+    </div>
 
-      <div class="modal-content">
+      <div class="panel-content">
         <!-- Add itinerary form content -->
         <div class="form-section">
           <div class="field-group">
@@ -58,7 +54,7 @@
         </div>
       </div>
 
-      <div class="modal-footer">
+      <div class="panel-footer">
         <button class="btn btn-secondary" @click="handleShare">
           <i class="fas fa-share"></i>
           Share
@@ -73,7 +69,6 @@
         </button>
       </div>
     </div>
-  </div>
   <POIAccordion
     v-model="poiForm"
     :visible="showPOIForm"
@@ -371,9 +366,6 @@ export default {
     },
     handleShare() {
       this.$emit('share')
-    },
-    handleOverlayClick() {
-      this.handleClose()
     },
     handleAddPOI() {
       this.editingPoiIndex = null
@@ -1008,62 +1000,26 @@ export default {
 </script>
 
 <style scoped>
-.add-place-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: transparent;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  z-index: 10000;
-  padding: var(--spacing-md);
-  animation: fadeIn 0.2s ease-out;
-  pointer-events: none;
-}
-
-.add-place-overlay > * {
-  pointer-events: auto;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.add-place-modal {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+.add-itinerary-root {
   width: 100%;
-  max-width: 600px;
-  height: calc(100vh - var(--spacing-md) * 2 - var(--spacing-md));
+  height: 100%;
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.3s ease-out;
+  min-height: 0; /* Important for flex children to allow scrolling */
+}
+
+.add-itinerary-panel {
+  background: var(--bg-primary);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  margin: var(--spacing-md);
-  margin-bottom: calc(var(--spacing-md) + var(--spacing-sm));
+  min-height: 0; /* Important for flex children to allow scrolling */
+  flex: 1; /* Take available space */
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.modal-header {
+.panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1071,7 +1027,7 @@ export default {
   border-bottom: 1px solid var(--border-light);
 }
 
-.modal-title {
+.panel-title {
   font-size: var(--font-size-xl);
   font-weight: 600;
   color: var(--text-primary);
@@ -1099,10 +1055,13 @@ export default {
   color: var(--text-primary);
 }
 
-.modal-content {
+.panel-content {
   flex: 1;
   padding: var(--spacing-lg);
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* Important for flex children to allow scrolling */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .form-section {
@@ -1204,7 +1163,7 @@ export default {
   text-decoration: underline;
 }
 
-.modal-footer {
+.panel-footer {
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-sm);

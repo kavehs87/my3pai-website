@@ -22,43 +22,54 @@
     </div>
 
     <template v-else>
-    <!-- Google Map Container -->
-    <div class="map-container">
-      <div ref="mapEl" class="google-map"></div>
-      <div v-if="loadError" class="map-fallback">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>Google Maps failed to load. Please check your API key configuration.</span>
+    <!-- Container for split layout and overlay prompt -->
+    <div class="split-layout-container">
+      <!-- Split Layout: AddItinerary (left) | Map (right) -->
+      <div class="split-layout">
+        <!-- Left Side: Add Itinerary Panel (30%) -->
+        <div class="panel-side">
+          <AddItinerary 
+            :visible="true" 
+            :initial-itinerary="editingItinerary"
+            @close="handleCloseItinerary" 
+            @publish="handlePublishItinerary"
+            @save-draft="handleSaveDraftItinerary"
+            @share="handleShareItinerary"
+            @pois-updated="handlePOIsUpdated"
+          />
+        </div>
+
+        <!-- Right Side: Map Container (70%) -->
+        <div class="map-side">
+          <div class="map-container">
+            <div ref="mapEl" class="google-map"></div>
+            <div v-if="loadError" class="map-fallback">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span>Google Maps failed to load. Please check your API key configuration.</span>
+            </div>
+          </div>
+
+          <!-- POI Markers on Map -->
+          <!-- Always render POIMarkers when map is ready, even if AdvancedMarkerElement is not available yet -->
+          <!-- It will create markers when AdvancedMarkerElement becomes available -->
+          <POIMarkers
+            v-if="map"
+            :pois="currentPOIs"
+            :map="map"
+            :AdvancedMarkerElement="AdvancedMarkerElement"
+          />
+        </div>
       </div>
-      <!-- First Place Prompt -->
+
+      <!-- First Place Prompt - Overlays entire split layout (both panel and map) -->
       <FirstPlacePrompt 
-          :visible="showFirstPlacePrompt && !isEditingExisting" 
+        :visible="showFirstPlacePrompt && !isEditingExisting" 
         @click="handleFirstPlaceClick"
       />
     </div>
 
-    <!-- Thin Footer -->
+    <!-- Thin Footer - Outside split layout, spans full width -->
     <ThinFooter />
-
-    <!-- POI Markers on Map -->
-    <!-- Always render POIMarkers when map is ready, even if AdvancedMarkerElement is not available yet -->
-    <!-- It will create markers when AdvancedMarkerElement becomes available -->
-    <POIMarkers
-      v-if="map"
-      :pois="currentPOIs"
-      :map="map"
-      :AdvancedMarkerElement="AdvancedMarkerElement"
-    />
-
-    <!-- Add Itinerary Modal -->
-    <AddItinerary 
-      :visible="showAddItinerary" 
-        :initial-itinerary="editingItinerary"
-      @close="showAddItinerary = false" 
-      @publish="handlePublishItinerary"
-      @save-draft="handleSaveDraftItinerary"
-      @share="handleShareItinerary"
-      @pois-updated="handlePOIsUpdated"
-    />
     </template>
   </div>
 </template>
@@ -219,6 +230,7 @@ export default {
 
       this.editingItinerary = itinerary
       this.showFirstPlacePrompt = false
+      // AddItinerary is always visible now, no need to set showAddItinerary
       
       // Extract POIs from itinerary and set currentPOIs immediately
       // This allows markers to be displayed on the map even before opening the modal
@@ -264,8 +276,6 @@ export default {
           }
         })
       }
-      
-      this.showAddItinerary = true
     },
     initGoogleMaps() {
       // Check if Google Maps is already loaded
@@ -368,7 +378,6 @@ export default {
     },
 
     handlePublishItinerary(payload) {
-      this.showAddItinerary = false
       const query = { tab: 'maps' }
       if (payload?.itineraryId) {
         query.highlight = payload.itineraryId
@@ -390,7 +399,12 @@ export default {
     },
     handleFirstPlaceClick() {
       this.showFirstPlacePrompt = false
-      this.showAddItinerary = true
+      // AddItinerary is always visible now, no need to set showAddItinerary
+    },
+    handleCloseItinerary() {
+      // When closing, we might want to reset the form or navigate away
+      // For now, just hide the first place prompt if needed
+      this.showFirstPlacePrompt = true
     },
     handlePOIsUpdated(pois) {
       // Update current POIs when AddItinerary emits updates
@@ -544,6 +558,49 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* Container for split layout and overlay prompt */
+.split-layout-container {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  min-height: 0; /* Important for flex children */
+  overflow: hidden;
+}
+
+/* Split Layout: 30/70 vertical split */
+.split-layout {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  min-height: 0; /* Important for flex children */
+}
+
+/* Left Side: AddItinerary Panel (30%) */
+.panel-side {
+  width: 30%;
+  flex: 0 0 30%;
+  height: 100%;
+  overflow: hidden;
+  border-right: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Important for flex children to allow scrolling */
+}
+
+/* Right Side: Map Container (70%) */
+.map-side {
+  width: 70%;
+  flex: 0 0 70%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
   overflow: hidden;
 }
 

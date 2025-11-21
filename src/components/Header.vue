@@ -452,7 +452,7 @@ export default {
 
 .dropdown-header {
   padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-light);
+  /* border-bottom: 1px solid var(--border-light); */
 }
 
 .user-info {

@@ -232,8 +232,8 @@ export default {
         case 'exact':
           // Exact: Solid blue circle with solid border
           return {
-            background: '#3b82f6', // Blue
-            borderColor: '#1e40af', // Darker blue
+            background: '#EA4335', // Google Maps Red
+            borderColor: '#B31412', // Darker Google Maps Red
             glyphColor: '#ffffff',
             cssText: `
               display: flex;
