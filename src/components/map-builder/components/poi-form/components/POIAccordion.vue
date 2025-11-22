@@ -65,7 +65,7 @@ import BasicIdentificationSection from './poi-sections/BasicIdentificationSectio
 import CategoryTypeSection from './poi-sections/CategoryTypeSection.vue'
 import DifficultyEffortSection from './poi-sections/DifficultyEffortSection.vue'
 import PricingVouchersSection from './poi-sections/PricingVouchersSection.vue'
-import RegionsTagsSection from './poi-sections/RegionsTagsSection.vue'
+import TagsSection from './poi-sections/TagsSection.vue'
 import AmenitiesServicesSection from './poi-sections/AmenitiesServicesSection.vue'
 import TravelTipsSection from './poi-sections/TravelTipsSection.vue'
 import MediaCreditsSection from './poi-sections/MediaCreditsSection.vue'
@@ -115,11 +115,10 @@ const defaultSections = [
   },
   {
     id: 'regions',
-    title: '6. Regions & tags',
-    subtitle: 'Tag the region or theme it belongs to.',
-    component: RegionsTagsSection,
-    modelKey: 'regions',
-    requiredFields: ['regions.primaryRegion']
+    title: '6. Tags',
+    subtitle: 'Tag the theme or category it belongs to.',
+    component: TagsSection,
+    modelKey: 'regions'
   },
   {
     id: 'amenities',
@@ -163,7 +162,6 @@ const FIELD_LABELS = {
   'basic.longitude': 'Longitude',
   'category.placeType': 'Place type',
   'pricing.costType': 'Cost type',
-  'regions.primaryRegion': 'Primary region',
   'experience.experience': 'Personal experience'
 }
 

@@ -1,22 +1,5 @@
 <template>
-  <div class="regions-tags">
-    <div class="pill-group">
-      <label>Primary region <span>*</span></label>
-      <div class="pill-list">
-        <button
-          v-for="region in primaryRegions"
-          :key="region.value"
-          type="button"
-          class="pill"
-          :class="{ active: primaryRegion === region.value }"
-          @click="primaryRegion = region.value"
-        >
-          {{ region.label }}
-          <span class="count" v-if="region.count">({{ region.count }})</span>
-        </button>
-      </div>
-    </div>
-
+  <div class="tags-section">
     <div class="pill-group">
       <label>Tags</label>
       <div class="pill-list">
@@ -76,14 +59,13 @@
 
 <script>
 const defaultValue = () => ({
-  primaryRegion: '',
   tags: []
 })
 
 const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
 export default {
-  name: 'RegionsTagsSection',
+  name: 'TagsSection',
   props: {
     modelValue: {
       type: Object,
@@ -93,12 +75,6 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
-      primaryRegions: [
-        { label: 'Bern', value: 'bern', count: 53 },
-        { label: 'Valais', value: 'valais', count: 38 },
-        { label: 'Ticino', value: 'ticino', count: 27 },
-        { label: 'Other', value: 'other' }
-      ],
       tagOptions: [
         { label: 'Instagrammable', value: 'instagrammable' },
         { label: 'Hidden gem', value: 'hidden-gem' },
@@ -109,14 +85,6 @@ export default {
     }
   },
   computed: {
-    primaryRegion: {
-      get() {
-        return this.modelValue?.primaryRegion || ''
-      },
-      set(value) {
-        this.updateField('primaryRegion', value)
-      }
-    },
     tags: {
       get() {
         return ensureArray(this.modelValue?.tags)
@@ -168,7 +136,7 @@ export default {
 </script>
 
 <style scoped>
-.regions-tags {
+.tags-section {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -204,12 +172,6 @@ label {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.pill .count {
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
 }
 
 .pill.active {

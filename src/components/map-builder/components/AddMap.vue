@@ -34,9 +34,6 @@
                 <div class="poi-card-title">{{ formatPOITitle(poi) }}</div>
                 <div class="poi-card-meta">
                   <span v-if="formatPOICategory(poi)">{{ formatPOICategory(poi) }}</span>
-                  <span v-if="formatPOIRegion(poi)">
-                    <span v-if="formatPOICategory(poi)"> • </span>{{ formatPOIRegion(poi) }}
-                  </span>
                 </div>
               </div>
               <div class="poi-card-actions">
@@ -452,9 +449,6 @@ export default {
     },
     formatPOICategory(poi) {
       return poi && poi.category && poi.category.placeType
-    },
-    formatPOIRegion(poi) {
-      return poi && poi.regions && poi.regions.primaryRegion
     },
     clonePOIData(poi) {
       const source = poi || this.createEmptyPOIForm()

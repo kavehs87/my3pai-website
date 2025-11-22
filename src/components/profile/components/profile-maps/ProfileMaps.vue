@@ -280,8 +280,9 @@ export default {
         if (poi?.pricing?.budget) {
           tags.add(poi.pricing.budget)
         }
-        if (poi?.regions?.primaryRegion) {
-          tags.add(poi.regions.primaryRegion)
+        // Add tags from regions.tags array
+        if (poi?.regions?.tags && Array.isArray(poi.regions.tags)) {
+          poi.regions.tags.forEach(tag => tags.add(tag))
         }
       })
       
