@@ -259,12 +259,10 @@ export default {
 }
 
 .navbar-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
   padding: var(--spacing-md) var(--spacing-xl);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--spacing-xl);
 }
 
@@ -273,6 +271,7 @@ export default {
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  margin-right: auto;
 }
 
 .brand-link {
@@ -307,6 +306,9 @@ export default {
   gap: var(--spacing-xl);
   flex: 1;
   justify-content: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .nav-link {
@@ -332,6 +334,7 @@ export default {
   align-items: center;
   gap: var(--spacing-lg);
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .language-selector {
