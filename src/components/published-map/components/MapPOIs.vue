@@ -4,7 +4,7 @@
       <!-- Header Section -->
       <MapPOIsHeader
         :user-name="userName"
-        :pois-count="pois.length"
+        :pois-count="filteredPOIs.length"
         :view-mode="viewMode"
         @view-mode-changed="handleViewModeChange"
         @sort-changed="handleSortChange"
@@ -24,9 +24,9 @@
       
       <!-- Map Container -->
       <MapContainer
-        :pois-count="pois.length"
+        :pois-count="filteredPOIs.length"
         :is-expanded="isMapExpanded"
-        :pois="pois"
+        :pois="filteredPOIs"
         @toggle-map="toggleMap"
       />
       
@@ -99,7 +99,6 @@ export default {
       return this.user?.publishedMapsCount || 1
     },
     filteredPOIs() {
-      // TODO: Apply search and filter logic
       let result = [...this.pois]
       
       // Apply search filter
@@ -109,11 +108,52 @@ export default {
           const name = poi.basic?.name?.toLowerCase() || ''
           const tagline = poi.basic?.tagline?.toLowerCase() || ''
           const summary = poi.basic?.summary?.toLowerCase() || ''
-          return name.includes(query) || tagline.includes(query) || summary.includes(query)
+          const experience = poi.experience?.experience?.toLowerCase() || ''
+          return name.includes(query) || 
+                 tagline.includes(query) || 
+                 summary.includes(query) ||
+                 experience.includes(query)
         })
       }
       
-      // TODO: Apply other filters (region, activity, duration, budget, difficulty)
+      // Apply place type filter
+      if (this.filters.place_type) {
+        result = result.filter(poi => {
+          return poi.category?.placeType === this.filters.place_type
+        })
+      }
+      
+      // Apply difficulty filter
+      if (this.filters.difficulty) {
+        result = result.filter(poi => {
+          return poi.difficulty?.difficulty === this.filters.difficulty
+        })
+      }
+      
+      // Apply cost type (budget) filter
+      if (this.filters.cost_type) {
+        result = result.filter(poi => {
+          return poi.pricing?.costType === this.filters.cost_type
+        })
+      }
+      
+      // Apply activities filter (multi-select)
+      if (this.filters.activities && this.filters.activities.length > 0) {
+        result = result.filter(poi => {
+          const poiActivities = poi.category?.activities || []
+          // POI must have at least one of the selected activities
+          return this.filters.activities.some(activity => 
+            poiActivities.includes(activity)
+          )
+        })
+      }
+      
+      // Apply country filter
+      if (this.filters.country) {
+        result = result.filter(poi => {
+          return poi.basic?.country === this.filters.country
+        })
+      }
       
       return result
     }
@@ -128,16 +168,15 @@ export default {
     },
     handleSearchChange(query) {
       this.searchQuery = query
-      // TODO: Implement search filtering
+      // Filtering is handled reactively in computed property
     },
     handleSearchSubmit() {
-      console.log('Search submitted:', this.searchQuery)
-      // TODO: Implement search logic
+      // Filtering is handled reactively in computed property
+      // Could add analytics or other side effects here if needed
     },
     handleFilterChange(filters) {
       this.filters = filters
-      console.log('Filters changed:', filters)
-      // TODO: Implement filter logic
+      // Filtering is handled reactively in computed property
     },
     toggleMap() {
       this.isMapExpanded = !this.isMapExpanded

@@ -327,6 +327,14 @@ class ApiService {
     })
   }
 
+  // Get POI filter metadata (activities, countries, etc.)
+  async getPoiFilterMetadata() {
+    // Public endpoint - no auth required
+    return this.request('/pois/filters/metadata', {
+      requireCsrf: false
+    })
+  }
+
   async getMaps(params = {}) {
     const queryString = this.buildQueryString(params)
     return this.request(`/maps${queryString}`)

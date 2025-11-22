@@ -3,14 +3,32 @@
     <!-- Image Section -->
     <div class="poi-image-container">
       <img 
-        v-if="mainImage" 
-        :src="mainImage" 
+        v-if="currentImage" 
+        :src="currentImage" 
         :alt="poi.basic?.name || 'POI Image'"
         class="poi-image"
       />
       <div v-else class="poi-image-placeholder">
         <i class="fas fa-image"></i>
       </div>
+      
+      <!-- Navigation Arrows -->
+      <button 
+        v-if="allImages.length > 1 && currentImageIndex > 0"
+        class="image-nav-btn image-nav-btn-left"
+        @click="previousImage"
+        aria-label="Previous image"
+      >
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button 
+        v-if="allImages.length > 1 && currentImageIndex < allImages.length - 1"
+        class="image-nav-btn image-nav-btn-right"
+        @click="nextImage"
+        aria-label="Next image"
+      >
+        <i class="fas fa-chevron-right"></i>
+      </button>
       
       <!-- Top-left label -->
       <div v-if="categoryLabel" class="image-label image-label-top-left">
@@ -155,21 +173,32 @@ export default {
   },
   data() {
     return {
-      isFavorite: false
+      isFavorite: false,
+      currentImageIndex: 0
     }
   },
   computed: {
-    mainImage() {
+    allImages() {
+      const images = []
       if (this.poi.media?.images && this.poi.media.images.length > 0) {
-        return this.poi.media.images[0].url
+        this.poi.media.images.forEach(img => {
+          if (img.url) images.push(img.url)
+        })
       }
-      if (this.poi.media?.previewImage) {
-        return this.poi.media.previewImage
+      // Include previewImage only if it's not already in the images array
+      if (this.poi.media?.previewImage && !images.includes(this.poi.media.previewImage)) {
+        images.unshift(this.poi.media.previewImage) // Add preview as first image
+      }
+      return images
+    },
+    currentImage() {
+      if (this.allImages.length > 0 && this.currentImageIndex < this.allImages.length) {
+        return this.allImages[this.currentImageIndex]
       }
       return null
     },
     imageCount() {
-      return this.poi.media?.images?.length || 0
+      return this.allImages.length || 0
     },
     categoryLabel() {
       const placeType = this.poi.category?.placeType
@@ -331,6 +360,16 @@ export default {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(' ')
     },
+    previousImage() {
+      if (this.currentImageIndex > 0) {
+        this.currentImageIndex--
+      }
+    },
+    nextImage() {
+      if (this.currentImageIndex < this.allImages.length - 1) {
+        this.currentImageIndex++
+      }
+    },
     viewDetails() {
       this.$emit('view-details', this.poi)
     },
@@ -343,6 +382,15 @@ export default {
     toggleFavorite() {
       this.isFavorite = !this.isFavorite
       this.$emit('toggle-favorite', this.poi, this.isFavorite)
+    }
+  },
+  watch: {
+    // Reset to first image when POI changes
+    poi: {
+      handler() {
+        this.currentImageIndex = 0
+      },
+      immediate: true
     }
   }
 }
@@ -397,7 +445,7 @@ export default {
 .image-label {
   position: absolute;
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-xs);
   font-weight: 600;
   display: flex;
@@ -422,6 +470,49 @@ export default {
 
 .image-label i {
   font-size: var(--font-size-xs);
+}
+
+/* Image Navigation Buttons */
+.image-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.image-nav-btn:hover {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.image-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.image-nav-btn-left {
+  left: var(--spacing-sm);
+}
+
+.image-nav-btn-right {
+  right: var(--spacing-sm);
+}
+
+.image-nav-btn i {
+  font-size: var(--font-size-sm);
+  font-weight: bold;
 }
 
 /* Content Section */
@@ -473,7 +564,7 @@ export default {
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-xs);
   font-weight: 600;
   white-space: nowrap;
@@ -525,7 +616,7 @@ export default {
 
 .tag-pill {
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-xs);
   font-weight: 500;
   white-space: nowrap;
@@ -632,7 +723,7 @@ export default {
 .icon-btn {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   background: var(--bg-primary);
   color: var(--text-secondary);
