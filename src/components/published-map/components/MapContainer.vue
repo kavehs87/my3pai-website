@@ -24,6 +24,8 @@
 </template>
 
 <script>
+import { createAdvancedMarker } from './markers/createMarker.js'
+
 export default {
   name: 'MapContainer',
   props: {
@@ -42,12 +44,32 @@ export default {
   },
   data() {
     return {
-      map: null,
+      // ============================================================================
+      // IMPORTANT: map is NOT stored in data() - Vue's reactivity breaks AdvancedMarkerElement
+      // ============================================================================
+      // 
+      // ISSUE: When map is stored in data(), Vue 3 wraps it in a Proxy for reactivity.
+      // This Proxy wrapper breaks Google Maps AdvancedMarkerElement - markers are created
+      // but don't display on the map.
+      //
+      // SOLUTION: Store map as a non-reactive property (initialized in beforeCreate hook).
+      // This prevents Vue from wrapping it in a Proxy, allowing AdvancedMarkerElement to work.
+      //
+      // REFERENCE: https://stackoverflow.com/questions/75526094/advancedmarkerelement-do-not-display-on-the-map
+      // ============================================================================
+      
       loadError: false,
       mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null,
       useAdvanced: import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true',
-      mapInitialized: false
+      mapInitialized: false,
+      markers: [] // Array to store marker instances
     }
+  },
+  beforeCreate() {
+    // Initialize map as a non-reactive property to avoid Vue's Proxy wrapping.
+    // This is REQUIRED for AdvancedMarkerElement to work correctly.
+    // Do NOT move this to data() - it will break marker visibility.
+    this.map = null
   },
   watch: {
     isExpanded(newVal) {
@@ -82,6 +104,7 @@ export default {
     }
   },
   beforeUnmount() {
+    this.clearMarkers()
     if (this.map) {
       // Clean up map instance
       this.map = null
@@ -167,7 +190,7 @@ export default {
           this.$nextTick(() => {
             if (this.map) {
               window.google.maps.event.trigger(this.map, 'resize')
-              this.fitMapToPOIs()
+              this.updateMapMarkers()
             }
           })
         })
@@ -209,9 +232,84 @@ export default {
       }
     },
     updateMapMarkers() {
-      // TODO: Implement marker rendering when POIs are available
-      // This will be implemented later when we add marker functionality
+      if (!this.map || !this.pois || this.pois.length === 0) {
+        this.clearMarkers()
+        return
+      }
+      
+      // Clear existing markers
+      this.clearMarkers()
+      
+      // Filter valid POIs with coordinates
+      const validPOIs = this.pois.filter(poi => 
+        poi.basic && 
+        typeof poi.basic.latitude === 'number' && 
+        typeof poi.basic.longitude === 'number' &&
+        !isNaN(poi.basic.latitude) &&
+        !isNaN(poi.basic.longitude)
+      )
+      
+      if (validPOIs.length === 0) {
+        return
+      }
+      
+      // Create markers for each POI
+      validPOIs.forEach(poi => {
+        try {
+          const marker = createAdvancedMarker(this.map, poi, {
+            onClick: (poi, marker) => {
+              this.handleMarkerClick(poi, marker)
+            },
+            onHover: (poi, marker, isHovering) => {
+              this.handleMarkerHover(poi, marker, isHovering)
+            }
+          })
+          
+          if (marker) {
+            this.markers.push(marker)
+          }
+        } catch (error) {
+          console.error('[MapContainer] Error creating marker for POI:', poi.id, error)
+        }
+      })
+      
+      // Fit map to show all markers
       this.fitMapToPOIs()
+    },
+    clearMarkers() {
+      // Remove all markers from map
+      this.markers.forEach(marker => {
+        try {
+          if (marker.map) {
+            marker.map = null
+          }
+          // For Advanced Markers
+          if (marker.content && marker.content.parentNode) {
+            marker.content.parentNode.removeChild(marker.content)
+          }
+        } catch (error) {
+          console.warn('[MapContainer] Error clearing marker:', error)
+        }
+      })
+      this.markers = []
+    },
+    handleMarkerClick(poi, marker) {
+      // Emit event to parent component
+      this.$emit('poi-clicked', poi)
+      
+      // Center map on clicked POI
+      if (this.map && poi.basic) {
+        this.map.setCenter({
+          lat: Number(poi.basic.latitude),
+          lng: Number(poi.basic.longitude)
+        })
+        this.map.setZoom(Math.max(this.map.getZoom() || 14, 14))
+      }
+    },
+    handleMarkerHover(poi, marker, isHovering) {
+      // Could add hover effects here (e.g., show info window, highlight)
+      // For now, just emit event
+      this.$emit('poi-hover', { poi, isHovering })
     }
   }
 }
@@ -323,6 +421,42 @@ export default {
 
 .map-fallback span {
   font-size: var(--font-size-base);
+}
+
+/* POI Marker Styles - Speech Bubble Design */
+:deep(.poi-marker-wrapper) {
+  position: relative;
+  display: inline-block;
+  transform-origin: center bottom; /* Scale from bottom center (pointer tip) */
+}
+
+:deep(.poi-marker-container) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Pro', 'Font Awesome 6 Brands', sans-serif;
+}
+
+:deep(.poi-marker-container i) {
+  font-style: normal;
+  font-weight: 900; /* Solid icons */
+}
+
+:deep(.poi-marker-container i.fab) {
+  font-family: 'Font Awesome 6 Brands';
+  font-weight: 400;
+}
+
+:deep(.poi-marker-label) {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  white-space: nowrap !important;
+}
+
+:deep(.poi-marker-pointer),
+:deep(.poi-marker-pointer-border) {
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {
