@@ -16,7 +16,11 @@
 
       <!-- Right Side: Itinerary POIs -->
       <div class="content-side">
-        <ItineraryPOIs />
+        <ItineraryPOIs 
+          :user="user"
+          :itinerary="itinerary"
+          :pois="pois"
+        />
       </div>
     </div>
   </div>
@@ -118,16 +122,20 @@ export default {
   width: 100%;
   min-height: 0;
   overflow: hidden;
+  align-items: stretch;
 }
 
 /* Left Side: User Profile Brief (Thin) */
 .panel-side {
-  width: 280px;
-  flex: 0 0 280px;
-  height: 100%;
+  width: 380px;
+  flex: 0 0 380px;
+  min-height: 100%;
   overflow-y: auto;
   border-right: 1px solid var(--border-light);
   background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
 }
 
 /* Right Side: Itinerary POIs */

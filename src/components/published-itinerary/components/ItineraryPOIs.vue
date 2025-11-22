@@ -1,58 +1,202 @@
 <template>
   <div class="itinerary-pois">
-    <!-- Itinerary POIs content will be added here -->
-    <div class="pois-placeholder">
-      <p>Itinerary POIs</p>
-      <p class="placeholder-text">Content will be added here</p>
+    <div class="pois-container">
+      <!-- Header Section -->
+      <ItineraryPOIsHeader
+        :user-name="userName"
+        :pois-count="pois.length"
+        :view-mode="viewMode"
+        @view-mode-changed="handleViewModeChange"
+        @sort-changed="handleSortChange"
+      />
+      
+      <!-- Search Bar -->
+      <SearchBar
+        :search-query="searchQuery"
+        @search-changed="handleSearchChange"
+        @search-submitted="handleSearchSubmit"
+      />
+      
+      <!-- Filter Bar -->
+      <FilterBar
+        @filter-changed="handleFilterChange"
+      />
+      
+      <!-- Map Container -->
+      <MapContainer
+        :pois-count="pois.length"
+        :is-expanded="isMapExpanded"
+        :pois="pois"
+        @toggle-map="toggleMap"
+      />
+      
+      <!-- POIs Content Area -->
+      <div class="pois-content">
+        <div v-if="loading" class="loading-state">
+          <p>Loading locations...</p>
+        </div>
+        <POICardsList
+          v-else
+          :pois="filteredPOIs"
+          :maps-count="mapsCount"
+          @view-details="handleViewDetails"
+          @show-on-map="handleShowOnMap"
+          @add-to-itinerary="handleAddToItinerary"
+          @toggle-favorite="handleToggleFavorite"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import ItineraryPOIsHeader from './ItineraryPOIsHeader.vue'
+import SearchBar from './SearchBar.vue'
+import FilterBar from './FilterBar.vue'
+import MapContainer from './MapContainer.vue'
+import POICardsList from './POICardsList.vue'
+
 export default {
   name: 'ItineraryPOIs',
-  data() {
-    return {
-      itinerary: null,
-      pois: [],
-      loading: true
+  components: {
+    ItineraryPOIsHeader,
+    SearchBar,
+    FilterBar,
+    MapContainer,
+    POICardsList
+  },
+  props: {
+    user: {
+      type: Object,
+      default: null
+    },
+    itinerary: {
+      type: Object,
+      default: null
+    },
+    pois: {
+      type: Array,
+      default: () => []
     }
   },
-  async mounted() {
-    // Fetch itinerary and POIs data based on route params
-    // This will be implemented later
-    this.loading = false
+  data() {
+    return {
+      loading: false,
+      viewMode: 'map',
+      searchQuery: '',
+      filters: {},
+      isMapExpanded: true
+    }
+  },
+  computed: {
+    userName() {
+      if (this.user) {
+        return this.user.firstName || this.user.username || 'User'
+      }
+      return 'User'
+    },
+    mapsCount() {
+      return this.user?.publishedItinerariesCount || 1
+    },
+    filteredPOIs() {
+      // TODO: Apply search and filter logic
+      let result = [...this.pois]
+      
+      // Apply search filter
+      if (this.searchQuery.trim()) {
+        const query = this.searchQuery.toLowerCase()
+        result = result.filter(poi => {
+          const name = poi.basic?.name?.toLowerCase() || ''
+          const tagline = poi.basic?.tagline?.toLowerCase() || ''
+          const summary = poi.basic?.summary?.toLowerCase() || ''
+          return name.includes(query) || tagline.includes(query) || summary.includes(query)
+        })
+      }
+      
+      // TODO: Apply other filters (region, activity, duration, budget, difficulty)
+      
+      return result
+    }
+  },
+  methods: {
+    handleViewModeChange(mode) {
+      this.viewMode = mode
+    },
+    handleSortChange(sortOption) {
+      console.log('Sort changed:', sortOption)
+      // TODO: Implement sorting logic
+    },
+    handleSearchChange(query) {
+      this.searchQuery = query
+      // TODO: Implement search filtering
+    },
+    handleSearchSubmit() {
+      console.log('Search submitted:', this.searchQuery)
+      // TODO: Implement search logic
+    },
+    handleFilterChange(filters) {
+      this.filters = filters
+      console.log('Filters changed:', filters)
+      // TODO: Implement filter logic
+    },
+    toggleMap() {
+      this.isMapExpanded = !this.isMapExpanded
+    },
+    handleViewDetails(poi) {
+      console.log('View details for POI:', poi)
+      // TODO: Navigate to POI detail page or open modal
+    },
+    handleShowOnMap(poi) {
+      console.log('Show POI on map:', poi)
+      // TODO: Center map on POI and highlight it
+      this.$emit('show-poi-on-map', poi)
+    },
+    handleAddToItinerary(poi) {
+      console.log('Add POI to itinerary:', poi)
+      // TODO: Implement add to itinerary functionality
+    },
+    handleToggleFavorite(poi, isFavorite) {
+      console.log('Toggle favorite for POI:', poi, isFavorite)
+      // TODO: Implement favorite functionality
+    }
   }
 }
 </script>
 
 <style scoped>
 .itinerary-pois {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   height: 100%;
+  overflow-y: auto;
+  background: var(--bg-primary);
 }
 
-.pois-placeholder {
+.pois-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.pois-content {
+  margin-top: var(--spacing-xl);
+}
+
+.loading-state {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 300px;
   color: var(--text-secondary);
-  text-align: center;
+  font-size: var(--font-size-lg);
 }
 
-.pois-placeholder p {
-  margin: 0;
-  font-size: var(--font-size-md);
-  font-weight: 600;
-}
-
-.placeholder-text {
-  margin-top: var(--spacing-xs) !important;
-  font-size: var(--font-size-sm) !important;
-  font-weight: 400 !important;
-  opacity: 0.7;
+@media (max-width: 768px) {
+  .itinerary-pois {
+    padding: var(--spacing-md);
+  }
+  
+  .pois-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 

@@ -51,7 +51,8 @@ export default {
 <style scoped>
 .user-profile-brief {
   padding: var(--spacing-xl);
-  height: 100%;
+  min-height: 100%;
+  flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
