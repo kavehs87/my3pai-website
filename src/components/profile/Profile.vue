@@ -214,7 +214,7 @@ export default {
       profileData: {
         user: {},
         stats: {},
-        itineraries: []
+        maps: []
       },
       isLoading: true,
       error: null,
@@ -339,7 +339,7 @@ export default {
           this.profileData = {
             user: normalizedUser,
             stats: data.stats || {},
-            itineraries: data.itineraries || []
+            maps: data.maps || []
           }
           
           // Restore scroll position if requested

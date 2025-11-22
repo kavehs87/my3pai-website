@@ -41,7 +41,7 @@ export default {
     },
     placeholder: {
       type: String,
-      default: 'Upload itinerary thumbnail'
+      default: 'Upload map thumbnail'
     },
     modelValue: {
       type: [File, String],

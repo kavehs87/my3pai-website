@@ -8,7 +8,7 @@
         <div class="days-toolbar">
           <div class="days-actions">
             <div class="toolbar-buttons">
-              <button class="btn secondary" type="button">Itinerary Timeline</button>
+              <button class="btn secondary" type="button">Map Timeline</button>
               <button class="btn secondary" type="button" @click="openCalendarExport">Export to Calendar</button>
               <button class="btn secondary" type="button">Statistics</button>
               <button class="btn secondary" type="button">Export as File</button>

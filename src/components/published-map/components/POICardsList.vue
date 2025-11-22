@@ -11,7 +11,7 @@
         :maps-count="mapsCount"
         @view-details="handleViewDetails"
         @show-on-map="handleShowOnMap"
-        @add-to-itinerary="handleAddToItinerary"
+        @add-to-map="handleAddToMap"
         @toggle-favorite="handleToggleFavorite"
       />
     </div>
@@ -43,8 +43,8 @@ export default {
     handleShowOnMap(poi) {
       this.$emit('show-on-map', poi)
     },
-    handleAddToItinerary(poi) {
-      this.$emit('add-to-itinerary', poi)
+    handleAddToMap(poi) {
+      this.$emit('add-to-map', poi)
     },
     handleToggleFavorite(poi, isFavorite) {
       this.$emit('toggle-favorite', poi, isFavorite)

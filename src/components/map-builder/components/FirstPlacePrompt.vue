@@ -6,7 +6,7 @@
         <div class="prompt-icon">
           <i class="fas fa-route"></i>
         </div>
-        <h3 class="prompt-title">Create your itinerary</h3>
+        <h3 class="prompt-title">Create your map</h3>
         <p class="prompt-subtitle">Click to get started</p>
       </div>
       <div class="prompt-info">

@@ -7,15 +7,15 @@ import Home from './components/Home.vue'
 import Studio from './components/studio/Studio.vue'
 import Profile from './components/profile/Profile.vue'
 import OAuthCallback from './components/OAuthCallback.vue'
-import ItineraryMap from './components/ItineraryMap.vue'
-import PublishedItinerary from './components/published-itinerary/PublishedItinerary.vue'
+import MapBuilder from './components/MapBuilder.vue'
+import PublishedMap from './components/published-map/PublishedMap.vue'
 import './style.css'
 
 const routes = [
   { path: '/', component: Home },
   { path: '/studio', component: Studio, name: 'studio' },
   { path: '/profile', component: Profile, name: 'profile' },
-  { path: '/itinerary-map', component: ItineraryMap, name: 'itinerary-map' },
+  { path: '/map-builder', component: MapBuilder, name: 'map-builder' },
   { 
     path: '/auth/callback', 
     component: OAuthCallback, 
@@ -24,8 +24,8 @@ const routes = [
   },
   {
     path: '/u/:username/:slug',
-    component: PublishedItinerary,
-    name: 'published-itinerary',
+    component: PublishedMap,
+    name: 'published-map',
     props: true
   },
 ]

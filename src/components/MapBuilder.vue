@@ -1,5 +1,5 @@
 <template>
-  <div class="itinerary-map-page">
+  <div class="map-builder-page">
     <!-- Header -->
     <Header />
 
@@ -14,7 +14,7 @@
       <div class="auth-card">
         <i class="fas fa-lock"></i>
         <h2>Sign in required</h2>
-        <p>You need to be logged in to access the itinerary builder.</p>
+        <p>You need to be logged in to access the map builder.</p>
         <button class="auth-button" @click="redirectToLogin">
           Go to homepage
         </button>
@@ -24,17 +24,17 @@
     <template v-else>
     <!-- Container for split layout and overlay prompt -->
     <div class="split-layout-container">
-      <!-- Split Layout: AddItinerary (left) | Map (right) -->
+      <!-- Split Layout: AddMap (left) | Map (right) -->
       <div class="split-layout">
-        <!-- Left Side: Add Itinerary Panel (30%) -->
+        <!-- Left Side: Add Map Panel (30%) -->
         <div class="panel-side">
-          <AddItinerary 
+          <AddMap 
             :visible="true" 
-            :initial-itinerary="editingItinerary"
-            @close="handleCloseItinerary" 
-            @publish="handlePublishItinerary"
-            @save-draft="handleSaveDraftItinerary"
-            @share="handleShareItinerary"
+            :initial-map="editingMap"
+            @close="handleCloseMap" 
+            @publish="handlePublishMap"
+            @save-draft="handleSaveDraftMap"
+            @share="handleShareMap"
             @pois-updated="handlePOIsUpdated"
           />
         </div>
@@ -76,18 +76,18 @@
 
 <script>
 import Header from './Header.vue'
-import ThinFooter from './itinerary-map/components/ThinFooter.vue'
-import AddItinerary from './itinerary-map/components/AddItinerary.vue'
-import FirstPlacePrompt from './itinerary-map/components/FirstPlacePrompt.vue'
-import POIMarkers from './itinerary-map/components/POIMarkers.vue'
+import ThinFooter from './map-builder/components/ThinFooter.vue'
+import AddMap from './map-builder/components/AddMap.vue'
+import FirstPlacePrompt from './map-builder/components/FirstPlacePrompt.vue'
+import POIMarkers from './map-builder/components/POIMarkers.vue'
 import apiService from '../services/api.js'
 
 export default {
-  name: 'ItineraryMap',
+  name: 'MapBuilder',
   components: {
     Header,
     ThinFooter,
-    AddItinerary,
+    AddMap,
     FirstPlacePrompt,
     POIMarkers
   },
@@ -120,9 +120,9 @@ export default {
       mapId: import.meta.env.VITE_GOOGLE_MAP_ID || null,
       useAdvanced: import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true',
       AdvancedMarkerElement: null,
-      showAddItinerary: false,
+      showAddMap: false,
       showFirstPlacePrompt: true,
-      editingItinerary: null,
+      editingMap: null,
       isAuthChecking: true,
       isAuthenticated: false,
       currentPOIs: []
@@ -139,25 +139,25 @@ export default {
     if (!authenticated) return
 
     // Log environment variables for debugging
-    console.log('[ItineraryMap] Environment check:', {
+    console.log('[MapBuilder] Environment check:', {
       mapId: this.mapId,
       useAdvanced: this.useAdvanced,
       hasApiKey: !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY
     })
 
     // Expose instance to window for manual testing in console
-    window.itineraryMapInstance = this
-    console.log('[ItineraryMap] Instance exposed to window.itineraryMapInstance for manual testing')
-    console.log('[ItineraryMap] Available methods:')
-    console.log('  - window.itineraryMapInstance.fitMapToPOIs()')
-    console.log('  - window.itineraryMapInstance.createTestMarker(lat, lng)')
-    console.log('  - window.itineraryMapInstance.map (map instance)')
-    console.log('  - window.itineraryMapInstance.currentPOIs (POIs array)')
-    console.log('  - window.itineraryMapInstance.AdvancedMarkerElement (AdvancedMarkerElement class)')
+    window.mapBuilderInstance = this
+    console.log('[MapBuilder] Instance exposed to window.mapBuilderInstance for manual testing')
+    console.log('[MapBuilder] Available methods:')
+    console.log('  - window.mapBuilderInstance.fitMapToPOIs()')
+    console.log('  - window.mapBuilderInstance.createTestMarker(lat, lng)')
+    console.log('  - window.mapBuilderInstance.map (map instance)')
+    console.log('  - window.mapBuilderInstance.currentPOIs (POIs array)')
+    console.log('  - window.mapBuilderInstance.AdvancedMarkerElement (AdvancedMarkerElement class)')
 
     this.initGoogleMaps()
     if (this.isEditingExisting) {
-      this.fetchExistingItinerary()
+      this.fetchExistingMap()
     }
     // Add resize listener to ensure map resizes properly
     window.addEventListener('resize', this.handleResize)
@@ -178,7 +178,7 @@ export default {
         this.isAuthenticated = Boolean(response?.success)
         return this.isAuthenticated
       } catch (error) {
-        console.warn('[ItineraryMap] Auth check failed', error)
+        console.warn('[MapBuilder] Auth check failed', error)
         this.isAuthenticated = false
         return false
       } finally {
@@ -192,53 +192,53 @@ export default {
         window.location.href = '/'
       }
     },
-    async fetchExistingItinerary() {
+    async fetchExistingMap() {
       const rawId = this.$route?.query?.id
-      const itineraryId = Number(rawId)
+      const mapId = Number(rawId)
 
-      if (!Number.isFinite(itineraryId) || itineraryId <= 0) {
-        console.warn('[ItineraryMap] Invalid itinerary id in route query:', rawId)
+      if (!Number.isFinite(mapId) || mapId <= 0) {
+        console.warn('[MapBuilder] Invalid map id in route query:', rawId)
         return
       }
 
-      console.log('[ItineraryMap] Loading itinerary', itineraryId)
-      const response = await apiService.getItinerary(itineraryId)
+      console.log('[MapBuilder] Loading map', mapId)
+      const response = await apiService.getMap(mapId)
 
       if (!response?.success) {
-        console.error('[ItineraryMap] Failed to load itinerary', {
-          itineraryId,
+        console.error('[MapBuilder] Failed to load map', {
+          mapId,
           error: response?.error,
           status: response?.status
         })
         return
       }
 
-      // Normalize itinerary payload similar to AddItinerary.extractItineraryFromResponse
+      // Normalize map payload similar to AddMap.extractMapFromResponse
       const payload = response.data || {}
-      const itinerary =
-        payload.data?.itinerary ||
-        payload.itinerary ||
+      const map =
+        payload.data?.map ||
+        payload.map ||
         payload.data ||
         payload
 
-      if (!itinerary || !itinerary.id) {
-        console.error('[ItineraryMap] Loaded itinerary response is missing itinerary data', payload)
+      if (!map || !map.id) {
+        console.error('[MapBuilder] Loaded map response is missing map data', payload)
         return
       }
 
-      console.log('[ItineraryMap] Loaded itinerary data', itinerary)
+      console.log('[MapBuilder] Loaded map data', map)
 
-      this.editingItinerary = itinerary
+      this.editingMap = map
       this.showFirstPlacePrompt = false
-      // AddItinerary is always visible now, no need to set showAddItinerary
+      // AddMap is always visible now, no need to set showAddMap
       
-      // Extract POIs from itinerary and set currentPOIs immediately
+      // Extract POIs from map and set currentPOIs immediately
       // This allows markers to be displayed on the map even before opening the modal
-      if (itinerary.pointsOfInterest && Array.isArray(itinerary.pointsOfInterest)) {
+      if (map.pois && Array.isArray(map.pois)) {
         // Use Vue.set or direct assignment to ensure reactivity
-        this.currentPOIs = [...itinerary.pointsOfInterest] // Create new array to trigger reactivity
-        console.log('[ItineraryMap] Set currentPOIs from itinerary:', this.currentPOIs.length, 'POIs')
-        console.log('[ItineraryMap] currentPOIs details:', this.currentPOIs.map(poi => ({
+        this.currentPOIs = [...map.pois] // Create new array to trigger reactivity
+        console.log('[MapBuilder] Set currentPOIs from map:', this.currentPOIs.length, 'POIs')
+        console.log('[MapBuilder] currentPOIs details:', this.currentPOIs.map(poi => ({
           name: poi?.basic?.name,
           lat: poi?.basic?.latitude,
           lng: poi?.basic?.longitude
@@ -247,13 +247,13 @@ export default {
         // Wait for map to be ready, then fit map FIRST, then wait before markers are created
         this.$nextTick(() => {
           if (this.map && this.currentPOIs.length > 0) {
-            console.log('[ItineraryMap] Map ready, fitting to POIs first')
+            console.log('[MapBuilder] Map ready, fitting to POIs first')
             // Fit map immediately
             this.fitMapToPOIs()
             
             // Then wait before ensuring markers are created
             setTimeout(() => {
-              console.log('[ItineraryMap] After map fit delay, ensuring markers are created')
+              console.log('[MapBuilder] After map fit delay, ensuring markers are created')
               // Force POIMarkers to update by triggering a reactive update
               this.$forceUpdate()
             }, 1000) // Delay after fitMapToPOIs, before ensuring markers
@@ -262,10 +262,10 @@ export default {
             const checkMap = setInterval(() => {
               if (this.map && this.currentPOIs.length > 0) {
                 clearInterval(checkMap)
-                console.log('[ItineraryMap] Map ready, fitting to POIs first')
+                console.log('[MapBuilder] Map ready, fitting to POIs first')
                 this.fitMapToPOIs()
                 setTimeout(() => {
-                  console.log('[ItineraryMap] After map fit delay, ensuring markers are created')
+                  console.log('[MapBuilder] After map fit delay, ensuring markers are created')
                   this.$forceUpdate()
                 }, 1000)
               }
@@ -292,7 +292,7 @@ export default {
       }
 
       // Load Google Maps script with callback to avoid loading warning
-      const callbackName = 'initItineraryMap_' + Date.now()
+      const callbackName = 'initMapBuilder_' + Date.now()
       window[callbackName] = () => {
         this.createMap()
         delete window[callbackName]
@@ -340,7 +340,7 @@ export default {
             ? (window.google?.maps?.marker?.AdvancedMarkerElement || null) 
             : null
           
-          console.log('[ItineraryMap] Map idle - AdvancedMarkerElement:', !!this.AdvancedMarkerElement, 'useAdvanced:', this.useAdvanced, 'mapId:', this.mapId)
+          console.log('[MapBuilder] Map idle - AdvancedMarkerElement:', !!this.AdvancedMarkerElement, 'useAdvanced:', this.useAdvanced, 'mapId:', this.mapId)
           
           // Trigger resize to ensure map fills container
           this.$nextTick(() => {
@@ -349,16 +349,16 @@ export default {
             }
           })
           
-          // If we have POIs loaded (e.g., from editing an existing itinerary), fit map to them
+          // If we have POIs loaded (e.g., from editing an existing map), fit map to them
           if (this.currentPOIs && this.currentPOIs.length > 0) {
             this.$nextTick(() => {
-              console.log('[ItineraryMap] Map idle - fitting to existing POIs:', this.currentPOIs.length)
+              console.log('[MapBuilder] Map idle - fitting to existing POIs:', this.currentPOIs.length)
               // Fit map immediately
               this.fitMapToPOIs()
               
               // Then wait before ensuring markers are created
               setTimeout(() => {
-                console.log('[ItineraryMap] After map fit delay, ensuring markers are created')
+                console.log('[MapBuilder] After map fit delay, ensuring markers are created')
                 // Force POIMarkers to update
                 this.$forceUpdate()
               }, 1000) // Delay after fitMapToPOIs, before ensuring markers
@@ -377,10 +377,10 @@ export default {
       }
     },
 
-    handlePublishItinerary(payload) {
+    handlePublishMap(payload) {
       const query = { tab: 'maps' }
-      if (payload?.itineraryId) {
-        query.highlight = payload.itineraryId
+      if (payload?.mapId) {
+        query.highlight = payload.mapId
       }
       if (this.$router) {
         this.$router.push({ path: '/profile', query })
@@ -389,27 +389,27 @@ export default {
         window.location.href = `/profile?${params.toString()}`
       }
     },
-    handleSaveDraftItinerary() {
+    handleSaveDraftMap() {
       // Handle save draft logic here
       // Don't close modal on draft save
     },
-    handleShareItinerary() {
+    handleShareMap() {
       // Handle share logic here
       // Don't close modal on share
     },
     handleFirstPlaceClick() {
       this.showFirstPlacePrompt = false
-      // AddItinerary is always visible now, no need to set showAddItinerary
+      // AddMap is always visible now, no need to set showAddMap
     },
-    handleCloseItinerary() {
+    handleCloseMap() {
       // When closing, we might want to reset the form or navigate away
       // For now, just hide the first place prompt if needed
       this.showFirstPlacePrompt = true
     },
     handlePOIsUpdated(pois) {
-      // Update current POIs when AddItinerary emits updates
+      // Update current POIs when AddMap emits updates
       this.currentPOIs = Array.isArray(pois) ? pois : []
-      console.log('[ItineraryMap] POIs updated:', this.currentPOIs.length, 'POIs', this.currentPOIs)
+      console.log('[MapBuilder] POIs updated:', this.currentPOIs.length, 'POIs', this.currentPOIs)
       
       // Log POI positions for debugging
       this.currentPOIs.forEach((poi, index) => {
@@ -420,20 +420,20 @@ export default {
         const isValid = !isNaN(latNum) && !isNaN(lngNum) && 
                        latNum >= -90 && latNum <= 90 && 
                        lngNum >= -180 && lngNum <= 180
-        console.log(`[ItineraryMap] POI ${index + 1}:`, poi?.basic?.name, 'lat:', lat, 'lng:', lng, 'latNum:', latNum, 'lngNum:', lngNum, 'valid:', isValid)
+        console.log(`[MapBuilder] POI ${index + 1}:`, poi?.basic?.name, 'lat:', lat, 'lng:', lng, 'latNum:', latNum, 'lngNum:', lngNum, 'valid:', isValid)
       })
       
       // Fit map bounds to show all POIs if there are any
-      // Use the same approach as when loading existing itinerary: fit map first, then wait for markers
+      // Use the same approach as when loading existing map: fit map first, then wait for markers
       if (this.currentPOIs.length > 0 && this.map) {
         this.$nextTick(() => {
-          console.log('[ItineraryMap] Fitting map to POIs after POI update')
+          console.log('[MapBuilder] Fitting map to POIs after POI update')
           // Fit map immediately
           this.fitMapToPOIs()
           
           // Then wait before ensuring markers are created
           setTimeout(() => {
-            console.log('[ItineraryMap] After map fit delay, ensuring markers are created')
+            console.log('[MapBuilder] After map fit delay, ensuring markers are created')
             // Force POIMarkers to update
             this.$forceUpdate()
           }, 1000) // Delay after fitMapToPOIs, before ensuring markers
@@ -443,7 +443,7 @@ export default {
     // Removed waitForMapAndMarkers - no longer needed with new approach
     fitMapToPOIs() {
       if (!this.map || !window.google || !window.google.maps) {
-        console.log('[ItineraryMap] fitMapToPOIs: map not ready')
+        console.log('[MapBuilder] fitMapToPOIs: map not ready')
         return
       }
       
@@ -457,7 +457,7 @@ export default {
                        latNum >= -90 && latNum <= 90 && 
                        lngNum >= -180 && lngNum <= 180
         if (!isValid) {
-          console.log('[ItineraryMap] fitMapToPOIs: Invalid POI coordinates:', {
+          console.log('[MapBuilder] fitMapToPOIs: Invalid POI coordinates:', {
             name: poi?.basic?.name,
             lat: lat,
             lng: lng,
@@ -470,10 +470,10 @@ export default {
         return isValid
       })
       
-      console.log('[ItineraryMap] fitMapToPOIs: validPOIs count:', validPOIs.length)
+      console.log('[MapBuilder] fitMapToPOIs: validPOIs count:', validPOIs.length)
       
       if (validPOIs.length === 0) {
-        console.log('[ItineraryMap] fitMapToPOIs: no valid POIs, skipping')
+        console.log('[MapBuilder] fitMapToPOIs: no valid POIs, skipping')
         return
       }
       
@@ -484,7 +484,7 @@ export default {
           lat: Number(poi.basic.latitude),
           lng: Number(poi.basic.longitude)
         }
-        console.log('[ItineraryMap] fitMapToPOIs: centering on single POI:', center)
+        console.log('[MapBuilder] fitMapToPOIs: centering on single POI:', center)
         this.map.setCenter(center)
         this.map.setZoom(14)
       } else {
@@ -496,19 +496,19 @@ export default {
             lng: Number(poi.basic.longitude)
           })
         })
-        console.log('[ItineraryMap] fitMapToPOIs: fitting bounds for', validPOIs.length, 'POIs')
+        console.log('[MapBuilder] fitMapToPOIs: fitting bounds for', validPOIs.length, 'POIs')
         this.map.fitBounds(bounds)
       }
     },
     // Manual test method to create a marker at specific coordinates
     createTestMarker(lat, lng, title = 'Test Marker') {
       if (!this.map) {
-        console.error('[ItineraryMap] Map not ready')
+        console.error('[MapBuilder] Map not ready')
         return null
       }
       
       if (!this.AdvancedMarkerElement) {
-        console.error('[ItineraryMap] AdvancedMarkerElement not available')
+        console.error('[MapBuilder] AdvancedMarkerElement not available')
         return null
       }
       
@@ -542,10 +542,10 @@ export default {
           zIndex: 2000
         })
         
-        console.log('[ItineraryMap] Test marker created:', marker, 'at', position)
+        console.log('[MapBuilder] Test marker created:', marker, 'at', position)
         return marker
       } catch (error) {
-        console.error('[ItineraryMap] Failed to create test marker:', error)
+        console.error('[MapBuilder] Failed to create test marker:', error)
         return null
       }
     }
@@ -554,7 +554,7 @@ export default {
 </script>
 
 <style scoped>
-.itinerary-map-page {
+.map-builder-page {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -580,7 +580,7 @@ export default {
   min-height: 0; /* Important for flex children */
 }
 
-/* Left Side: AddItinerary Panel (30%) */
+/* Left Side: AddMap Panel (30%) */
 .panel-side {
   width: 30%;
   flex: 0 0 30%;

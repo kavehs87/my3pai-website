@@ -1,5 +1,5 @@
 <template>
-  <div class="itinerary-pois-header">
+  <div class="map-pois-header">
     <div class="header-left">
       <h1 class="header-title">All locations by {{ userName }}</h1>
       <h2 class="header-subtitle">{{ poisCount }} Points of Interest</h2>
@@ -51,7 +51,7 @@
 
 <script>
 export default {
-  name: 'ItineraryPOIsHeader',
+  name: 'MapPOIsHeader',
   props: {
     userName: {
       type: String,
@@ -103,7 +103,7 @@ export default {
 </script>
 
 <style scoped>
-.itinerary-pois-header {
+.map-pois-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -257,7 +257,7 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .itinerary-pois-header {
+  .map-pois-header {
     flex-direction: column;
     gap: var(--spacing-md);
   }

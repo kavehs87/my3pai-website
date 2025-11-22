@@ -24,7 +24,7 @@ export default {
       type: Object,
       default: null
     },
-    itinerary: {
+    map: {
       type: Object,
       default: null
     },
@@ -43,12 +43,12 @@ export default {
       return this.pois.length || 0
     },
     mapsCount() {
-      // Use publishedItinerariesCount from user object
-      if (this.user && typeof this.user.publishedItinerariesCount === 'number') {
-        return this.user.publishedItinerariesCount
+      // Use publishedMapsCount from user object
+      if (this.user && typeof this.user.publishedMapsCount === 'number') {
+        return this.user.publishedMapsCount
       }
-      // Fallback to 1 if we have an itinerary but no count
-      return this.itinerary ? 1 : 0
+      // Fallback to 1 if we have a map but no count
+      return this.map ? 1 : 0
     }
   }
 }

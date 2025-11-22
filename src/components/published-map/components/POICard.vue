@@ -122,7 +122,7 @@
           <button class="icon-btn" @click="showOnMap" title="Show on map">
             <i class="fas fa-map-marker-alt"></i>
           </button>
-          <button class="icon-btn" @click="addToItinerary" title="Add to itinerary">
+          <button class="icon-btn" @click="addToMap" title="Add to map">
             <i class="fas fa-plus"></i>
           </button>
           <button class="icon-btn" @click="toggleFavorite" :class="{ active: isFavorite }" title="Save">
@@ -337,8 +337,8 @@ export default {
     showOnMap() {
       this.$emit('show-on-map', this.poi)
     },
-    addToItinerary() {
-      this.$emit('add-to-itinerary', this.poi)
+    addToMap() {
+      this.$emit('add-to-map', this.poi)
     },
     toggleFavorite() {
       this.isFavorite = !this.isFavorite

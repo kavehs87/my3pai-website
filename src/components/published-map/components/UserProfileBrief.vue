@@ -6,9 +6,9 @@
     />
     
     <UserProfileStats 
-      v-if="user && itinerary"
+      v-if="user && map"
       :user="user"
-      :itinerary="itinerary"
+      :map="map"
       :pois="pois"
     />
     
@@ -36,7 +36,7 @@ export default {
       type: Object,
       default: null
     },
-    itinerary: {
+    map: {
       type: Object,
       default: null
     },

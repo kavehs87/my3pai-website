@@ -11,7 +11,7 @@
             <i class="fas fa-robot"></i>
             <input 
               type="text" 
-              placeholder="Ask our AI: 'Plan a 5-day trip to Japan' or 'Find itineraries for families with kids'"
+              placeholder="Ask our AI: 'Plan a 5-day trip to Japan' or 'Find maps for families with kids'"
               v-model="prompt"
               @input="handleInput"
               @focus="showSuggestions = true"
@@ -75,7 +75,7 @@
           </div>
           <div class="feature">
             <i class="fas fa-users"></i>
-            <span>Creator Itineraries</span>
+            <span>Creator Maps</span>
           </div>
           <div class="feature">
             <i class="fas fa-code-branch"></i>
@@ -97,12 +97,12 @@ export default {
       suggestions: [],
       liveResults: [],
       dummyData: {
-        itineraries: [
+        maps: [
           {
             id: 1,
             title: "Tokyo 5-Day Adventure",
-            description: "Complete itinerary covering temples, food tours, and modern districts",
-            type: "Creator Itinerary",
+            description: "Complete map covering temples, food tours, and modern districts",
+            type: "Creator Map",
             rating: 4.8,
             image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=80&h=60&fit=crop",
             creator: "TravelPro_Mike",
@@ -113,7 +113,7 @@ export default {
             id: 2,
             title: "Paris Romantic Getaway",
             description: "Perfect for couples - museums, cafes, and Seine river cruise",
-            type: "Creator Itinerary",
+            type: "Creator Map",
             rating: 4.9,
             image: "https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=80&h=60&fit=crop",
             creator: "ParisExplorer",
@@ -124,7 +124,7 @@ export default {
             id: 3,
             title: "Iceland Ring Road Adventure",
             description: "Epic 10-day road trip covering waterfalls, glaciers, and northern lights",
-            type: "Creator Itinerary",
+            type: "Creator Map",
             rating: 4.7,
             image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=80&h=60&fit=crop",
             creator: "AdventureSeeker",
@@ -215,7 +215,7 @@ export default {
         title: 'Quick Suggestions',
         items: [
           'Plan a trip to ' + (query || 'your destination'),
-          'Find itineraries for families',
+          'Find maps for families',
           'Budget travel options',
           'Solo traveler guides'
         ]
@@ -235,14 +235,14 @@ export default {
         })
       }
       
-      // Itinerary suggestions
-      if (query.includes('itinerary') || query.includes('plan') || query.includes('schedule') || query.length > 0) {
+      // Map suggestions
+      if (query.includes('map') || query.includes('plan') || query.includes('schedule') || query.length > 0) {
         this.suggestions.push({
-          type: 'itineraries',
-          title: 'Creator Itineraries',
+            type: 'maps',
+            title: 'Creator Maps',
           items: [
-            'Find itineraries for families with kids',
-            'Solo traveler itineraries',
+            'Find maps for families with kids',
+            'Solo traveler maps',
             'Budget-friendly trip plans',
             'Luxury travel experiences'
           ]
@@ -312,7 +312,7 @@ export default {
       
       // Search through dummy data based on query
       const allData = [
-        ...this.dummyData.itineraries,
+        ...this.dummyData.maps,
         ...this.dummyData.destinations,
         ...this.dummyData.activities,
         ...this.dummyData.accommodations
@@ -320,7 +320,7 @@ export default {
       
       // Add contextual results based on keywords
       if (query.includes('japan') || query.includes('tokyo')) {
-        this.liveResults.push(...this.dummyData.itineraries.filter(item => 
+        this.liveResults.push(...this.dummyData.maps.filter(item => 
           item.title.toLowerCase().includes('tokyo') || 
           item.title.toLowerCase().includes('japan')
         ))
@@ -333,7 +333,7 @@ export default {
       }
       
       if (query.includes('paris') || query.includes('france')) {
-        this.liveResults.push(...this.dummyData.itineraries.filter(item => 
+        this.liveResults.push(...this.dummyData.maps.filter(item => 
           item.title.toLowerCase().includes('paris')
         ))
         this.liveResults.push(...this.dummyData.activities.filter(item => 
@@ -342,7 +342,7 @@ export default {
       }
       
       if (query.includes('iceland')) {
-        this.liveResults.push(...this.dummyData.itineraries.filter(item => 
+        this.liveResults.push(...this.dummyData.maps.filter(item => 
           item.title.toLowerCase().includes('iceland')
         ))
       }

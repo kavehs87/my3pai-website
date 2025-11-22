@@ -36,7 +36,7 @@
   },
   "stats": {
     "totalTrips": 12,
-    "totalItineraries": 8,
+    "totalMaps": 8,
     "savedPlans": 45,
     "followers": 156,
     "following": 89,
@@ -78,7 +78,7 @@
       "createdAt": "2024-06-01"
     }
   ],
-  "itineraries": [
+  "maps": [
     {
       "id": 1,
       "title": "Weekend in New York",

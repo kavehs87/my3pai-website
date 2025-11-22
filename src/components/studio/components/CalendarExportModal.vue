@@ -9,7 +9,7 @@
       </div>
 
       <div class="modal-body">
-        <p class="description">Choose your calendar service to export your trip itinerary:</p>
+        <p class="description">Choose your calendar service to export your trip map:</p>
         
         <div class="calendar-options">
           <!-- Google Calendar -->

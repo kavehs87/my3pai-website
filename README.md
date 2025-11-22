@@ -1,6 +1,6 @@
 # my3pai.com - AI-Powered Travel Planning Platform
 
-A modern travel website built with Vue.js, featuring AI-powered travel planning, creator itineraries, and video content discovery. This project uses dummy data and is designed to be easily integrated with a Node.js or PHP Laravel backend in the future.
+A modern travel website built with Vue.js, featuring AI-powered travel planning, creator maps, and video content discovery. This project uses dummy data and is designed to be easily integrated with a Node.js or PHP Laravel backend in the future.
 
 ## 🌟 Key Features
 
@@ -20,7 +20,7 @@ A modern travel website built with Vue.js, featuring AI-powered travel planning,
 - **Video Plans** - YouTube shorts, Instagram reels, and TikTok videos
 - **Two Display Styles** - Grid layout and vertical shorts/reels format
 - **Auto-play Videos** - Engaging video content with intersection observer
-- **Clone & Customize** - Fork creator itineraries into your own trips
+- **Clone & Customize** - Fork creator maps into your own trips
 
 ### 🎯 Content Categories
 - **Destinations** - Popular travel destinations with ratings

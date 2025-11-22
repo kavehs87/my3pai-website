@@ -171,7 +171,7 @@ export default {
       
       // Add specific suggestions based on input
       if (query.includes('japan') || query.includes('tokyo')) {
-        this.suggestions.push('Tokyo food tour itinerary', 'Kyoto temple hopping guide')
+        this.suggestions.push('Tokyo food tour map', 'Kyoto temple hopping guide')
       }
       if (query.includes('beach') || query.includes('tropical')) {
         this.suggestions.push('Best tropical beach destinations', 'Island hopping adventures')

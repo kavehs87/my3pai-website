@@ -1,5 +1,5 @@
 <template>
-  <nav class="published-itinerary-navbar">
+  <nav class="published-map-navbar">
     <div class="navbar-container">
       <!-- Logo Section -->
       <div class="navbar-brand">
@@ -80,7 +80,7 @@ import apiService from '../../../services/api.js'
 import eventBus from '../../../utils/eventBus.js'
 
 export default {
-  name: 'PublishedItineraryNavbar',
+  name: 'PublishedMapNavbar',
   components: {
     LoginModal,
     SignupModal
@@ -250,7 +250,7 @@ export default {
 </script>
 
 <style scoped>
-.published-itinerary-navbar {
+.published-map-navbar {
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-light);
   position: sticky;

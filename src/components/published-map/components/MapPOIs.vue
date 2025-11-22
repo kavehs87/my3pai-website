@@ -1,8 +1,8 @@
 <template>
-  <div class="itinerary-pois">
+  <div class="map-pois">
     <div class="pois-container">
       <!-- Header Section -->
-      <ItineraryPOIsHeader
+      <MapPOIsHeader
         :user-name="userName"
         :pois-count="pois.length"
         :view-mode="viewMode"
@@ -41,7 +41,7 @@
           :maps-count="mapsCount"
           @view-details="handleViewDetails"
           @show-on-map="handleShowOnMap"
-          @add-to-itinerary="handleAddToItinerary"
+          @add-to-map="handleAddToMap"
           @toggle-favorite="handleToggleFavorite"
         />
       </div>
@@ -50,16 +50,16 @@
 </template>
 
 <script>
-import ItineraryPOIsHeader from './ItineraryPOIsHeader.vue'
+import MapPOIsHeader from './MapPOIsHeader.vue'
 import SearchBar from './SearchBar.vue'
 import FilterBar from './FilterBar.vue'
 import MapContainer from './MapContainer.vue'
 import POICardsList from './POICardsList.vue'
 
 export default {
-  name: 'ItineraryPOIs',
+  name: 'MapPOIs',
   components: {
-    ItineraryPOIsHeader,
+    MapPOIsHeader,
     SearchBar,
     FilterBar,
     MapContainer,
@@ -70,7 +70,7 @@ export default {
       type: Object,
       default: null
     },
-    itinerary: {
+    map: {
       type: Object,
       default: null
     },
@@ -96,7 +96,7 @@ export default {
       return 'User'
     },
     mapsCount() {
-      return this.user?.publishedItinerariesCount || 1
+      return this.user?.publishedMapsCount || 1
     },
     filteredPOIs() {
       // TODO: Apply search and filter logic
@@ -151,9 +151,9 @@ export default {
       // TODO: Center map on POI and highlight it
       this.$emit('show-poi-on-map', poi)
     },
-    handleAddToItinerary(poi) {
-      console.log('Add POI to itinerary:', poi)
-      // TODO: Implement add to itinerary functionality
+    handleAddToMap(poi) {
+      console.log('Add POI to map:', poi)
+      // TODO: Implement add to map functionality
     },
     handleToggleFavorite(poi, isFavorite) {
       console.log('Toggle favorite for POI:', poi, isFavorite)
@@ -164,7 +164,7 @@ export default {
 </script>
 
 <style scoped>
-.itinerary-pois {
+.map-pois {
   padding: var(--spacing-xl);
   height: 100%;
   overflow-y: auto;
@@ -190,7 +190,7 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .itinerary-pois {
+  .map-pois {
     padding: var(--spacing-md);
   }
   

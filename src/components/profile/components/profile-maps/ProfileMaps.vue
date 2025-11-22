@@ -27,29 +27,29 @@
               <option value="pois">Most POIs</option>
             </select>
 
-            <button class="refresh-btn icon-only" @click="fetchItineraries" :disabled="isBusy" title="Refresh maps">
+            <button class="refresh-btn icon-only" @click="fetchMaps" :disabled="isBusy" title="Refresh maps">
               <i :class="['fas', isBusy ? 'fa-spinner fa-spin' : 'fa-rotate']"></i>
             </button>
           </div>
         </div>
       </div>
 
-      <div v-if="error && itineraries.length" class="inline-alert">
+      <div v-if="error && maps.length" class="inline-alert">
         <i class="fas fa-circle-exclamation"></i>
         <span>{{ error }}</span>
-        <button class="btn-link" @click="fetchItineraries">
+        <button class="btn-link" @click="fetchMaps">
           Retry
         </button>
       </div>
 
-      <div v-if="error && !itineraries.length" class="state-card error">
+      <div v-if="error && !maps.length" class="state-card error">
         <div class="state-icon">
           <i class="fas fa-triangle-exclamation"></i>
         </div>
         <div class="state-copy">
           <h3>Unable to load maps</h3>
           <p>{{ error }}</p>
-          <button class="btn-link" @click="fetchItineraries">
+          <button class="btn-link" @click="fetchMaps">
             <i class="fas fa-redo"></i>
             Try again
           </button>
@@ -67,14 +67,14 @@
         </div>
       </div>
 
-      <div v-else-if="!itineraries.length" class="state-card empty">
+      <div v-else-if="!maps.length" class="state-card empty">
         <div class="state-icon">
           <i class="fas fa-route"></i>
         </div>
         <div class="state-copy">
-          <h3>No itinerary maps yet</h3>
-          <p>Create itinerary maps from the studio to keep your POIs organized.</p>
-          <button class="btn-primary" @click="$emit('create-itinerary')">
+          <h3>No maps yet</h3>
+          <p>Create maps from the studio to keep your POIs organized.</p>
+          <button class="btn-primary" @click="$emit('create-map')">
             <i class="fas fa-plus"></i>
             Create a map
           </button>
@@ -84,9 +84,9 @@
       <div v-else>
         <div class="cards-grid">
           <ProfileMapsCard
-            v-for="itinerary in paginatedItineraries"
-            :key="itinerary.id"
-            :itinerary="itinerary"
+            v-for="map in paginatedMaps"
+            :key="map.id"
+            :map="map"
             :username="username"
             @edit="handleEdit"
             @publish="handlePublish"
@@ -137,10 +137,10 @@ export default {
       default: null
     }
   },
-  emits: ['create-itinerary'],
+  emits: ['create-map'],
   data() {
     return {
-      itineraries: [],
+      maps: [],
       isLoading: true,
       isRefreshing: false,
       error: '',
@@ -156,8 +156,8 @@ export default {
     isBusy() {
       return this.isLoading || this.isRefreshing
     },
-    filteredItineraries() {
-      let result = [...this.itineraries]
+    filteredMaps() {
+      let result = [...this.maps]
       
       // 1. Search
       if (this.searchQuery) {
@@ -194,26 +194,26 @@ export default {
       return result
     },
     totalPages() {
-      return Math.max(1, Math.ceil(this.filteredItineraries.length / this.itemsPerPage) || 1)
+      return Math.max(1, Math.ceil(this.filteredMaps.length / this.itemsPerPage) || 1)
     },
-    paginatedItineraries() {
+    paginatedMaps() {
       const start = (this.currentPage - 1) * this.itemsPerPage
       const end = start + this.itemsPerPage
-      return this.filteredItineraries.slice(start, end)
+      return this.filteredMaps.slice(start, end)
     }
   },
   watch: {
     // Reset to page 1 when filters or search change
-    filteredItineraries() {
+    filteredMaps() {
       this.currentPage = 1
     }
   },
   created() {
-    this.fetchItineraries()
+    this.fetchMaps()
   },
   methods: {
-    async fetchItineraries() {
-      const isInitialLoad = this.itineraries.length === 0
+    async fetchMaps() {
+      const isInitialLoad = this.maps.length === 0
       if (isInitialLoad) {
         this.isLoading = true
       } else {
@@ -221,15 +221,15 @@ export default {
       }
       this.error = ''
       try {
-        const response = await apiService.getItineraries({ per_page: 12 })
+        const response = await apiService.getMaps({ per_page: 12 })
         if (!response.success) {
           throw new Error(response.error || 'Unable to load saved maps right now.')
         }
         const apiResponse = response.data || {}
         const rootData = apiResponse.data || apiResponse
-        const list = rootData.itineraries || rootData.data || []
-        this.itineraries = (Array.isArray(list) ? list : [])
-          .map(this.normalizeItinerary)
+        const list = rootData.maps || rootData.data || []
+        this.maps = (Array.isArray(list) ? list : [])
+          .map(this.normalizeMap)
           .filter(Boolean)
       } catch (error) {
         this.error = error.message || 'Unexpected error while loading maps.'
@@ -240,7 +240,7 @@ export default {
         this.isRefreshing = false
       }
     },
-    normalizeItinerary(raw) {
+    normalizeMap(raw) {
       if (!raw) return null
       // Handle both 'pois' and 'pointsOfInterest' naming conventions
       const pois = Array.isArray(raw.pois) 
@@ -300,50 +300,50 @@ export default {
         tags: Array.from(tags).slice(0, 5) // Limit to 5 tags
       }
     },
-    handleEdit(itinerary) {
-      // Navigate to itinerary map page with itinerary ID
+    handleEdit(map) {
+      // Navigate to map builder page with map ID
       this.$router.push({ 
-        name: 'itinerary-map', 
-        query: { id: itinerary.id } 
+        name: 'map-builder', 
+        query: { id: map.id } 
       })
     },
-    async handleDelete(itinerary) {
-      if (!confirm('Delete this itinerary and all of its POIs? This action cannot be undone.')) {
+    async handleDelete(map) {
+      if (!confirm('Delete this map and all of its POIs? This action cannot be undone.')) {
         return
       }
 
-      const previous = [...this.itineraries]
+      const previous = [...this.maps]
       // Optimistic removal
-      this.itineraries = this.itineraries.filter(item => item.id !== itinerary.id)
+      this.maps = this.maps.filter(item => item.id !== map.id)
 
       try {
-        const result = await apiService.deleteItinerary(itinerary.id)
+        const result = await apiService.deleteMap(map.id)
         if (!result.success) {
-          throw new Error(result.error || 'Failed to delete itinerary')
+          throw new Error(result.error || 'Failed to delete map')
         }
-        toast.success('Itinerary deleted successfully')
+        toast.success('Map deleted successfully')
       } catch (error) {
         // Revert on failure
-        this.itineraries = previous
-        toast.error(error.message || 'Unable to delete itinerary')
+        this.maps = previous
+        toast.error(error.message || 'Unable to delete map')
       }
     },
-    async handlePublish(itinerary) {
-      await this.updatePublishStatus(itinerary, true)
+    async handlePublish(map) {
+      await this.updatePublishStatus(map, true)
     },
-    async handleUnpublish(itinerary) {
+    async handleUnpublish(map) {
       if (!confirm('Are you sure you want to unpublish this map? It will no longer be visible to others.')) {
         return
       }
-      await this.updatePublishStatus(itinerary, false)
+      await this.updatePublishStatus(map, false)
     },
-    async updatePublishStatus(itinerary, isPublished) {
-      const originalStatus = itinerary.isPublished
+    async updatePublishStatus(map, isPublished) {
+      const originalStatus = map.isPublished
       // Optimistic update
-      itinerary.isPublished = isPublished
+      map.isPublished = isPublished
       
       try {
-        const result = await apiService.updateItinerary(itinerary.id, {
+        const result = await apiService.updateMap(map.id, {
           isPublished
         })
         
@@ -355,7 +355,7 @@ export default {
         }
       } catch (error) {
         // Revert on failure
-        itinerary.isPublished = originalStatus
+        map.isPublished = originalStatus
         toast.error(error.message || 'Unable to update map status')
       }
     }

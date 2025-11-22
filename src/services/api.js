@@ -301,23 +301,23 @@ class ApiService {
     })
   }
 
-  // Trips CRUD
-  // Itineraries & POIs
-  async createItinerary(itineraryData) {
-    return this.request('/itineraries', {
+  // Maps CRUD
+  // Maps & POIs
+  async createMap(mapData) {
+    return this.request('/maps', {
       method: 'POST',
-      body: itineraryData
+      body: mapData
     })
   }
 
-  async getItinerary(itineraryId) {
-    if (!itineraryId) {
-      return { success: false, error: 'Missing itinerary identifier.' }
+  async getMap(mapId) {
+    if (!mapId) {
+      return { success: false, error: 'Missing map identifier.' }
     }
-    return this.request(`/itineraries/${itineraryId}`)
+    return this.request(`/maps/${mapId}`)
   }
 
-  async getPublicItinerary(username, slug) {
+  async getPublicMap(username, slug) {
     if (!username || !slug) {
       return { success: false, error: 'Missing username or slug.' }
     }
@@ -327,48 +327,48 @@ class ApiService {
     })
   }
 
-  async getItineraries(params = {}) {
+  async getMaps(params = {}) {
     const queryString = this.buildQueryString(params)
-    return this.request(`/itineraries${queryString}`)
+    return this.request(`/maps${queryString}`)
   }
 
-  async updateItinerary(itineraryId, itineraryData) {
-    return this.request(`/itineraries/${itineraryId}`, {
+  async updateMap(mapId, mapData) {
+    return this.request(`/maps/${mapId}`, {
       method: 'PUT',
-      body: itineraryData
+      body: mapData
     })
   }
 
-  async uploadItineraryThumbnail(itineraryId, file) {
+  async uploadMapThumbnail(mapId, file) {
     const formData = new FormData()
     formData.append('thumbnail', file)
-    return this.request(`/itineraries/${itineraryId}/thumbnail`, {
+    return this.request(`/maps/${mapId}/thumbnail`, {
       method: 'POST',
       body: formData
     })
   }
 
-  async deleteItineraryThumbnail(itineraryId) {
-    if (!itineraryId) {
-      return { success: false, error: 'Missing itinerary identifier.' }
+  async deleteMapThumbnail(mapId) {
+    if (!mapId) {
+      return { success: false, error: 'Missing map identifier.' }
     }
-    return this.request(`/itineraries/${itineraryId}/thumbnail`, {
+    return this.request(`/maps/${mapId}/thumbnail`, {
       method: 'DELETE'
     })
   }
 
-  async savePoi(itineraryId, poiData) {
-    return this.request(`/itineraries/${itineraryId}/pois`, {
+  async savePoi(mapId, poiData) {
+    return this.request(`/maps/${mapId}/pois`, {
       method: 'POST',
       body: poiData
     })
   }
 
-  async updatePoi(itineraryId, poiId, poiData) {
-    if (!itineraryId || !poiId) {
-      return { success: false, error: 'Missing itinerary or POI identifier.' }
+  async updatePoi(mapId, poiId, poiData) {
+    if (!mapId || !poiId) {
+      return { success: false, error: 'Missing map or POI identifier.' }
     }
-    return this.request(`/itineraries/${itineraryId}/pois/${poiId}`, {
+    return this.request(`/maps/${mapId}/pois/${poiId}`, {
       method: 'PUT',
       body: poiData
     })
@@ -426,17 +426,17 @@ class ApiService {
     })
   }
 
-  async deletePoi(itineraryId, poiId) {
-    if (!itineraryId || !poiId) {
-      return { success: false, error: 'Missing itinerary or POI identifier.' }
+  async deletePoi(mapId, poiId) {
+    if (!mapId || !poiId) {
+      return { success: false, error: 'Missing map or POI identifier.' }
     }
-    return this.request(`/itineraries/${itineraryId}/pois/${poiId}`, {
+    return this.request(`/maps/${mapId}/pois/${poiId}`, {
       method: 'DELETE'
     })
   }
 
-  async deleteItinerary(itineraryId) {
-    return this.request(`/itineraries/${itineraryId}`, {
+  async deleteMap(mapId) {
+    return this.request(`/maps/${mapId}`, {
       method: 'DELETE'
     })
   }

@@ -1,27 +1,27 @@
 <template>
-  <div class="add-itinerary-root">
-  <div class="add-itinerary-panel">
+  <div class="add-map-root">
+  <div class="add-map-panel">
     <div class="panel-header">
-      <h2 class="panel-title">Add Itinerary</h2>
+      <h2 class="panel-title">Add Map</h2>
       </div>
 
       <div class="panel-content">
-        <!-- Add itinerary form content -->
+        <!-- Add map form content -->
         <div class="form-section">
           <div class="field-group">
-            <label for="itinerary-title">Itinerary title <span>*</span></label>
+            <label for="map-title">Map title <span>*</span></label>
             <input
-              id="itinerary-title"
+              id="map-title"
               type="text"
               v-model="formData.title"
-              placeholder="Give this itinerary a name"
+              placeholder="Give this map a name"
               :class="{ 'has-error': titleError }"
             />
             <p v-if="titleError" class="error-text">{{ titleError }}</p>
           </div>
           <ThumbnailUpload
             label="Thumbnail"
-            placeholder="Upload itinerary thumbnail"
+            placeholder="Upload map thumbnail"
             v-model="formData.thumbnail"
           />
           <div v-if="formData.pointsOfInterest.length" class="poi-list">
@@ -116,14 +116,14 @@
 </template>
 
 <script>
-import PlaceField from './add-itineraries/components/PlaceField.vue'
-import ThumbnailUpload from './add-itineraries/components/ThumbnailUpload.vue'
-import POIAccordion from './add-itineraries/components/POIAccordion.vue'
+import PlaceField from './poi-form/components/PlaceField.vue'
+import ThumbnailUpload from './poi-form/components/ThumbnailUpload.vue'
+import POIAccordion from './poi-form/components/POIAccordion.vue'
 import apiService from '../../../services/api.js'
 import { toast } from '../../../utils/toast.js'
 
 export default {
-  name: 'AddItinerary',
+  name: 'AddMap',
   components: {
     PlaceField,
     ThumbnailUpload,
@@ -134,7 +134,7 @@ export default {
       type: Boolean,
       default: false
     },
-    initialItinerary: {
+    initialMap: {
       type: Object,
       default: null
     }
@@ -152,7 +152,7 @@ export default {
       poiForm: this.createEmptyPOIForm(),
       editingPoiIndex: null,
       titleError: '',
-      remoteItineraryId: null,
+      remoteMapId: null,
       pendingPoiDeletions: [],
       submissionState: {
         active: false,
@@ -167,18 +167,18 @@ export default {
     }
   },
   watch: {
-    initialItinerary: {
+    initialMap: {
       immediate: true,
       handler(newValue) {
         if (newValue && newValue.id) {
-          this.hydrateFromItinerary(newValue)
+          this.hydrateFromMap(newValue)
         }
       }
     },
     'formData.pointsOfInterest': {
       deep: true,
       handler() {
-        // Emit POI updates to parent (ItineraryMap) so it can update markers
+        // Emit POI updates to parent (MapBuilder) so it can update markers
         this.$emit('pois-updated', this.formData.pointsOfInterest)
       }
     }
@@ -226,14 +226,14 @@ export default {
         socialPosts: []
       }
     },
-    hydrateFromItinerary(itinerary = {}) {
-      const safeItinerary = itinerary || {}
-      const pois = Array.isArray(safeItinerary.pois) ? safeItinerary.pois : []
+    hydrateFromMap(map = {}) {
+      const safeMap = map || {}
+      const pois = Array.isArray(safeMap.pois) ? safeMap.pois : []
 
-      this.remoteItineraryId = safeItinerary.id || null
-      this.formData.title = safeItinerary.title || ''
-      this.formData.thumbnail = safeItinerary.thumbnailUrl || null
-      this.originalThumbnailUrl = safeItinerary.thumbnailUrl || null
+      this.remoteMapId = safeMap.id || null
+      this.formData.title = safeMap.title || ''
+      this.formData.thumbnail = safeMap.thumbnailUrl || null
+      this.originalThumbnailUrl = safeMap.thumbnailUrl || null
       this.titleError = ''
       this.pendingPoiDeletions = []
       this.editingPoiIndex = null
@@ -362,17 +362,17 @@ export default {
       this.$emit('close')
     },
     async handlePublish() {
-      console.log('[AddItinerary] handlePublish called')
+      console.log('[AddMap] handlePublish called')
       if (!this.ensureTitleIsPresent()) {
-        console.log('[AddItinerary] handlePublish: title check failed')
+        console.log('[AddMap] handlePublish: title check failed')
         return
       }
-      console.log('[AddItinerary] handlePublish: calling submitItinerary')
-      await this.submitItinerary({ mode: 'publish' })
+      console.log('[AddMap] handlePublish: calling submitMap')
+      await this.submitMap({ mode: 'publish' })
     },
     async handleSaveDraft() {
       if (!this.ensureTitleIsPresent()) return
-      await this.submitItinerary({ mode: 'draft' })
+      await this.submitMap({ mode: 'draft' })
     },
     handleShare() {
       this.$emit('share')
@@ -388,11 +388,11 @@ export default {
       // this.poiForm = this.clonePOIData()
     },
     handlePOISave(poiData = this.poiForm, options = {}) {
-      console.log('[AddItinerary] handlePOISave called')
-      console.log('[AddItinerary] handlePOISave: poiData.media:', poiData?.media)
-      console.log('[AddItinerary] handlePOISave: poiData.media?.images:', poiData?.media?.images)
-      console.log('[AddItinerary] handlePOISave: poiForm.media:', this.poiForm?.media)
-      console.log('[AddItinerary] handlePOISave: poiForm.media?.images:', this.poiForm?.media?.images)
+      console.log('[AddMap] handlePOISave called')
+      console.log('[AddMap] handlePOISave: poiData.media:', poiData?.media)
+      console.log('[AddMap] handlePOISave: poiData.media?.images:', poiData?.media?.images)
+      console.log('[AddMap] handlePOISave: poiForm.media:', this.poiForm?.media)
+      console.log('[AddMap] handlePOISave: poiForm.media?.images:', this.poiForm?.media?.images)
       const { keepOpen = false } = options
       const isEdit = this.editingPoiIndex !== null
       const existingEntry = isEdit ? this.formData.pointsOfInterest[this.editingPoiIndex] : null
@@ -400,9 +400,9 @@ export default {
         id: existingEntry && existingEntry.id ? existingEntry.id : Date.now(),
         ...this.clonePOIData(poiData)
       }
-      console.log('[AddItinerary] handlePOISave: payload.media:', payload?.media)
-      console.log('[AddItinerary] handlePOISave: payload.media?.images:', payload?.media?.images)
-      console.log('[AddItinerary] handlePOISave: payload.media?.imagesToDelete:', payload?.media?.imagesToDelete)
+      console.log('[AddMap] handlePOISave: payload.media:', payload?.media)
+      console.log('[AddMap] handlePOISave: payload.media?.images:', payload?.media?.images)
+      console.log('[AddMap] handlePOISave: payload.media?.imagesToDelete:', payload?.media?.imagesToDelete)
 
       if (isEdit) {
         this.formData.pointsOfInterest.splice(this.editingPoiIndex, 1, payload)
@@ -412,7 +412,7 @@ export default {
 
       // Emit POIs update after POI is saved so map can show markers
       this.$nextTick(() => {
-        console.log('[AddItinerary] Emitting pois-updated after POI save:', this.formData.pointsOfInterest.length, 'POIs')
+        console.log('[AddMap] Emitting pois-updated after POI save:', this.formData.pointsOfInterest.length, 'POIs')
         this.$emit('pois-updated', this.formData.pointsOfInterest)
       })
 
@@ -480,8 +480,8 @@ export default {
       Object.assign(this.submissionState, {
         active: true,
         mode,
-        heading: mode === 'publish' ? 'Publishing itinerary' : 'Saving draft',
-        message: 'Preparing your itinerary…',
+        heading: mode === 'publish' ? 'Publishing map' : 'Saving draft',
+        message: 'Preparing your map…',
         detail: '',
         poiProgress: '',
         error: null,
@@ -506,7 +506,7 @@ export default {
       })
     },
     handleSubmissionError(error) {
-      const message = error?.message || 'Unable to save itinerary. Please try again.'
+      const message = error?.message || 'Unable to save map. Please try again.'
       Object.assign(this.submissionState, {
         error: message,
         detail: '',
@@ -516,10 +516,10 @@ export default {
       toast.error(message)
     },
     finishSubmission(mode) {
-      const heading = mode === 'publish' ? 'Itinerary published' : 'Draft saved'
+      const heading = mode === 'publish' ? 'Map published' : 'Draft saved'
       const detail =
         mode === 'publish'
-          ? 'Your itinerary and POIs are synced with My3PAI.'
+          ? 'Your map and POIs are synced with My3PAI.'
           : 'We saved your progress. You can continue editing anytime.'
       Object.assign(this.submissionState, {
         success: true,
@@ -536,81 +536,81 @@ export default {
         this.dismissSubmissionOverlay()
       }, 1200)
     },
-    async submitItinerary({ mode }) {
-      console.log('[AddItinerary] submitItinerary called, mode:', mode)
+    async submitMap({ mode }) {
+      console.log('[AddMap] submitMap called, mode:', mode)
       if (this.submissionState.active) {
-        console.log('[AddItinerary] submitItinerary: already active, returning')
+        console.log('[AddMap] submitMap: already active, returning')
         return false
       }
       const trimmedTitle = (this.formData.title || '').trim()
       if (!trimmedTitle) {
-        console.log('[AddItinerary] submitItinerary: no title')
+        console.log('[AddMap] submitMap: no title')
         this.titleError = 'Title is required'
         return false
       }
       if (mode === 'publish' && !this.formData.pointsOfInterest.length) {
-        console.log('[AddItinerary] submitItinerary: no POIs for publish')
+        console.log('[AddMap] submitMap: no POIs for publish')
         toast.error('Add at least one point of interest before publishing.')
         return false
       }
-      console.log('[AddItinerary] submitItinerary: starting submission, POI count:', this.formData.pointsOfInterest.length)
+      console.log('[AddMap] submitMap: starting submission, POI count:', this.formData.pointsOfInterest.length)
       this.startSubmission(mode)
       try {
-        console.log('[AddItinerary] submitItinerary: calling ensureItineraryRecord')
-        const itineraryId = await this.ensureItineraryRecord(mode, trimmedTitle)
-        console.log('[AddItinerary] submitItinerary: got itineraryId:', itineraryId)
-        console.log('[AddItinerary] submitItinerary: calling uploadItineraryThumbnailIfNeeded')
-        await this.uploadItineraryThumbnailIfNeeded(itineraryId)
-        console.log('[AddItinerary] submitItinerary: calling savePointsOfInterest')
-        await this.savePointsOfInterest(itineraryId)
-        console.log('[AddItinerary] submitItinerary: calling flushPendingPoiDeletions')
+        console.log('[AddMap] submitMap: calling ensureMapRecord')
+        const mapId = await this.ensureMapRecord(mode, trimmedTitle)
+        console.log('[AddMap] submitMap: got mapId:', mapId)
+        console.log('[AddMap] submitMap: calling uploadMapThumbnailIfNeeded')
+        await this.uploadMapThumbnailIfNeeded(mapId)
+        console.log('[AddMap] submitMap: calling savePointsOfInterest')
+        await this.savePointsOfInterest(mapId)
+        console.log('[AddMap] submitMap: calling flushPendingPoiDeletions')
         await this.flushPendingPoiDeletions()
-        console.log('[AddItinerary] submitItinerary: finishing submission')
+        console.log('[AddMap] submitMap: finishing submission')
         this.finishSubmission(mode)
         const payload = {
-          itineraryId,
+          mapId,
           mode,
           poiCount: this.formData.pointsOfInterest.length
         }
-        console.log('[AddItinerary] submitItinerary: emitting event, payload:', payload)
+        console.log('[AddMap] submitMap: emitting event, payload:', payload)
         this.$emit(mode === 'publish' ? 'publish' : 'save-draft', payload)
         return true
       } catch (error) {
-        console.error('[AddItinerary] submitItinerary: ERROR caught:', error)
+        console.error('[AddMap] submitMap: ERROR caught:', error)
         this.handleSubmissionError(error)
         return false
       }
     },
-    async ensureItineraryRecord(mode, title) {
+    async ensureMapRecord(mode, title) {
       const payload = { title }
       if (mode === 'publish') {
         payload.isPublished = true
       } else if (mode === 'draft') {
         payload.isPublished = false
       }
-      if (!this.remoteItineraryId) {
-        this.updateSubmission('Creating itinerary', 'Sending itinerary details')
-        const response = await apiService.createItinerary(payload)
-        const itinerary = this.extractItineraryFromResponse(response)
-        if (!itinerary?.id) {
-          throw new Error('Unable to create itinerary. Missing identifier.')
+      if (!this.remoteMapId) {
+        this.updateSubmission('Creating map', 'Sending map details')
+        const response = await apiService.createMap(payload)
+        const map = this.extractMapFromResponse(response)
+        if (!map?.id) {
+          throw new Error('Unable to create map. Missing identifier.')
         }
-        this.remoteItineraryId = itinerary.id
-        return itinerary.id
+        this.remoteMapId = map.id
+        return map.id
       }
       this.updateSubmission(
-        mode === 'publish' ? 'Publishing itinerary' : 'Updating itinerary',
-        'Syncing itinerary details'
+        mode === 'publish' ? 'Publishing map' : 'Updating map',
+        'Syncing map details'
       )
-      const response = await apiService.updateItinerary(this.remoteItineraryId, payload)
-      const itinerary = this.extractItineraryFromResponse(response)
-      if (!itinerary?.id) {
-        throw new Error('Unable to update itinerary. Missing identifier.')
+      const response = await apiService.updateMap(this.remoteMapId, payload)
+      const map = this.extractMapFromResponse(response)
+      if (!map?.id) {
+        throw new Error('Unable to update map. Missing identifier.')
       }
-      this.remoteItineraryId = itinerary.id
-      return itinerary.id
+      this.remoteMapId = map.id
+      return map.id
     },
-    async uploadItineraryThumbnailIfNeeded(itineraryId) {
+    async uploadMapThumbnailIfNeeded(mapId) {
       const hasNewFile = this.formData.thumbnail instanceof File
       const shouldDelete =
         !this.formData.thumbnail &&
@@ -623,37 +623,37 @@ export default {
 
       if (hasNewFile) {
       this.updateSubmission('Uploading thumbnail', 'Sending featured image')
-      const response = await apiService.uploadItineraryThumbnail(itineraryId, this.formData.thumbnail)
-      const itinerary = this.extractItineraryFromResponse(response)
-      if (itinerary?.thumbnailUrl) {
-        this.formData.thumbnail = itinerary.thumbnailUrl
-          this.originalThumbnailUrl = itinerary.thumbnailUrl
+      const response = await apiService.uploadMapThumbnail(mapId, this.formData.thumbnail)
+      const map = this.extractMapFromResponse(response)
+      if (map?.thumbnailUrl) {
+        this.formData.thumbnail = map.thumbnailUrl
+          this.originalThumbnailUrl = map.thumbnailUrl
         }
         return
       }
 
       if (shouldDelete) {
         this.updateSubmission('Removing thumbnail', 'Clearing featured image')
-        await apiService.deleteItineraryThumbnail(itineraryId)
+        await apiService.deleteMapThumbnail(mapId)
         this.originalThumbnailUrl = null
         this.formData.thumbnail = null
       }
     },
-    async savePointsOfInterest(itineraryId) {
-      console.log('[AddItinerary] savePointsOfInterest reached, itineraryId:', itineraryId)
+    async savePointsOfInterest(mapId) {
+      console.log('[AddMap] savePointsOfInterest reached, mapId:', mapId)
       const points = this.formData.pointsOfInterest || []
-      console.log('[AddItinerary] savePointsOfInterest: POI count:', points.length)
+      console.log('[AddMap] savePointsOfInterest: POI count:', points.length)
       if (!points.length) {
-        console.log('[AddItinerary] savePointsOfInterest: no POIs, returning early')
+        console.log('[AddMap] savePointsOfInterest: no POIs, returning early')
         return
       }
       for (let index = 0; index < points.length; index += 1) {
         const poi = points[index]
         const label = this.formatPOITitle(poi)
-        console.log(`[AddItinerary] savePointsOfInterest: processing POI ${index + 1}/${points.length}:`, label)
-        console.log(`[AddItinerary] savePointsOfInterest: POI media images count:`, poi?.media?.images?.length || 0)
+        console.log(`[AddMap] savePointsOfInterest: processing POI ${index + 1}/${points.length}:`, label)
+        console.log(`[AddMap] savePointsOfInterest: POI media images count:`, poi?.media?.images?.length || 0)
         if (poi?.media?.images?.length) {
-          console.log(`[AddItinerary] savePointsOfInterest: POI media images:`, poi.media.images.map(img => ({
+          console.log(`[AddMap] savePointsOfInterest: POI media images:`, poi.media.images.map(img => ({
             type: img.type,
             hasFile: !!img.file,
             name: img.name
@@ -666,20 +666,20 @@ export default {
         )
         const payload = this.buildPoiPayload(poi)
         const isExisting = Boolean(poi.remoteId)
-        console.log(`[AddItinerary] savePointsOfInterest: isExisting=${isExisting}, remoteId=${poi.remoteId}`)
+        console.log(`[AddMap] savePointsOfInterest: isExisting=${isExisting}, remoteId=${poi.remoteId}`)
         const response = isExisting
-          ? await apiService.updatePoi(itineraryId, poi.remoteId, payload)
-          : await apiService.savePoi(itineraryId, payload)
+          ? await apiService.updatePoi(mapId, poi.remoteId, payload)
+          : await apiService.savePoi(mapId, payload)
         const remotePoi = this.extractPoiFromResponse(response)
-        console.log('[AddItinerary] savePointsOfInterest: remotePoi response:', remotePoi)
+        console.log('[AddMap] savePointsOfInterest: remotePoi response:', remotePoi)
         if (!remotePoi?.id) {
           throw new Error(`Unable to save ${label}. Missing identifier.`)
         }
-        console.log(`[AddItinerary] savePointsOfInterest: POI saved, remoteId=${remotePoi.id}`)
+        console.log(`[AddMap] savePointsOfInterest: POI saved, remoteId=${remotePoi.id}`)
         this.formData.pointsOfInterest[index].remoteId = remotePoi.id
         const poiRef = this.formData.pointsOfInterest[index]
-        console.log(`[AddItinerary] savePointsOfInterest: calling uploadPoiMediaIfNeeded for POI ${index + 1}`)
-        console.log(`[AddItinerary] savePointsOfInterest: poiRef.media?.imagesToDelete before operations:`, poiRef?.media?.imagesToDelete)
+        console.log(`[AddMap] savePointsOfInterest: calling uploadPoiMediaIfNeeded for POI ${index + 1}`)
+        console.log(`[AddMap] savePointsOfInterest: poiRef.media?.imagesToDelete before operations:`, poiRef?.media?.imagesToDelete)
         await this.uploadPoiMediaIfNeeded(poiRef)
         await this.deletePoiMediaIfNeeded(poiRef)
         await this.reorderPoiMediaIfNeeded(poiRef)
@@ -688,7 +688,7 @@ export default {
         await this.deletePoiPdfIfNeeded(poiRef)
         await this.uploadPoiPdfIfNeeded(poiRef)
       }
-      console.log('[AddItinerary] savePointsOfInterest: completed all POIs')
+      console.log('[AddMap] savePointsOfInterest: completed all POIs')
     },
     buildPoiPayload(poi) {
       const source = this.clonePOIData(poi)
@@ -737,24 +737,24 @@ export default {
       return `POI ${current} of ${total}`
     },
     async uploadPoiMediaIfNeeded(poi) {
-      console.log('[AddItinerary] uploadPoiMediaIfNeeded called for POI:', this.formatPOITitle(poi))
-      console.log('[AddItinerary] uploadPoiMediaIfNeeded: poi.remoteId:', poi?.remoteId)
-      console.log('[AddItinerary] uploadPoiMediaIfNeeded: poi.media?.images:', poi?.media?.images)
+      console.log('[AddMap] uploadPoiMediaIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddMap] uploadPoiMediaIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddMap] uploadPoiMediaIfNeeded: poi.media?.images:', poi?.media?.images)
       const files = this.getPoiMediaFiles(poi)
-      console.log('[AddItinerary] uploadPoiMediaIfNeeded: extracted files count:', files.length)
+      console.log('[AddMap] uploadPoiMediaIfNeeded: extracted files count:', files.length)
       if (!files.length || !poi?.remoteId) {
-        console.log('[AddItinerary] uploadPoiMediaIfNeeded: skipping upload - files.length:', files.length, 'remoteId:', poi?.remoteId)
+        console.log('[AddMap] uploadPoiMediaIfNeeded: skipping upload - files.length:', files.length, 'remoteId:', poi?.remoteId)
         return
       }
-      console.log('[AddItinerary] uploadPoiMediaIfNeeded: calling API with', files.length, 'files')
+      console.log('[AddMap] uploadPoiMediaIfNeeded: calling API with', files.length, 'files')
       this.updateSubmission(
         `Uploading media for ${this.formatPOITitle(poi)}`,
         'Sending media assets'
       )
       const response = await apiService.uploadPoiMedia(poi.remoteId, files)
-      console.log('[AddItinerary] uploadPoiMediaIfNeeded: API response:', response)
+      console.log('[AddMap] uploadPoiMediaIfNeeded: API response:', response)
       this.ensureApiSuccess(response, 'Unable to upload media for this POI.')
-      console.log('[AddItinerary] uploadPoiMediaIfNeeded: upload successful')
+      console.log('[AddMap] uploadPoiMediaIfNeeded: upload successful')
       const uploadedImages = this.extractImagesFromMediaResponse(response)
       const existingEntries = (poi.media?.images || []).filter((image) => image?.type === 'existing')
       const mergedEntries = this.mergeImageEntries(existingEntries, uploadedImages)
@@ -766,15 +766,15 @@ export default {
     },
     async deletePoiMediaIfNeeded(poi) {
       const ids = Array.isArray(poi?.media?.imagesToDelete) ? poi.media.imagesToDelete : []
-      console.log('[AddItinerary] deletePoiMediaIfNeeded: poi.media?.imagesToDelete:', poi?.media?.imagesToDelete)
-      console.log('[AddItinerary] deletePoiMediaIfNeeded: extracted ids:', ids)
-      console.log('[AddItinerary] deletePoiMediaIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddMap] deletePoiMediaIfNeeded: poi.media?.imagesToDelete:', poi?.media?.imagesToDelete)
+      console.log('[AddMap] deletePoiMediaIfNeeded: extracted ids:', ids)
+      console.log('[AddMap] deletePoiMediaIfNeeded: poi.remoteId:', poi?.remoteId)
       if (!ids.length || !poi?.remoteId) {
-        console.log('[AddItinerary] deletePoiMediaIfNeeded: skipping - no ids to delete or no remoteId')
+        console.log('[AddMap] deletePoiMediaIfNeeded: skipping - no ids to delete or no remoteId')
         return
       }
       for (const mediaId of ids) {
-        console.log('[AddItinerary] deletePoiMediaIfNeeded: deleting media ID:', mediaId)
+        console.log('[AddMap] deletePoiMediaIfNeeded: deleting media ID:', mediaId)
         const response = await apiService.deletePoiMedia(poi.remoteId, mediaId)
         this.ensureApiSuccess(response, 'Unable to delete media for this POI.')
         poi.media.images = (poi.media.images || []).filter((image) => image.id !== mediaId)
@@ -786,7 +786,7 @@ export default {
         .map((image) => image.id)
       // Update originalImageOrder to reflect deletions, but don't clear imagesToDelete yet
       poi.media.originalImageOrder = [...poi.media.imagesOrder]
-      console.log('[AddItinerary] deletePoiMediaIfNeeded: after deletion, imagesOrder:', poi.media.imagesOrder)
+      console.log('[AddMap] deletePoiMediaIfNeeded: after deletion, imagesOrder:', poi.media.imagesOrder)
     },
     async reorderPoiMediaIfNeeded(poi) {
       // Exclude images that are marked for deletion from the order
@@ -797,10 +797,10 @@ export default {
       const originalOrder = Array.isArray(poi?.media?.originalImageOrder)
         ? poi.media.originalImageOrder.filter((id) => !idsToDelete.has(id))
         : []
-      console.log('[AddItinerary] reorderPoiMediaIfNeeded: desiredOrder:', desiredOrder, 'idsToDelete:', Array.from(idsToDelete))
-      console.log('[AddItinerary] reorderPoiMediaIfNeeded: originalOrder:', originalOrder)
+      console.log('[AddMap] reorderPoiMediaIfNeeded: desiredOrder:', desiredOrder, 'idsToDelete:', Array.from(idsToDelete))
+      console.log('[AddMap] reorderPoiMediaIfNeeded: originalOrder:', originalOrder)
       if (!poi?.remoteId || !desiredOrder.length) {
-        console.log('[AddItinerary] reorderPoiMediaIfNeeded: skipping - no remoteId or no desiredOrder')
+        console.log('[AddMap] reorderPoiMediaIfNeeded: skipping - no remoteId or no desiredOrder')
         // Clear imagesToDelete if we're skipping
         if (poi?.media) {
           poi.media.imagesToDelete = []
@@ -808,7 +808,7 @@ export default {
         return
       }
       if (this.haveSameOrder(desiredOrder, originalOrder)) {
-        console.log('[AddItinerary] reorderPoiMediaIfNeeded: skipping - order unchanged')
+        console.log('[AddMap] reorderPoiMediaIfNeeded: skipping - order unchanged')
         // Clear imagesToDelete if order is unchanged
         if (poi?.media) {
           poi.media.imagesToDelete = []
@@ -822,35 +822,35 @@ export default {
       if (poi?.media) {
         poi.media.imagesToDelete = []
       }
-      console.log('[AddItinerary] reorderPoiMediaIfNeeded: completed successfully')
+      console.log('[AddMap] reorderPoiMediaIfNeeded: completed successfully')
     },
     async uploadPoiAudioIfNeeded(poi) {
       const audioFile = poi?.basic?.audioFile
-      console.log('[AddItinerary] uploadPoiAudioIfNeeded called for POI:', this.formatPOITitle(poi))
-      console.log('[AddItinerary] uploadPoiAudioIfNeeded: poi.remoteId:', poi?.remoteId)
-      console.log('[AddItinerary] uploadPoiAudioIfNeeded: audioFile:', audioFile)
+      console.log('[AddMap] uploadPoiAudioIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddMap] uploadPoiAudioIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddMap] uploadPoiAudioIfNeeded: audioFile:', audioFile)
       
       if (!audioFile || !poi?.remoteId) {
-        console.log('[AddItinerary] uploadPoiAudioIfNeeded: skipping - no audio file or no remoteId')
+        console.log('[AddMap] uploadPoiAudioIfNeeded: skipping - no audio file or no remoteId')
         return
       }
 
       // Check if it's a File object (new upload) or a string URL (existing)
       if (!this.isFileLikeValue(audioFile)) {
-        console.log('[AddItinerary] uploadPoiAudioIfNeeded: skipping - audioFile is not a File object')
+        console.log('[AddMap] uploadPoiAudioIfNeeded: skipping - audioFile is not a File object')
         return
       }
 
-      console.log('[AddItinerary] uploadPoiAudioIfNeeded: calling API with audio file')
+      console.log('[AddMap] uploadPoiAudioIfNeeded: calling API with audio file')
       this.updateSubmission(
         `Uploading audio for ${this.formatPOITitle(poi)}`,
         'Sending audio file'
       )
       
       const response = await apiService.uploadPoiAudio(poi.remoteId, audioFile)
-      console.log('[AddItinerary] uploadPoiAudioIfNeeded: API response:', response)
+      console.log('[AddMap] uploadPoiAudioIfNeeded: API response:', response)
       this.ensureApiSuccess(response, 'Unable to upload audio for this POI.')
-      console.log('[AddItinerary] uploadPoiAudioIfNeeded: upload successful')
+      console.log('[AddMap] uploadPoiAudioIfNeeded: upload successful')
       
       // Update the audioFile with the URL from the response if provided
       if (response?.data?.audio?.url) {
@@ -861,29 +861,29 @@ export default {
     async deletePoiAudioIfNeeded(poi) {
       const audioFile = poi?.basic?.audioFile
       const audioId = poi?.basic?.audioId
-      console.log('[AddItinerary] deletePoiAudioIfNeeded called for POI:', this.formatPOITitle(poi))
-      console.log('[AddItinerary] deletePoiAudioIfNeeded: poi.remoteId:', poi?.remoteId)
-      console.log('[AddItinerary] deletePoiAudioIfNeeded: audioFile:', audioFile, 'type:', typeof audioFile)
-      console.log('[AddItinerary] deletePoiAudioIfNeeded: audioId:', audioId)
+      console.log('[AddMap] deletePoiAudioIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddMap] deletePoiAudioIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddMap] deletePoiAudioIfNeeded: audioFile:', audioFile, 'type:', typeof audioFile)
+      console.log('[AddMap] deletePoiAudioIfNeeded: audioId:', audioId)
       
       // If audioFile is null/undefined/empty but audioId exists, it means user deleted the audio
       // audioFile can be null, undefined, empty string, or falsy - all mean "deleted"
       const hasNoAudioFile = !audioFile || audioFile === null || audioFile === undefined || audioFile === ''
       if (hasNoAudioFile && audioId && poi?.remoteId) {
-        console.log('[AddItinerary] deletePoiAudioIfNeeded: deleting audio with ID:', audioId)
+        console.log('[AddMap] deletePoiAudioIfNeeded: deleting audio with ID:', audioId)
         this.updateSubmission(
           `Deleting audio for ${this.formatPOITitle(poi)}`,
           'Removing audio file'
         )
         
         const response = await apiService.deletePoiMedia(poi.remoteId, audioId)
-        console.log('[AddItinerary] deletePoiAudioIfNeeded: API response:', response)
+        console.log('[AddMap] deletePoiAudioIfNeeded: API response:', response)
         this.ensureApiSuccess(response, 'Unable to delete audio for this POI.')
-        console.log('[AddItinerary] deletePoiAudioIfNeeded: deletion successful')
+        console.log('[AddMap] deletePoiAudioIfNeeded: deletion successful')
         
         // Verify deletion from response - audio should be null in the response
         const deletedAudio = response?.data?.audio
-        console.log('[AddItinerary] deletePoiAudioIfNeeded: response audio:', deletedAudio)
+        console.log('[AddMap] deletePoiAudioIfNeeded: response audio:', deletedAudio)
         
         // Clear both audioId and audioFile after successful deletion
         if (poi.basic) {
@@ -892,39 +892,39 @@ export default {
           // Force reactivity update by reassigning the basic object
           poi.basic = { ...poi.basic }
         }
-        console.log('[AddItinerary] deletePoiAudioIfNeeded: cleared audioId and audioFile')
+        console.log('[AddMap] deletePoiAudioIfNeeded: cleared audioId and audioFile')
         return
       }
       
-      console.log('[AddItinerary] deletePoiAudioIfNeeded: skipping - no deletion needed')
+      console.log('[AddMap] deletePoiAudioIfNeeded: skipping - no deletion needed')
     },
     async uploadPoiPdfIfNeeded(poi) {
       const pdfFile = poi?.basic?.pdfFile
-      console.log('[AddItinerary] uploadPoiPdfIfNeeded called for POI:', this.formatPOITitle(poi))
-      console.log('[AddItinerary] uploadPoiPdfIfNeeded: poi.remoteId:', poi?.remoteId)
-      console.log('[AddItinerary] uploadPoiPdfIfNeeded: pdfFile:', pdfFile)
+      console.log('[AddMap] uploadPoiPdfIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddMap] uploadPoiPdfIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddMap] uploadPoiPdfIfNeeded: pdfFile:', pdfFile)
       
       if (!pdfFile || !poi?.remoteId) {
-        console.log('[AddItinerary] uploadPoiPdfIfNeeded: skipping - no PDF file or no remoteId')
+        console.log('[AddMap] uploadPoiPdfIfNeeded: skipping - no PDF file or no remoteId')
         return
       }
 
       // Check if it's a File object (new upload) or a string URL (existing)
       if (!this.isFileLikeValue(pdfFile)) {
-        console.log('[AddItinerary] uploadPoiPdfIfNeeded: skipping - pdfFile is not a File object')
+        console.log('[AddMap] uploadPoiPdfIfNeeded: skipping - pdfFile is not a File object')
         return
       }
 
-      console.log('[AddItinerary] uploadPoiPdfIfNeeded: calling API with PDF file')
+      console.log('[AddMap] uploadPoiPdfIfNeeded: calling API with PDF file')
       this.updateSubmission(
         `Uploading PDF for ${this.formatPOITitle(poi)}`,
         'Sending PDF file'
       )
       
       const response = await apiService.uploadPoiPdf(poi.remoteId, pdfFile)
-      console.log('[AddItinerary] uploadPoiPdfIfNeeded: API response:', response)
+      console.log('[AddMap] uploadPoiPdfIfNeeded: API response:', response)
       this.ensureApiSuccess(response, 'Unable to upload PDF for this POI.')
-      console.log('[AddItinerary] uploadPoiPdfIfNeeded: upload successful')
+      console.log('[AddMap] uploadPoiPdfIfNeeded: upload successful')
       
       // Update the pdfFile with the URL from the response if provided
       if (response?.data?.pdf?.url) {
@@ -935,24 +935,24 @@ export default {
     async deletePoiPdfIfNeeded(poi) {
       const pdfFile = poi?.basic?.pdfFile
       const pdfId = poi?.basic?.pdfId
-      console.log('[AddItinerary] deletePoiPdfIfNeeded called for POI:', this.formatPOITitle(poi))
-      console.log('[AddItinerary] deletePoiPdfIfNeeded: poi.remoteId:', poi?.remoteId)
-      console.log('[AddItinerary] deletePoiPdfIfNeeded: pdfFile:', pdfFile, 'type:', typeof pdfFile)
-      console.log('[AddItinerary] deletePoiPdfIfNeeded: pdfId:', pdfId)
+      console.log('[AddMap] deletePoiPdfIfNeeded called for POI:', this.formatPOITitle(poi))
+      console.log('[AddMap] deletePoiPdfIfNeeded: poi.remoteId:', poi?.remoteId)
+      console.log('[AddMap] deletePoiPdfIfNeeded: pdfFile:', pdfFile, 'type:', typeof pdfFile)
+      console.log('[AddMap] deletePoiPdfIfNeeded: pdfId:', pdfId)
       
       // If pdfFile is null/undefined/empty but pdfId exists, it means user deleted the PDF
       const hasNoPdfFile = !pdfFile || pdfFile === null || pdfFile === undefined || pdfFile === ''
       if (hasNoPdfFile && pdfId && poi?.remoteId) {
-        console.log('[AddItinerary] deletePoiPdfIfNeeded: deleting PDF with ID:', pdfId)
+        console.log('[AddMap] deletePoiPdfIfNeeded: deleting PDF with ID:', pdfId)
         this.updateSubmission(
           `Deleting PDF for ${this.formatPOITitle(poi)}`,
           'Removing PDF file'
         )
         
         const response = await apiService.deletePoiMedia(poi.remoteId, pdfId)
-        console.log('[AddItinerary] deletePoiPdfIfNeeded: API response:', response)
+        console.log('[AddMap] deletePoiPdfIfNeeded: API response:', response)
         this.ensureApiSuccess(response, 'Unable to delete PDF for this POI.')
-        console.log('[AddItinerary] deletePoiPdfIfNeeded: deletion successful')
+        console.log('[AddMap] deletePoiPdfIfNeeded: deletion successful')
         
         // Clear both pdfId and pdfFile after successful deletion
         if (poi.basic) {
@@ -961,18 +961,18 @@ export default {
           // Force reactivity update by reassigning the basic object
           poi.basic = { ...poi.basic }
         }
-        console.log('[AddItinerary] deletePoiPdfIfNeeded: cleared pdfId and pdfFile')
+        console.log('[AddMap] deletePoiPdfIfNeeded: cleared pdfId and pdfFile')
         return
       }
       
-      console.log('[AddItinerary] deletePoiPdfIfNeeded: skipping - no deletion needed')
+      console.log('[AddMap] deletePoiPdfIfNeeded: skipping - no deletion needed')
     },
     getPoiMediaFiles(poi) {
       const images = poi?.media?.images || []
-      console.log('[AddItinerary] getPoiMediaFiles: images array length:', images.length)
+      console.log('[AddMap] getPoiMediaFiles: images array length:', images.length)
       const files = images
         .map((image, idx) => {
-          console.log(`[AddItinerary] getPoiMediaFiles: image ${idx}:`, {
+          console.log(`[AddMap] getPoiMediaFiles: image ${idx}:`, {
             type: image?.type,
             hasFile: !!image?.file,
             isFileLike: this.isFileLikeValue(image),
@@ -980,24 +980,24 @@ export default {
             name: image?.name
           })
           if (image && image.type === 'new' && this.isFileLikeValue(image.file)) {
-            console.log(`[AddItinerary] getPoiMediaFiles: returning image.file for image ${idx}`)
+            console.log(`[AddMap] getPoiMediaFiles: returning image.file for image ${idx}`)
             return image.file
           }
           if (this.isFileLikeValue(image)) {
-            console.log(`[AddItinerary] getPoiMediaFiles: returning image itself for image ${idx}`)
+            console.log(`[AddMap] getPoiMediaFiles: returning image itself for image ${idx}`)
             return image
           }
-          console.log(`[AddItinerary] getPoiMediaFiles: skipping image ${idx}`)
+          console.log(`[AddMap] getPoiMediaFiles: skipping image ${idx}`)
           return null
         })
         .filter(Boolean)
-      console.log('[AddItinerary] getPoiMediaFiles: final files count:', files.length)
+      console.log('[AddMap] getPoiMediaFiles: final files count:', files.length)
       return files
     },
     async flushPendingPoiDeletions() {
       if (!this.pendingPoiDeletions.length) return
-      if (!this.remoteItineraryId) {
-        console.warn('Cannot delete POIs without a remote itinerary id.')
+      if (!this.remoteMapId) {
+        console.warn('Cannot delete POIs without a remote map id.')
         return
       }
       const queue = [...this.pendingPoiDeletions]
@@ -1009,7 +1009,7 @@ export default {
           'Cleaning up deleted points of interest',
           `Deleting ${index + 1} of ${queue.length}`
         )
-        const response = await apiService.deletePoi(this.remoteItineraryId, poiId)
+        const response = await apiService.deletePoi(this.remoteMapId, poiId)
         if (!response?.success) {
           this.pendingPoiDeletions.push(...queue.slice(index))
           throw new Error(response?.error || 'Unable to delete point of interest.')
@@ -1022,12 +1022,12 @@ export default {
         this.pendingPoiDeletions.push(remoteId)
       }
     },
-    extractItineraryFromResponse(response) {
+    extractMapFromResponse(response) {
       if (!response?.success) {
-        throw new Error(response?.error || 'Itinerary request failed.')
+        throw new Error(response?.error || 'Map request failed.')
       }
       const payload = response.data || {}
-      return payload.data?.itinerary || payload.itinerary || payload.data || payload
+      return payload.data?.map || payload.map || payload.data || payload
     },
     extractPoiFromResponse(response) {
       if (!response?.success) {
@@ -1047,7 +1047,7 @@ export default {
         pointsOfInterest: []
       }
       this.originalThumbnailUrl = null
-      this.remoteItineraryId = null
+      this.remoteMapId = null
       this.pendingPoiDeletions = []
       this.editingPoiIndex = null
       this.showPOIForm = false
@@ -1081,7 +1081,7 @@ export default {
 </script>
 
 <style scoped>
-.add-itinerary-root {
+.add-map-root {
   width: 100%;
   height: 100%;
   display: flex;
@@ -1089,7 +1089,7 @@ export default {
   min-height: 0; /* Important for flex children to allow scrolling */
 }
 
-.add-itinerary-panel {
+.add-map-panel {
   background: var(--bg-primary);
   width: 100%;
   height: 100%;

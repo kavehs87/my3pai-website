@@ -10,8 +10,8 @@
 
         <!-- Navigation -->
         <nav class="nav">
-          <router-link to="/itinerary-map" class="nav-link">POIs</router-link>
-          <a href="#" class="nav-link">Itinerary</a>
+          <router-link to="/map-builder" class="nav-link">POIs</router-link>
+          <a href="#" class="nav-link">Map</a>
           <a href="#" class="nav-link">Consult</a>
           <a href="#" class="nav-link">Media</a>
           <a href="#" class="nav-link">Plan</a>
@@ -65,8 +65,8 @@
       <!-- Mobile Menu -->
       <div class="mobile-menu" :class="{ active: mobileMenuOpen }">
         <nav class="mobile-nav">
-          <router-link to="/itinerary-map" class="mobile-nav-link" @click="toggleMobileMenu">POIs</router-link>
-          <a href="#" class="mobile-nav-link">Itinerary</a>
+          <router-link to="/map-builder" class="mobile-nav-link" @click="toggleMobileMenu">POIs</router-link>
+          <a href="#" class="mobile-nav-link">Map</a>
           <a href="#" class="mobile-nav-link">Consult</a>
           <a href="#" class="mobile-nav-link">Media</a>
           <a href="#" class="mobile-nav-link">Plan</a>

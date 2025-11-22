@@ -1,7 +1,7 @@
 <template>
-  <div class="published-itinerary-page">
-    <!-- Custom Navbar for Published Itinerary -->
-    <PublishedItineraryNavbar />
+  <div class="published-map-page">
+    <!-- Custom Navbar for Published Map -->
+    <PublishedMapNavbar />
 
     <!-- Split Layout Container -->
     <div class="split-layout-container">
@@ -9,16 +9,16 @@
       <div class="panel-side">
         <UserProfileBrief 
           :user="user"
-          :itinerary="itinerary"
+          :map="map"
           :pois="pois"
         />
       </div>
 
-      <!-- Right Side: Itinerary POIs -->
+      <!-- Right Side: Map POIs -->
       <div class="content-side">
-        <ItineraryPOIs 
+        <MapPOIs 
           :user="user"
-          :itinerary="itinerary"
+          :map="map"
           :pois="pois"
         />
       </div>
@@ -27,22 +27,22 @@
 </template>
 
 <script>
-import PublishedItineraryNavbar from './components/PublishedItineraryNavbar.vue'
+import PublishedMapNavbar from './components/PublishedMapNavbar.vue'
 import UserProfileBrief from './components/UserProfileBrief.vue'
-import ItineraryPOIs from './components/ItineraryPOIs.vue'
+import MapPOIs from './components/MapPOIs.vue'
 import apiService from '../../services/api.js'
 
 export default {
-  name: 'PublishedItinerary',
+  name: 'PublishedMap',
   components: {
-    PublishedItineraryNavbar,
+    PublishedMapNavbar,
     UserProfileBrief,
-    ItineraryPOIs
+    MapPOIs
   },
   data() {
     return {
-      // Will be populated with itinerary data
-      itinerary: null,
+      // Will be populated with map data
+      map: null,
       user: null,
       pois: [],
       loading: true,
@@ -50,18 +50,18 @@ export default {
     }
   },
   async mounted() {
-    await this.fetchItineraryData()
+    await this.fetchMapData()
   },
   watch: {
     '$route.params': {
       handler() {
-        this.fetchItineraryData()
+        this.fetchMapData()
       },
       deep: true
     }
   },
   methods: {
-    async fetchItineraryData() {
+    async fetchMapData() {
       const { username, slug } = this.$route.params
       
       if (!username || !slug) {
@@ -74,10 +74,10 @@ export default {
       this.error = null
 
       try {
-        const response = await apiService.getPublicItinerary(username, slug)
+        const response = await apiService.getPublicMap(username, slug)
         
         if (!response.success) {
-          throw new Error(response.error || 'Failed to load itinerary')
+          throw new Error(response.error || 'Failed to load map')
         }
 
         const data = response.data?.data || response.data
@@ -87,18 +87,18 @@ export default {
         }
 
         this.user = data.user || null
-        this.itinerary = data.itinerary || null
+        this.map = data.map || null
         this.pois = Array.isArray(data.pois) ? data.pois : []
 
         // Pass data to child components via props (will be implemented when UI is designed)
-        console.log('[PublishedItinerary] Loaded data:', {
+        console.log('[PublishedMap] Loaded data:', {
           user: this.user,
-          itinerary: this.itinerary,
+          map: this.map,
           poisCount: this.pois.length
         })
       } catch (error) {
-        console.error('[PublishedItinerary] Error loading itinerary:', error)
-        this.error = error.message || 'Failed to load itinerary page'
+        console.error('[PublishedMap] Error loading map:', error)
+        this.error = error.message || 'Failed to load map page'
       } finally {
         this.loading = false
       }
@@ -108,7 +108,7 @@ export default {
 </script>
 
 <style scoped>
-.published-itinerary-page {
+.published-map-page {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -138,7 +138,7 @@ export default {
   align-self: stretch;
 }
 
-/* Right Side: Itinerary POIs */
+/* Right Side: Map POIs */
 .content-side {
   flex: 1;
   height: 100%;

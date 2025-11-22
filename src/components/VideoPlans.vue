@@ -3,7 +3,7 @@
     <div class="container">
       <div class="section-header">
         <h2>Travel Plans</h2>
-        <p>Discover amazing travel itineraries from our community creators</p>
+        <p>Discover amazing travel maps from our community creators</p>
       </div>
 
       <div class="video-grid">

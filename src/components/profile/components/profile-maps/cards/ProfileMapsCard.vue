@@ -14,9 +14,9 @@
       </div>
       
       <div class="media-overlay">
-        <span v-if="itinerary.slug" class="slug-badge">
+        <span v-if="map.slug" class="slug-badge">
           <i class="fas fa-link"></i>
-          /{{ itinerary.slug }}
+          /{{ map.slug }}
         </span>
       </div>
     </div>
@@ -26,8 +26,8 @@
         <div class="header-top">
         <p class="eyebrow">{{ subtitle }}</p>
           <a 
-            v-if="itinerary.isPublished && itinerary.slug && username" 
-            :href="`/u/${username}/${itinerary.slug}`"
+            v-if="map.isPublished && map.slug && username" 
+            :href="`/u/${username}/${map.slug}`"
             class="view-as-link"
             @click.prevent="handlePreview"
             title="View as public"
@@ -35,11 +35,11 @@
             Preview
           </a>
         </div>
-        <h3 class="title" :title="itinerary.title">{{ itinerary.title }}</h3>
+        <h3 class="title" :title="map.title">{{ map.title }}</h3>
       </header>
 
-      <p class="summary" :title="itinerary.summary">
-        {{ itinerary.summary || 'No summary provided.' }}
+      <p class="summary" :title="map.summary">
+        {{ map.summary || 'No summary provided.' }}
       </p>
 
       <footer class="card-footer">
@@ -55,27 +55,27 @@
           </div>
           <template v-if="hasIndicators">
             <div class="meta-divider"></div>
-            <div class="meta-item" v-if="itinerary.hasAudio" title="Has audio recordings">
+            <div class="meta-item" v-if="map.hasAudio" title="Has audio recordings">
               <i class="fas fa-microphone"></i>
               <span>Audio</span>
             </div>
-            <div class="meta-divider" v-if="itinerary.hasAudio && itinerary.poisWithImages > 0"></div>
-            <div class="meta-item" v-if="itinerary.poisWithImages > 0" :title="`${itinerary.poisWithImages} POI${itinerary.poisWithImages > 1 ? 's' : ''} with images`">
+            <div class="meta-divider" v-if="map.hasAudio && map.poisWithImages > 0"></div>
+            <div class="meta-item" v-if="map.poisWithImages > 0" :title="`${map.poisWithImages} POI${map.poisWithImages > 1 ? 's' : ''} with images`">
               <i class="fas fa-images"></i>
-              <span>{{ itinerary.poisWithImages }}</span>
+              <span>{{ map.poisWithImages }}</span>
             </div>
           </template>
         </div>
         
-        <div class="location-row" v-if="itinerary.locationLabel">
+        <div class="location-row" v-if="map.locationLabel">
             <i class="fas fa-globe-americas"></i>
-          <span class="location-text">{{ itinerary.locationLabel }}</span>
+          <span class="location-text">{{ map.locationLabel }}</span>
         </div>
         
         <!-- Tags Row -->
         <div class="tags-row" v-if="hasTags">
           <span 
-            v-for="tag in itinerary.tags" 
+            v-for="tag in map.tags" 
             :key="tag" 
             class="tag-badge"
             :title="tag"
@@ -86,15 +86,15 @@
       </footer>
 
       <div class="card-actions">
-        <button class="btn-action secondary" @click="$emit('edit', itinerary)">
+        <button class="btn-action secondary" @click="$emit('edit', map)">
           <i class="fas fa-pen"></i>
           <span>Edit</span>
         </button>
         
         <button 
-          v-if="!itinerary.isPublished" 
+          v-if="!map.isPublished" 
           class="btn-action primary" 
-          @click="$emit('publish', itinerary)"
+          @click="$emit('publish', map)"
         >
           <i class="fas fa-upload"></i>
           <span>Publish</span>
@@ -103,7 +103,7 @@
         <button 
           v-else 
           class="btn-action ghost" 
-          @click="$emit('unpublish', itinerary)"
+          @click="$emit('unpublish', map)"
           title="Unpublish map"
         >
           <i class="fas fa-archive"></i>
@@ -111,8 +111,8 @@
 
         <button 
           class="btn-action danger" 
-          @click="$emit('delete', itinerary)"
-          title="Delete itinerary"
+          @click="$emit('delete', map)"
+          title="Delete map"
         >
           <i class="fas fa-trash"></i>
         </button>
@@ -125,7 +125,7 @@
 export default {
   name: 'ProfileMapsCard',
   props: {
-    itinerary: {
+    map: {
       type: Object,
       required: true
     },
@@ -137,31 +137,31 @@ export default {
   emits: ['edit', 'publish', 'unpublish', 'delete'],
   computed: {
     hasThumbnail() {
-      return Boolean(this.itinerary.thumbnail)
+      return Boolean(this.map.thumbnail)
     },
     coverStyle() {
       if (!this.hasThumbnail) return {}
       return {
-        backgroundImage: `url(${this.itinerary.thumbnail})`,
+        backgroundImage: `url(${this.map.thumbnail})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }
     },
     statusLabel() {
-      return this.itinerary.isPublished ? 'Published' : 'Draft'
+      return this.map.isPublished ? 'Published' : 'Draft'
     },
     statusIcon() {
-      return this.itinerary.isPublished ? 'fas fa-globe' : 'fas fa-pen-ruler'
+      return this.map.isPublished ? 'fas fa-globe' : 'fas fa-pen-ruler'
     },
     statusClass() {
-      return this.itinerary.isPublished ? 'is-published' : 'is-draft'
+      return this.map.isPublished ? 'is-published' : 'is-draft'
     },
     subtitle() {
-      return this.itinerary.isPublished ? 'Live Itinerary' : 'Draft Map'
+      return this.map.isPublished ? 'Live Map' : 'Draft Map'
     },
     poiCountNumber() {
-      return Number.isFinite(this.itinerary.poiCount)
-        ? this.itinerary.poiCount
+      return Number.isFinite(this.map.poiCount)
+        ? this.map.poiCount
         : 0
     },
     poiIconClass() {
@@ -171,13 +171,13 @@ export default {
     },
     poiTitle() {
       return this.poiCountNumber === 0
-        ? 'Empty itinerary — add some POIs to bring this map to life.'
+        ? 'Empty map — add some POIs to bring this map to life.'
         : 'Number of POIs'
     },
     formattedUpdated() {
-      if (!this.itinerary.lastUpdated) return 'New'
+      if (!this.map.lastUpdated) return 'New'
       try {
-        const date = new Date(this.itinerary.lastUpdated)
+        const date = new Date(this.map.lastUpdated)
         const now = new Date()
         const diffTime = Math.abs(now - date)
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
@@ -207,8 +207,8 @@ export default {
       return `${count} POIs`
     },
     initials() {
-      if (!this.itinerary.title) return 'MAP'
-      return this.itinerary.title
+      if (!this.map.title) return 'MAP'
+      return this.map.title
         .split(/\s+/)
         .slice(0, 2)
         .map(w => w[0])
@@ -216,27 +216,27 @@ export default {
         .toUpperCase()
     },
     hasIndicators() {
-      return this.itinerary.hasAudio || (this.itinerary.poisWithImages > 0)
+      return this.map.hasAudio || (this.map.poisWithImages > 0)
     },
     hasTags() {
-      return Array.isArray(this.itinerary.tags) && this.itinerary.tags.length > 0
+      return Array.isArray(this.map.tags) && this.map.tags.length > 0
     }
   },
   methods: {
     handlePreview(event) {
-      if (!this.itinerary.slug || !this.username) {
+      if (!this.map.slug || !this.username) {
         return
       }
       if (this.$router) {
         this.$router.push({
-          name: 'published-itinerary',
+          name: 'published-map',
           params: {
             username: this.username,
-            slug: this.itinerary.slug
+            slug: this.map.slug
           }
         })
       } else {
-        window.location.href = `/u/${this.username}/${this.itinerary.slug}`
+        window.location.href = `/u/${this.username}/${this.map.slug}`
       }
     }
   }

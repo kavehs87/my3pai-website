@@ -24,7 +24,7 @@ export default {
     computedStats() {
       return [
         { label: 'Trips', value: this.stats.totalTrips || 0, icon: 'fas fa-map-marked-alt' },
-        { label: 'Itineraries', value: this.stats.totalItineraries || 0, icon: 'fas fa-route' },
+        { label: 'Maps', value: this.stats.totalMaps || 0, icon: 'fas fa-route' },
         { label: 'Countries Visited', value: this.stats.countriesVisited || 0, icon: 'fas fa-globe' },
         { label: 'Days Traveled', value: this.stats.totalDaysTraveled || 0, icon: 'fas fa-calendar-day' },
         { label: 'Followers', value: this.stats.followers || 0, icon: 'fas fa-users' }
