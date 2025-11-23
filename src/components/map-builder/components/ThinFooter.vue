@@ -3,7 +3,7 @@
     <div class="container">
       <div class="thin-footer-content">
         <div class="thin-footer-left">
-          <p>&copy; {{ currentYear }} my3pai.com, Inc. All rights reserved.</p>
+          <p>&copy; {{ currentYear }} my3p.ai, Inc. All rights reserved.</p>
           <div class="thin-footer-links">
             <a href="#">Privacy Policy</a>
             <span class="separator">•</span>

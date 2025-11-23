@@ -5,7 +5,7 @@
         <!-- Company Info -->
         <div class="footer-section company-section">
           <div class="footer-logo" style="display: flex; align-items: center;">
-            <img src="/logo-small.png" alt="my3pai.com Logo" class="footer-logo-image" style="height: 42px; width: auto; margin-right: 10px;" />
+            <img src="/logo-small.png" alt="my3p.ai Logo" class="footer-logo-image" style="height: 42px; width: auto; margin-right: 10px;" />
             <span style="font-size: 1.1rem;">My3pai</span>
           </div>
           <p class="footer-description">
@@ -106,7 +106,7 @@
       <div class="footer-bottom">
         <div class="footer-bottom-content">
           <div class="footer-bottom-left">
-            <p>&copy; 2024 my3pai.com, Inc. All rights reserved.</p>
+            <p>&copy; 2024 my3p.ai, Inc. All rights reserved.</p>
             <div class="footer-bottom-links">
               <a href="#">Privacy Policy</a>
               <a href="#">Terms of Service</a>
