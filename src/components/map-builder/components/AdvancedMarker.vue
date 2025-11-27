@@ -10,7 +10,12 @@ export default {
       type: Object,
       required: true,
       validator: (value) => {
-        return typeof value.lat === 'number' && typeof value.lng === 'number'
+        if (!value) return false
+        // Support both plain objects { lat: number, lng: number }
+        // and Google Maps LatLng objects where lat/lng are functions
+        const latVal = typeof value.lat === 'function' ? value.lat() : value.lat
+        const lngVal = typeof value.lng === 'function' ? value.lng() : value.lng
+        return typeof latVal === 'number' && typeof lngVal === 'number'
       }
     },
     title: {
