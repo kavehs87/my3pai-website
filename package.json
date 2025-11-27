@@ -9,12 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "lucide-vue-next": "^0.554.0",
     "vue": "^3.4.0",
     "vue-router": "^4.2.5",
     "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.15",
     "vite": "^5.0.0"
   }
 }

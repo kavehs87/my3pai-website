@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* CSS Custom Properties for Easy Theme Management */
 :root {
   /* Brand Colors */
@@ -409,5 +413,18 @@ body {
   
   .section-header p {
     font-size: var(--font-size-base);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease forwards;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

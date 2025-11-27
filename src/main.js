@@ -9,6 +9,7 @@ import Profile from './components/profile/Profile.vue'
 import OAuthCallback from './components/OAuthCallback.vue'
 import MapBuilder from './components/MapBuilder.vue'
 import PublishedMap from './components/published-map/PublishedMap.vue'
+import InfluencerProfile from './components/influencer/InfluencerProfile.vue'
 import './style.css'
 
 const routes = [
@@ -16,6 +17,12 @@ const routes = [
   { path: '/studio', component: Studio, name: 'studio' },
   { path: '/profile', component: Profile, name: 'profile' },
   { path: '/map-builder', component: MapBuilder, name: 'map-builder' },
+  {
+    path: '/influencer/:username?',
+    component: InfluencerProfile,
+    name: 'influencer-profile',
+    props: true,
+  },
   { 
     path: '/auth/callback', 
     component: OAuthCallback, 

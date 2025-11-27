@@ -1,0 +1,351 @@
+<template>
+  <aside class="flex flex-col gap-6 p-6 text-slate-800">
+    <div class="flex flex-col items-center text-center">
+      <div class="relative mb-4">
+        <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+          <img :src="PROFILE.image" :alt="PROFILE.name" class="w-full h-full object-cover" />
+        </div>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-900">{{ PROFILE.name }}</h1>
+      <p class="text-sm font-semibold text-indigo-600 mb-1">{{ PROFILE.handle }}</p>
+      <p class="text-sm text-slate-600 font-medium mb-3">
+        {{ PROFILE.tagline }}
+      </p>
+      <div class="flex flex-col items-center gap-1.5 text-slate-500 text-sm mb-4">
+        <div class="flex items-center gap-1.5">
+          <MapPin class="w-3.5 h-3.5" />
+          <span>{{ PROFILE.location }}</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <Building2 class="w-3.5 h-3.5" />
+          <span>{{ PROFILE.subLocation }}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-slate-400">
+        <a href="#" class="hover:text-pink-600 transition-colors" aria-label="Instagram">
+          <Instagram class="w-5 h-5" />
+        </a>
+        <a href="#" class="hover:text-red-600 transition-colors" aria-label="YouTube">
+          <Youtube class="w-5 h-5" />
+        </a>
+        <a href="#" class="hover:text-blue-400 transition-colors" aria-label="Twitter">
+          <Twitter class="w-5 h-5" />
+        </a>
+      </div>
+    </div>
+
+    <div class="bg-slate-50/80 rounded-2xl p-4 flex justify-between items-center text-center">
+      <div class="flex flex-col items-center">
+        <div class="flex items-center gap-1 text-slate-900 font-bold">
+          <Star class="w-4 h-4 text-yellow-400 fill-yellow-400" />
+          <span>{{ PROFILE.stats.rating }}</span>
+        </div>
+        <span class="text-xs text-slate-500">{{ PROFILE.stats.reviews }} reviews</span>
+      </div>
+      <div class="w-px h-8 bg-slate-200" />
+      <div class="flex flex-col items-center">
+        <span class="text-slate-900 font-bold">{{ PROFILE.stats.locations }}</span>
+        <span class="text-xs text-slate-500">locations</span>
+      </div>
+      <div class="w-px h-8 bg-slate-200" />
+      <div class="flex flex-col items-center">
+        <span class="text-slate-900 font-bold">{{ PROFILE.stats.mapsBuilt }}</span>
+        <span class="text-xs text-slate-500">maps built</span>
+      </div>
+      <div class="w-px h-8 bg-slate-200" />
+      <div class="flex flex-col items-center">
+        <span class="text-slate-900 font-bold">{{ PROFILE.stats.travelersGuided }}</span>
+        <span class="text-xs text-slate-500">travelers</span>
+      </div>
+    </div>
+
+    <div class="bg-slate-900 rounded-2xl p-5 text-white shadow-lg shadow-slate-900/10">
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden shrink-0">
+          <img :src="CONSULTATION.image" alt="Consultation" class="w-full h-full object-cover" />
+        </div>
+        <div>
+          <h3 class="font-bold text-lg leading-tight">1-on-1 Trip Planning</h3>
+          <p class="text-slate-400 text-xs mt-1">Video call • 60 mins</p>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center justify-between">
+        <div class="text-sm font-medium">
+          <span class="text-slate-400">From </span>
+          <span class="text-white text-lg font-bold">\${{ CONSULTATION.price }}</span>
+        </div>
+        <button class="bg-white text-slate-900 px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-100 transition-colors">
+          Book Now →
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div
+        v-for="link in EXTERNAL_LINKS"
+        :key="link.id"
+        class="bg-white border border-slate-100 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      >
+        <div class="flex items-center gap-1.5 mb-1.5">
+          <div class="w-5 h-5 rounded flex items-center justify-center border border-slate-100">
+            <span :class="['text-xs font-bold', link.platform === 'Airbnb' ? 'text-rose-500' : 'text-orange-500']">
+              {{ link.platform === 'Airbnb' ? 'A' : 'G' }}
+            </span>
+          </div>
+          <div v-if="link.rating" class="flex items-center gap-0.5 text-[10px] font-bold text-slate-600">
+            <Star class="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
+            {{ link.rating }}
+          </div>
+        </div>
+        <h4 class="font-bold text-slate-900 text-sm leading-tight">{{ link.title }}</h4>
+        <p class="text-slate-500 text-[10px] leading-tight mt-0.5">{{ link.subtitle }}</p>
+      </div>
+    </div>
+
+    <div class="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+      <div class="flex h-16">
+        <div class="w-20 shrink-0">
+          <img :src="FEATURED_ACCOMMODATION.image" alt="Accommodation" class="w-full h-full object-cover" />
+        </div>
+        <div class="p-2.5 flex flex-col justify-center min-w-0">
+          <div class="flex items-center gap-1.5 mb-0.5">
+            <span class="text-[10px] font-bold text-rose-500 bg-rose-50 px-1.5 rounded">Airbnb</span>
+            <div class="flex items-center text-[10px] text-slate-500">
+              <Star class="w-2.5 h-2.5 fill-slate-900 text-slate-900 mr-0.5" />
+              <span class="text-slate-900 font-bold">{{ FEATURED_ACCOMMODATION.rating }}</span>
+              <span class="ml-0.5">({{ FEATURED_ACCOMMODATION.reviews }})</span>
+            </div>
+          </div>
+          <h4 class="text-xs font-bold text-slate-900 truncate">{{ FEATURED_ACCOMMODATION.title }}</h4>
+          <p class="text-[10px] text-slate-500 truncate">{{ FEATURED_ACCOMMODATION.location }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <h2 class="text-lg font-bold text-slate-900">About me</h2>
+      <p v-for="(paragraph, index) in bioParagraphs" :key="index" class="text-sm text-slate-600 leading-relaxed">
+        {{ paragraph }}
+      </p>
+    </div>
+
+    <div class="space-y-6">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900 mb-3">Skills and languages</h2>
+        <h3 class="text-sm font-bold text-slate-700 mb-2">Skills</h3>
+        <div class="flex flex-wrap gap-2">
+          <span
+            v-for="skill in PROFILE.skills"
+            :key="skill"
+            class="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full"
+          >
+            {{ skill }}
+          </span>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-sm font-bold text-slate-700 mb-3">Languages</h3>
+        <div class="space-y-3">
+          <div v-for="language in PROFILE.languages" :key="language.name" class="flex items-center justify-between text-sm">
+            <div class="flex items-center gap-2">
+              <span class="text-base">{{ language.flag }}</span>
+              <span class="text-slate-700 font-medium">{{ language.name }}</span>
+            </div>
+            <span class="text-slate-500 text-xs">{{ language.level }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <h2 class="text-lg font-bold text-slate-900">Certifications and badges</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div
+          v-for="cert in PROFILE.certifications"
+          :key="cert"
+          class="bg-slate-50 p-3 rounded-xl flex items-center gap-3"
+        >
+          <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-indigo-600">
+            <component :is="getCertificationIcon(cert)" class="w-5 h-5 text-indigo-500" />
+          </div>
+          <span class="text-xs font-bold text-slate-700 leading-tight">
+            {{ cert }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <button class="w-full py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-xl font-semibold shadow-sm transition-all flex items-center justify-center gap-2">
+        <Bell class="w-4 h-4" />
+        Subscribe to my content
+      </button>
+      <button class="w-full py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-xl font-semibold shadow-sm transition-all flex items-center justify-center gap-2">
+        <MessageSquare class="w-4 h-4" />
+        Message this creator
+      </button>
+      <button
+        class="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md transition-all flex items-center justify-center gap-2"
+        @click="isModalOpen = true"
+      >
+        <Sparkles class="w-4 h-4 text-yellow-300" />
+        Request custom trip
+      </button>
+      <button class="w-full py-3 px-4 bg-rose-50 border border-rose-100 hover:bg-rose-100 text-rose-600 rounded-xl font-semibold shadow-sm transition-all flex items-center justify-center gap-2">
+        <Coffee class="w-4 h-4" />
+        Send tip
+      </button>
+    </div>
+
+    <div
+      v-if="isModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    >
+      <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <h2 class="text-xl font-bold mb-4 text-slate-900">Plan Your Adventure</h2>
+        <p class="text-sm text-slate-500 mb-6">Use my AI assistant to preview what a trip curated by me looks like.</p>
+        <form v-if="!aiResponse" class="space-y-4" @submit.prevent="handleRequestTrip">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Destination</label>
+            <input
+              v-model="destination"
+              type="text"
+              required
+              class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none"
+              placeholder="e.g., Patagonia, Kyoto, Tuscany"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Travel Style</label>
+            <select
+              v-model="travelStyle"
+              class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none"
+            >
+              <option>Adventure</option>
+              <option>Luxury</option>
+              <option>Budget</option>
+              <option>Foodie</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="w-full py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 disabled:opacity-70 flex justify-center items-center gap-2"
+          >
+            <span v-if="loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <template v-else>
+              <Sparkles class="w-4 h-4" />
+              Generate Preview
+            </template>
+          </button>
+        </form>
+        <div v-else class="animate-fade-in">
+          <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 text-sm text-slate-700 mb-6 whitespace-pre-wrap">
+            {{ aiResponse }}
+          </div>
+          <button
+            class="w-full py-2 border border-slate-200 text-slate-600 rounded-lg font-medium hover:bg-slate-50"
+            @click="closeModal"
+          >
+            Close &amp; Book Call
+          </button>
+        </div>
+        <button
+          v-if="!aiResponse"
+          class="mt-4 w-full text-center text-sm text-slate-400 hover:text-slate-600"
+          @click="closeModal"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </aside>
+</template>
+
+<script setup>
+import { computed, ref } from 'vue'
+import {
+  MapPin,
+  Building2,
+  Instagram,
+  Youtube,
+  Twitter,
+  Star,
+  Bell,
+  MessageSquare,
+  Sparkles,
+  Coffee,
+  GraduationCap,
+  HeartPulse,
+  Leaf,
+  Award,
+  Home,
+  BadgeCheck,
+} from 'lucide-vue-next'
+import {
+  PROFILE,
+  EXTERNAL_LINKS,
+  FEATURED_ACCOMMODATION,
+  CONSULTATION,
+} from '../constants'
+
+const isModalOpen = ref(false)
+const destination = ref('')
+const travelStyle = ref('Adventure')
+const aiResponse = ref('')
+const loading = ref(false)
+
+const bioParagraphs = computed(() => PROFILE.bio.split('\n\n'))
+
+const getCertificationIcon = (name) => {
+  if (name.includes('Hiking')) return GraduationCap
+  if (name.includes('First Aid')) return HeartPulse
+  if (name.includes('Sustainability')) return Leaf
+  if (name.includes('Airbnb')) return Home
+  if (name.includes('TripAdvisor')) return Award
+  return BadgeCheck
+}
+
+const previewTemplates = [
+  (dest, style) =>
+    `• Sunrise hike into ${dest} with curated ${style.toLowerCase()} photo spots 🌄
+• Midday bites at my favorite hidden cafés + stress-free transit notes ☕️
+• Golden-hour picnic overlooking the water, complete with gear + budgeting tips 💼
+
+Craving the full playbook? Book a session and I’ll tailor every detail.`,
+  (dest, style) =>
+    `• Boutique stays + seamless transfers mapped for ${dest} ✈️
+• ${style} friendly eats, markets, and scenic detours I personally vetted 🍽️
+• Evening experiences that skip the crowds but keep the magic alive ✨
+
+Let’s build the full trip together—grab a consultation slot.`,
+  (dest, style) =>
+    `• Day 1 immersion through my private Google Maps layer for ${dest} 🗺️
+• Handpicked ${style} adventures with plan B options for shifting weather 🌦️
+• Packing, pacing, and budget guardrails so you can just enjoy the ride 🎒
+
+Want the rest of the blueprint? Tap “Book Now” and I’ll send it over.`,
+]
+
+const handleRequestTrip = () => {
+  loading.value = true
+  aiResponse.value = ''
+
+  window.setTimeout(() => {
+    const template =
+      previewTemplates[Math.floor(Math.random() * previewTemplates.length)]
+    const resolvedDestination = destination.value || 'your next escape'
+    const resolvedStyle = travelStyle.value || 'Adventure'
+    aiResponse.value = template(resolvedDestination, resolvedStyle)
+    loading.value = false
+  }, 800)
+}
+
+const closeModal = () => {
+  isModalOpen.value = false
+  aiResponse.value = ''
+  destination.value = ''
+  travelStyle.value = 'Adventure'
+}
+</script>
+
