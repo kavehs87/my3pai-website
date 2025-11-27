@@ -230,12 +230,18 @@
     </div>
 
     <div class="field-group">
-      <button type="button" class="pick-on-map-button" @click="openMapPicker">
-        <i class="fas fa-map-marker-alt"></i>
-        Pick on map
+      <button 
+        type="button" 
+        class="pick-on-map-button" 
+        :class="{ 'is-picking': isPickingLocation }"
+        @click="openMapPicker"
+        :disabled="isPickingLocation"
+      >
+        <i :class="isPickingLocation ? 'fas fa-crosshairs fa-spin' : 'fas fa-map-marker-alt'"></i>
+        {{ isPickingLocation ? 'Click on the map...' : 'Pick on map' }}
       </button>
       <p class="helper-text subtle">
-        Click to select coordinates interactively on the map
+        {{ isPickingLocation ? 'Click anywhere on the map to set coordinates' : 'Click to select coordinates interactively on the map' }}
       </p>
     </div>
 
@@ -269,19 +275,11 @@
     </div>
   </div>
 
-  <!-- Map Picker Modal -->
-  <MapPickerModal
-    :visible="showMapPicker"
-    :initialLatitude="latitude"
-    :initialLongitude="longitude"
-    @close="closeMapPicker"
-    @confirm="handleMapPickerConfirm"
-  />
 </template>
 
 <script>
 import AudioRecorder from './AudioRecorder.vue'
-import MapPickerModal from '../MapPickerModal.vue'
+import { eventBus } from '../../../../../../utils/eventBus.js'
 
 const defaultForm = () => ({
   name: '',
@@ -386,8 +384,7 @@ async function fetchCountryIsoDataset() {
 export default {
   name: 'BasicIdentificationSection',
   components: {
-    AudioRecorder,
-    MapPickerModal
+    AudioRecorder
   },
   props: {
     modelValue: {
@@ -431,8 +428,8 @@ export default {
       replacementQueue: [],
       activeReplacement: null,
       countryInputValue: '',
-      showMapPicker: false,
-      showPdfPreview: false
+      showPdfPreview: false,
+      isPickingLocation: false
     }
   },
   created() {
@@ -443,6 +440,9 @@ export default {
     this.$nextTick(() => {
       this.initializePlaceHelpers()
     })
+    // Listen for map location picked events
+    eventBus.on('map-location-picked', this.handleMapLocationPicked)
+    eventBus.on('map-pick-mode-cancelled', this.handleMapPickModeCancelled)
   },
   beforeUnmount() {
     if (this.autocompleteRetryTimer) {
@@ -463,6 +463,10 @@ export default {
         URL.revokeObjectURL(url)
       }
     }
+    
+    // Clean up event bus listeners
+    eventBus.off('map-location-picked', this.handleMapLocationPicked)
+    eventBus.off('map-pick-mode-cancelled', this.handleMapPickModeCancelled)
   },
   computed: {
     name: {
@@ -875,19 +879,26 @@ export default {
       console.error('Audio error:', message)
     },
     openMapPicker() {
-      this.showMapPicker = true
+      // Enter map pick mode - emit event to MapBuilder via event bus
+      this.isPickingLocation = true
+      eventBus.emit('enter-map-pick-mode', {
+        currentLatitude: this.latitude,
+        currentLongitude: this.longitude
+      })
     },
-    closeMapPicker() {
-      this.showMapPicker = false
-    },
-    handleMapPickerConfirm(coordinates) {
+    handleMapLocationPicked(coordinates) {
+      // Receive coordinates from MapBuilder when user clicks on map
       if (coordinates && coordinates.latitude && coordinates.longitude) {
         this.updateFields({
           latitude: coordinates.latitude,
           longitude: coordinates.longitude
         })
       }
-      this.closeMapPicker()
+      this.isPickingLocation = false
+    },
+    handleMapPickModeCancelled() {
+      // Reset picking state when pick mode is cancelled
+      this.isPickingLocation = false
     },
     triggerPdfUpload() {
       this.$refs.pdfInput?.click()
@@ -1366,11 +1377,31 @@ textarea {
   gap: var(--spacing-xs);
 }
 
-.pick-on-map-button:hover {
+.pick-on-map-button:hover:not(:disabled) {
   background: var(--primary-color);
   color: white;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.pick-on-map-button.is-picking {
+  background: var(--primary-color);
+  color: white;
+  cursor: wait;
+  animation: pulse-picking 1.5s ease-in-out infinite;
+}
+
+.pick-on-map-button:disabled {
+  opacity: 1;
+}
+
+@keyframes pulse-picking {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+  }
 }
 
 .pick-on-map-button i {

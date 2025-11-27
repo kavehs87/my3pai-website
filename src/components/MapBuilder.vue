@@ -41,12 +41,20 @@
 
         <!-- Right Side: Map Container (70%) -->
         <div class="map-side">
-    <div class="map-container">
-      <div ref="mapEl" class="google-map"></div>
-      <div v-if="loadError" class="map-fallback">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>Google Maps failed to load. Please check your API key configuration.</span>
-      </div>
+          <div class="map-container">
+            <div ref="mapEl" class="google-map"></div>
+            <div v-if="loadError" class="map-fallback">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span>Google Maps failed to load. Please check your API key configuration.</span>
+            </div>
+            <!-- Pick mode indicator -->
+            <transition name="fade">
+              <div v-if="isMapPickMode" class="pick-mode-indicator">
+                <i class="fas fa-crosshairs"></i>
+                <span>Click anywhere on the map to set location</span>
+                <button class="pick-mode-cancel" @click="exitMapPickMode">Cancel</button>
+              </div>
+            </transition>
           </div>
 
           <!-- POI Markers on Map -->
@@ -81,6 +89,7 @@ import AddMap from './map-builder/components/AddMap.vue'
 import FirstPlacePrompt from './map-builder/components/FirstPlacePrompt.vue'
 import POIMarkers from './map-builder/components/POIMarkers.vue'
 import apiService from '../services/api.js'
+import { eventBus } from '../utils/eventBus.js'
 
 export default {
   name: 'MapBuilder',
@@ -125,7 +134,11 @@ export default {
       editingMap: null,
       isAuthChecking: true,
       isAuthenticated: false,
-      currentPOIs: []
+      currentPOIs: [],
+      // Map pick mode state
+      isMapPickMode: false,
+      mapPickClickListener: null,
+      pickModeMarker: null
     }
   },
   beforeCreate() {
@@ -161,6 +174,9 @@ export default {
     }
     // Add resize listener to ensure map resizes properly
     window.addEventListener('resize', this.handleResize)
+    
+    // Listen for map pick mode events
+    eventBus.on('enter-map-pick-mode', this.enterMapPickMode)
   },
   beforeUnmount() {
     // Clean up map instance if needed
@@ -169,6 +185,10 @@ export default {
     }
     // Remove resize listener
     window.removeEventListener('resize', this.handleResize)
+    
+    // Clean up event bus listeners and pick mode
+    eventBus.off('enter-map-pick-mode', this.enterMapPickMode)
+    this.exitMapPickMode()
   },
   methods: {
     async ensureAuthenticated() {
@@ -500,6 +520,134 @@ export default {
         this.map.fitBounds(bounds)
       }
     },
+    // Map pick mode methods
+    enterMapPickMode(options = {}) {
+      console.log('[MapBuilder] Entering map pick mode', options)
+      if (!this.map) {
+        console.warn('[MapBuilder] Cannot enter pick mode - map not ready')
+        return
+      }
+      
+      this.isMapPickMode = true
+      
+      // Add crosshair cursor class to map container
+      const mapEl = this.$refs.mapEl
+      if (mapEl) {
+        mapEl.classList.add('pick-mode')
+      }
+      
+      // If there are initial coordinates, center the map there
+      if (options.currentLatitude && options.currentLongitude) {
+        const lat = Number(options.currentLatitude)
+        const lng = Number(options.currentLongitude)
+        if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+          this.map.setCenter({ lat, lng })
+          if (this.map.getZoom() < 12) {
+            this.map.setZoom(14)
+          }
+        }
+      }
+      
+      // Add click listener to map
+      this.mapPickClickListener = this.map.addListener('click', (event) => {
+        const position = {
+          latitude: event.latLng.lat().toFixed(6),
+          longitude: event.latLng.lng().toFixed(6)
+        }
+        console.log('[MapBuilder] Map clicked in pick mode:', position)
+        
+        // Show temporary marker at picked location
+        this.showPickModeMarker(event.latLng)
+        
+        // Emit the picked location
+        eventBus.emit('map-location-picked', position)
+        
+        // Exit pick mode after a short delay to show the marker
+        setTimeout(() => {
+          this.exitMapPickMode()
+        }, 300)
+      })
+    },
+    
+    exitMapPickMode(emitCancelEvent = true) {
+      if (!this.isMapPickMode) return
+      
+      console.log('[MapBuilder] Exiting map pick mode')
+      this.isMapPickMode = false
+      
+      // Remove crosshair cursor class
+      const mapEl = this.$refs.mapEl
+      if (mapEl) {
+        mapEl.classList.remove('pick-mode')
+      }
+      
+      // Remove click listener
+      if (this.mapPickClickListener) {
+        window.google?.maps?.event?.removeListener(this.mapPickClickListener)
+        this.mapPickClickListener = null
+      }
+      
+      // Remove temporary marker
+      if (this.pickModeMarker) {
+        this.pickModeMarker.setMap(null)
+        this.pickModeMarker = null
+      }
+      
+      // Emit cancel event so UI can update (e.g., button state)
+      if (emitCancelEvent) {
+        eventBus.emit('map-pick-mode-cancelled')
+      }
+    },
+    
+    showPickModeMarker(position) {
+      // Remove existing pick mode marker
+      if (this.pickModeMarker) {
+        this.pickModeMarker.setMap(null)
+      }
+      
+      if (!this.map || !window.google) return
+      
+      // Create a simple marker to show where user clicked
+      const AdvancedMarkerElement = this.AdvancedMarkerElement
+      
+      if (AdvancedMarkerElement) {
+        const content = document.createElement('div')
+        content.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: #22c55e;
+          color: #fff;
+          font-size: 20px;
+          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+          border: 3px solid white;
+          animation: pick-marker-pop 0.3s ease-out;
+        `
+        content.innerHTML = '<i class="fas fa-check"></i>'
+        
+        try {
+          this.pickModeMarker = new AdvancedMarkerElement({
+            map: this.map,
+            position: position,
+            content: content,
+            zIndex: 3000
+          })
+        } catch (error) {
+          console.warn('[MapBuilder] AdvancedMarkerElement failed for pick marker:', error)
+        }
+      } else {
+        // Fallback to regular marker
+        this.pickModeMarker = new window.google.maps.Marker({
+          map: this.map,
+          position: position,
+          animation: window.google.maps.Animation.DROP
+        })
+      }
+    },
+    
     // Manual test method to create a marker at specific coordinates
     createTestMarker(lat, lng, title = 'Test Marker') {
       if (!this.map) {
@@ -690,6 +838,90 @@ export default {
 
 .auth-button:hover {
   filter: brightness(1.05);
+}
+
+/* Map pick mode styles */
+.google-map.pick-mode {
+  cursor: crosshair !important;
+}
+
+.google-map.pick-mode :deep(*) {
+  cursor: crosshair !important;
+}
+
+.pick-mode-indicator {
+  position: absolute;
+  top: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--bg-primary);
+  border: 2px solid var(--primary-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  animation: slide-down 0.3s ease-out;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.pick-mode-indicator i {
+  color: var(--primary-color);
+  font-size: var(--font-size-lg);
+  animation: pulse-icon 1s ease-in-out infinite;
+}
+
+@keyframes pulse-icon {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pick-mode-cancel {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pick-mode-cancel:hover {
+  background: var(--error-color, #ef4444);
+  border-color: var(--error-color, #ef4444);
+  color: white;
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
 
