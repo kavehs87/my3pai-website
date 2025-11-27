@@ -3,7 +3,12 @@
     <!-- Map Form Panel - shown when not editing POI -->
     <div v-if="!showPOIForm" class="add-map-panel">
       <div class="panel-header">
-        <h2 class="panel-title">Add Map</h2>
+        <button class="back-button" @click="handleGoBack" aria-label="Back to maps">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="header-content">
+          <h2 class="panel-title">{{ isEditingMap ? 'Edit Map' : 'Add Map' }}</h2>
+        </div>
       </div>
 
       <div class="panel-content">
@@ -168,6 +173,11 @@ export default {
       }
     }
   },
+  computed: {
+    isEditingMap() {
+      return Boolean(this.remoteMapId || this.initialMap?.id)
+    }
+  },
   watch: {
     initialMap: {
       immediate: true,
@@ -186,6 +196,20 @@ export default {
     }
   },
   methods: {
+    handleGoBack() {
+      // Navigate back to profile maps page
+      if (this.$router) {
+        // Check if there's history to go back to
+        if (window.history.length > 1) {
+          this.$router.back()
+        } else {
+          // Fallback to profile maps page
+          this.$router.push({ path: '/profile', query: { tab: 'maps' } })
+        }
+      } else {
+        window.location.href = '/profile?tab=maps'
+      }
+    },
     createEmptyPOIForm() {
       return {
         remoteId: null,
@@ -1101,13 +1125,41 @@ export default {
 
 .panel-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: var(--spacing-md);
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--border-light);
 }
 
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.back-button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.header-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .panel-title {
+  margin: 0;
   font-size: var(--font-size-xl);
   font-weight: 600;
   color: var(--text-primary);
