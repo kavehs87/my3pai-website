@@ -1,61 +1,59 @@
 <template>
-  <div v-if="visible" class="poi-accordion-overlay" @click.self="handleClose">
-    <div class="poi-accordion-modal">
-      <div class="modal-header">
-        <div>
-          <p class="modal-eyebrow">Point of interest</p>
-          <h3>Create a point of interest</h3>
-        </div>
-        <button class="close-button" @click="handleClose" aria-label="Close">
-          <i class="fas fa-times"></i>
-        </button>
+  <div v-if="visible" class="poi-accordion-panel">
+    <div class="panel-header">
+      <button class="back-button" @click="handleClose" aria-label="Back to map">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="header-content">
+        <p class="panel-eyebrow">Point of interest</p>
+        <h2 class="panel-title">{{ isEditing ? 'Edit POI' : 'Add POI' }}</h2>
       </div>
+    </div>
 
-      <div class="modal-body">
-        <div class="poi-accordion">
-          <div 
-            v-for="section in sectionsToRender" 
-            :key="section.id" 
-            class="accordion-section"
-            :class="{
-              open: openSection === section.id,
-              'has-required-missing': sectionStatuses[section.id] === 'missing'
-            }"
-          >
-            <button class="accordion-header" @click="toggleSection(section.id)">
-              <div class="header-text">
-                <h4>{{ section.title }}</h4>
-                <p>{{ section.subtitle }}</p>
-              </div>
-              <div
-                v-if="section.requiredFields?.length"
-                class="header-status"
-              >
-                <span
-                  class="status-pill"
-                  :class="sectionStatuses[section.id]"
-                >
-                  {{ sectionStatuses[section.id] === 'complete' ? 'Complete' : 'Required' }}
-                </span>
-              </div>
-              <i :class="['fas', openSection === section.id ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
-            </button>
-            <div v-if="openSection === section.id" class="accordion-body">
-              <component
-                :is="section.component"
-                :modelValue="localValue[section.modelKey]"
-                @update:modelValue="handleSectionUpdate(section.modelKey, $event)"
-              />
+    <div class="panel-body">
+      <div class="poi-accordion">
+        <div 
+          v-for="section in sectionsToRender" 
+          :key="section.id" 
+          class="accordion-section"
+          :class="{
+            open: openSection === section.id,
+            'has-required-missing': sectionStatuses[section.id] === 'missing'
+          }"
+        >
+          <button class="accordion-header" @click="toggleSection(section.id)">
+            <div class="header-text">
+              <h4>{{ section.title }}</h4>
+              <p>{{ section.subtitle }}</p>
             </div>
+            <div
+              v-if="section.requiredFields?.length"
+              class="header-status"
+            >
+              <span
+                class="status-pill"
+                :class="sectionStatuses[section.id]"
+              >
+                {{ sectionStatuses[section.id] === 'complete' ? 'Complete' : 'Required' }}
+              </span>
+            </div>
+            <i :class="['fas', openSection === section.id ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+          </button>
+          <div v-if="openSection === section.id" class="accordion-body">
+            <component
+              :is="section.component"
+              :modelValue="localValue[section.modelKey]"
+              @update:modelValue="handleSectionUpdate(section.modelKey, $event)"
+            />
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-secondary" @click="handleClose">Cancel</button>
-        <button class="btn btn-outline" @click="handleSaveAndAddAnother">Save & Add Another</button>
-        <button class="btn btn-primary" @click="handleSave">Save POI</button>
-      </div>
+    <div class="panel-footer">
+      <button class="btn btn-secondary" @click="handleClose">Cancel</button>
+      <button class="btn btn-outline" @click="handleSaveAndAddAnother">Save & Add Another</button>
+      <button class="btn btn-primary" @click="handleSave">Save POI</button>
     </div>
   </div>
 </template>
@@ -220,6 +218,10 @@ export default {
     sections: {
       type: Array,
       default: () => defaultSections
+    },
+    isEditing: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['close', 'save', 'save-and-add', 'update:modelValue'],
@@ -460,84 +462,86 @@ export default {
 </script>
 
 <style scoped>
-.poi-accordion-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl);
-  z-index: 10001;
-}
-
-.poi-accordion-modal {
+/* Panel layout - fills parent container */
+.poi-accordion-panel {
   width: 100%;
-  max-width: 720px;
-  max-height: 90vh;
+  height: 100%;
   background: var(--bg-primary);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
-.modal-header {
+.panel-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: var(--spacing-xl);
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
   border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
 }
 
-.modal-eyebrow {
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.back-button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
-  margin: 0 0 var(--spacing-xs);
+  margin: 0 0 var(--spacing-2xs);
 }
 
-.modal-header h3 {
+.panel-title {
   margin: 0;
   font-size: var(--font-size-xl);
+  font-weight: 600;
   color: var(--text-primary);
 }
 
-.close-button {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: var(--font-size-lg);
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: var(--radius-full);
-  transition: all var(--transition-normal);
-}
-
-.close-button:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-
-.modal-body {
-  padding: var(--spacing-lg) var(--spacing-xl);
+.panel-body {
+  flex: 1;
+  padding: var(--spacing-lg);
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
-.modal-footer {
+.panel-footer {
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-sm);
-  padding: var(--spacing-lg) var(--spacing-xl);
+  padding: var(--spacing-lg);
   border-top: 1px solid var(--border-light);
   background: var(--bg-secondary);
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -548,6 +552,7 @@ export default {
   cursor: pointer;
   transition: all var(--transition-normal);
   border: none;
+  white-space: nowrap;
 }
 
 .btn-secondary {
@@ -662,17 +667,16 @@ button:focus {
 }
 
 @media (max-width: 768px) {
-  .poi-accordion-overlay {
+  .panel-header {
     padding: var(--spacing-md);
   }
 
-  .poi-accordion-modal {
-    max-height: 100vh;
-    border-radius: var(--radius-lg);
+  .panel-body {
+    padding: var(--spacing-md);
   }
 
-  .modal-body {
-    padding: var(--spacing-md) var(--spacing-lg);
+  .panel-footer {
+    padding: var(--spacing-md);
   }
 }
 </style>

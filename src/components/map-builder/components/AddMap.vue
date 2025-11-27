@@ -1,8 +1,9 @@
 <template>
   <div class="add-map-root">
-  <div class="add-map-panel">
-    <div class="panel-header">
-      <h2 class="panel-title">Add Map</h2>
+    <!-- Map Form Panel - shown when not editing POI -->
+    <div v-if="!showPOIForm" class="add-map-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Add Map</h2>
       </div>
 
       <div class="panel-content">
@@ -64,15 +65,19 @@
           <i class="fas fa-paper-plane"></i>
           Publish
         </button>
+      </div>
     </div>
-  </div>
-  <POIAccordion
-    v-model="poiForm"
-    :visible="showPOIForm"
-    @close="handlePOIModalClose"
-    @save="handlePOISave"
-    @save-and-add="handlePOISaveAndAddAnother"
-  />
+
+    <!-- POI Accordion Panel - shown when editing/adding POI -->
+    <POIAccordion
+      v-else
+      v-model="poiForm"
+      :visible="showPOIForm"
+      :is-editing="editingPoiIndex !== null"
+      @close="handlePOIModalClose"
+      @save="handlePOISave"
+      @save-and-add="handlePOISaveAndAddAnother"
+    />
   <transition name="fade">
     <div v-if="submissionState.active" class="submission-overlay">
       <div class="submission-card" role="status" aria-live="polite">
