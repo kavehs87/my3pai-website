@@ -189,6 +189,7 @@
           </div>
         </div>
       </div>
+
     </div>
 
     <!-- Social Modal -->
@@ -371,6 +372,7 @@
         </div>
       </div>
     </transition>
+
   </div>
 </template>
 
@@ -1018,6 +1020,22 @@ export default {
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--secondary-color);
 }
 
 .modal-header {

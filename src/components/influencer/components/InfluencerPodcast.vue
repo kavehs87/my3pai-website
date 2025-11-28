@@ -13,7 +13,7 @@
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-300">New Episodes</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span v-if="episodes.length > 0" class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           </div>
           <h2 class="text-2xl font-bold tracking-tight">WanderLuxe Audio</h2>
           <p class="text-slate-400 text-sm">Travel stories &amp; tips on the go.</p>
@@ -24,15 +24,38 @@
         Subscribe
       </button>
     </div>
-    <div class="relative z-10 space-y-2">
+
+    <!-- Loading State -->
+    <div v-if="loading" class="relative z-10 py-12 text-center text-slate-500">
+      <Loader2 class="w-6 h-6 animate-spin mx-auto mb-2" />
+      <p>Loading episodes...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="episodes.length === 0" class="relative z-10 py-12 text-center text-slate-500">
+      <Headphones class="w-12 h-12 mx-auto mb-3 opacity-30" />
+      <p>No episodes yet</p>
+    </div>
+
+    <!-- Episodes List -->
+    <div v-else class="relative z-10 space-y-2">
       <article
-        v-for="(episode, index) in PODCAST_EPISODES"
+        v-for="(episode, index) in episodes"
         :key="episode.id"
         class="group flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 transition-all cursor-pointer border border-transparent hover:border-white/5"
+        @click="playEpisode(episode)"
       >
         <div class="text-slate-600 font-mono text-xs w-4">{{ (index + 1).toString().padStart(2, '0') }}</div>
         <div class="relative w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-slate-800">
-          <img :src="episode.image" :alt="episode.title" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+          <img
+            v-if="episode.coverImage || episode.image"
+            :src="episode.coverImage || episode.image"
+            :alt="episode.title"
+            class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+          />
+          <div v-else class="w-full h-full flex items-center justify-center bg-slate-700">
+            <Mic class="w-4 h-4 text-slate-500" />
+          </div>
           <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
             <Play class="w-4 h-4 text-white fill-white" />
           </div>
@@ -42,7 +65,7 @@
             <h3 class="font-bold text-slate-200 truncate group-hover:text-white transition-colors">
               {{ episode.title }}
             </h3>
-            <Lock v-if="episode.isPremium" class="w-3 h-3 text-amber-400" />
+            <Lock v-if="episode.isPremium" class="w-3 h-3 text-amber-400 shrink-0" />
           </div>
           <p class="text-xs text-slate-500 line-clamp-1">
             {{ episode.description }}
@@ -54,12 +77,16 @@
             <div class="w-0.5 h-5 bg-indigo-500/60 rounded-full" />
             <div class="w-0.5 h-2 bg-indigo-500/40 rounded-full" />
           </div>
-          <span class="text-xs font-mono text-slate-400">{{ episode.duration }}</span>
+          <span class="text-xs font-mono text-slate-400">{{ episode.duration || '--:--' }}</span>
         </div>
       </article>
     </div>
-    <div class="mt-8 flex justify-center">
-      <button class="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-2">
+
+    <div v-if="hasMore" class="mt-8 flex justify-center">
+      <button
+        class="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-2"
+        @click="loadMore"
+      >
         View Full Library <BarChart3 class="w-3 h-3" />
       </button>
     </div>
@@ -67,7 +94,92 @@
 </template>
 
 <script setup>
-import { Play, Lock, Mic, Headphones, BarChart3 } from 'lucide-vue-next'
+import { ref, onMounted, inject } from 'vue'
+import { Play, Lock, Mic, Headphones, BarChart3, Loader2 } from 'lucide-vue-next'
+import api from '@/services/api'
 import { PODCAST_EPISODES } from '../constants'
+
+const props = defineProps({
+  username: {
+    type: String,
+    default: null
+  }
+})
+
+const episodes = ref([])
+const loading = ref(false)
+const hasMore = ref(false)
+const currentPage = ref(1)
+const useMockData = ref(false)
+
+// Try to get username from parent context if not passed as prop
+const injectedUsername = inject('influencerUsername', null)
+
+const getUsername = () => {
+  return props.username || injectedUsername?.value || null
+}
+
+const loadEpisodes = async () => {
+  const username = getUsername()
+  
+  if (!username) {
+    // Fallback to mock data
+    useMockData.value = true
+    episodes.value = PODCAST_EPISODES
+    return
+  }
+
+  loading.value = true
+  try {
+    const result = await api.getInfluencerPodcastEpisodes(username, {
+      page: currentPage.value,
+      per_page: 10
+    })
+
+    if (result.success && result.data?.data) {
+      const newEpisodes = result.data.data
+      if (currentPage.value === 1) {
+        episodes.value = newEpisodes
+      } else {
+        episodes.value = [...episodes.value, ...newEpisodes]
+      }
+      hasMore.value = result.data.meta?.current_page < result.data.meta?.last_page
+    } else {
+      // Fallback to mock
+      useMockData.value = true
+      episodes.value = PODCAST_EPISODES
+    }
+  } catch (err) {
+    console.error('[InfluencerPodcast] Error loading episodes:', err)
+    useMockData.value = true
+    episodes.value = PODCAST_EPISODES
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadMore = () => {
+  if (hasMore.value) {
+    currentPage.value++
+    loadEpisodes()
+  }
+}
+
+const playEpisode = (episode) => {
+  if (episode.isPremium && episode.isLocked) {
+    // Show premium prompt
+    console.log('Premium episode - requires purchase:', episode.title)
+    return
+  }
+  
+  if (episode.audioUrl) {
+    console.log('Playing episode:', episode.title, episode.audioUrl)
+    // Could open an audio player modal or navigate to episode page
+  }
+}
+
+onMounted(() => {
+  loadEpisodes()
+})
 </script>
 

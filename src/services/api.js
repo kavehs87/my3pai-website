@@ -672,6 +672,172 @@ class ApiService {
       method: 'DELETE'
     })
   }
+
+  // ========================================
+  // Blog API Methods
+  // ========================================
+
+  /**
+   * Get public blog posts for an influencer (no auth)
+   */
+  async getInfluencerBlogPosts(username, params = {}) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/blog${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get a single blog post by slug (no auth, premium gated)
+   */
+  async getInfluencerBlogPost(username, slug) {
+    if (!username || !slug) {
+      return { success: false, error: 'Username and slug are required.' }
+    }
+    return this.request(`/influencers/${encodeURIComponent(username)}/blog/${encodeURIComponent(slug)}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get own blog posts (includes drafts)
+   */
+  async getMyBlogPosts() {
+    return this.request('/influencer/blog')
+  }
+
+  /**
+   * Create a blog post
+   */
+  async createBlogPost(data) {
+    return this.request('/influencer/blog', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update a blog post
+   */
+  async updateBlogPost(id, data) {
+    return this.request(`/influencer/blog/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete a blog post
+   */
+  async deleteBlogPost(id) {
+    return this.request(`/influencer/blog/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Upload blog post cover image
+   */
+  async uploadBlogCover(id, file) {
+    const formData = new FormData()
+    formData.append('cover', file)
+    return this.request(`/influencer/blog/${id}/cover`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  // ========================================
+  // Podcast API Methods
+  // ========================================
+
+  /**
+   * Get public podcast episodes for an influencer (no auth)
+   */
+  async getInfluencerPodcastEpisodes(username, params = {}) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/podcast${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get a single podcast episode by slug (no auth, premium gated)
+   */
+  async getInfluencerPodcastEpisode(username, slug) {
+    if (!username || !slug) {
+      return { success: false, error: 'Username and slug are required.' }
+    }
+    return this.request(`/influencers/${encodeURIComponent(username)}/podcast/${encodeURIComponent(slug)}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get own podcast episodes (includes drafts)
+   */
+  async getMyPodcastEpisodes() {
+    return this.request('/influencer/podcast')
+  }
+
+  /**
+   * Create a podcast episode
+   */
+  async createPodcastEpisode(data) {
+    return this.request('/influencer/podcast', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update a podcast episode
+   */
+  async updatePodcastEpisode(id, data) {
+    return this.request(`/influencer/podcast/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete a podcast episode
+   */
+  async deletePodcastEpisode(id) {
+    return this.request(`/influencer/podcast/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Upload podcast audio file
+   */
+  async uploadPodcastAudio(id, file) {
+    const formData = new FormData()
+    formData.append('audio', file)
+    return this.request(`/influencer/podcast/${id}/audio`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  /**
+   * Upload podcast cover image
+   */
+  async uploadPodcastCover(id, file) {
+    const formData = new FormData()
+    formData.append('cover', file)
+    return this.request(`/influencer/podcast/${id}/cover`, {
+      method: 'POST',
+      body: formData
+    })
+  }
 }
 
 // Create singleton instance
