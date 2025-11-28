@@ -46,6 +46,10 @@
         v-if="activeTab === 'podcast'"
       />
       
+      <ProfileMasterclassSettings
+        v-if="activeTab === 'masterclass'"
+      />
+      
       <ProfileSettings
         ref="profileSettings"
         v-if="activeTab === 'settings'"
@@ -208,6 +212,7 @@ import ProfileSettings from './components/ProfileSettings.vue'
 import ProfileCreatorSettings from './components/ProfileCreatorSettings.vue'
 import ProfileBlogSettings from './components/ProfileBlogSettings.vue'
 import ProfilePodcastSettings from './components/ProfilePodcastSettings.vue'
+import ProfileMasterclassSettings from './components/ProfileMasterclassSettings.vue'
 import ProfileMaps from './components/profile-maps/ProfileMaps.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
@@ -224,6 +229,7 @@ export default {
     ProfileCreatorSettings,
     ProfileBlogSettings,
     ProfilePodcastSettings,
+    ProfileMasterclassSettings,
     ProfileMaps
   },
   data() {
@@ -241,6 +247,7 @@ export default {
         { id: 'maps', label: 'Maps', icon: 'fas fa-map-marked-alt', count: null },
         { id: 'blog', label: 'Blog', icon: 'fas fa-blog', count: null },
         { id: 'podcast', label: 'Podcast', icon: 'fas fa-podcast', count: null },
+        { id: 'masterclass', label: 'Training', icon: 'fas fa-graduation-cap', count: null },
         { id: 'creator', label: 'Creator Profile', icon: 'fas fa-id-card', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],

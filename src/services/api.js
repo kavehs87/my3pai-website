@@ -909,6 +909,77 @@ class ApiService {
       method: 'DELETE'
     })
   }
+
+  // ========================================
+  // Masterclasses API Methods
+  // ========================================
+
+  /**
+   * Get public masterclasses for an influencer
+   */
+  async getInfluencerMasterclasses(username, params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${username}/masterclasses${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get single public masterclass
+   */
+  async getInfluencerMasterclass(username, slug) {
+    return this.request(`/influencers/${username}/masterclasses/${slug}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get own masterclasses (includes drafts)
+   */
+  async getMyMasterclasses() {
+    return this.request('/influencer/masterclasses')
+  }
+
+  /**
+   * Create masterclass
+   */
+  async createMasterclass(data) {
+    return this.request('/influencer/masterclasses', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update masterclass
+   */
+  async updateMasterclass(id, data) {
+    return this.request(`/influencer/masterclasses/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete masterclass
+   */
+  async deleteMasterclass(id) {
+    return this.request(`/influencer/masterclasses/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Upload masterclass cover image
+   */
+  async uploadMasterclassCover(id, file) {
+    const formData = new FormData()
+    formData.append('cover', file)
+    return this.request(`/influencer/masterclasses/${id}/cover`, {
+      method: 'POST',
+      body: formData
+    })
+  }
 }
 
 // Create singleton instance

@@ -122,10 +122,10 @@
           </div>
 
           <InfluencerItineraries @add-to-cart="handleAddToCart" />
-          <InfluencerMasterclasses @add-to-cart="handleAddToCart" />
+          <InfluencerMasterclasses :username="currentUsername" @add-to-cart="handleAddToCart" />
           <InfluencerCountryMaps @add-to-cart="handleAddToCart" />
-          <InfluencerPodcast />
-          <InfluencerBlog />
+          <InfluencerPodcast :username="currentUsername" />
+          <InfluencerBlog :username="currentUsername" />
           <InfluencerMedia @add-to-cart="handleAddToCart" />
           <InfluencerSocial />
 
