@@ -6,6 +6,78 @@
         <p>Manage your public influencer profile. These details appear on your public profile page.</p>
       </div>
 
+      <!-- Intro Video Section -->
+      <div class="settings-section intro-video-section">
+        <div class="section-header">
+          <h2><i class="fas fa-video"></i> Intro Video</h2>
+        </div>
+        
+        <p class="section-description">
+          Add a short video introduction (max 60 seconds) to make your profile stand out.
+        </p>
+        
+        <div v-if="introVideo.loading" class="loading-state">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+        
+        <div v-else-if="introVideo.url" class="video-preview">
+          <div class="video-container">
+            <video 
+              :src="introVideo.url" 
+              :poster="introVideo.thumbnail"
+              controls
+              playsinline
+              class="preview-video"
+            />
+          </div>
+          <div class="video-info">
+            <div class="video-status" :class="introVideo.status">
+              <i :class="getVideoStatusIcon(introVideo.status)"></i>
+              {{ formatVideoStatus(introVideo.status) }}
+            </div>
+            <span v-if="introVideo.duration" class="video-duration">
+              {{ formatDuration(introVideo.duration) }}
+            </span>
+          </div>
+          <div class="video-actions">
+            <button class="action-btn replace" @click="triggerVideoUpload">
+              <i class="fas fa-sync-alt"></i> Replace
+            </button>
+            <button class="action-btn delete" @click="deleteIntroVideo" :disabled="introVideo.deleting">
+              <i :class="introVideo.deleting ? 'fas fa-spinner fa-spin' : 'fas fa-trash'"></i>
+              {{ introVideo.deleting ? 'Deleting...' : 'Remove' }}
+            </button>
+          </div>
+        </div>
+        
+        <div v-else class="upload-area" @click="triggerVideoUpload" @dragover.prevent="onDragOver" @dragleave="onDragLeave" @drop.prevent="onDrop" :class="{ 'drag-over': isDragging }">
+          <div class="upload-content">
+            <div class="upload-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h3>Upload Intro Video</h3>
+            <p>Drag and drop or click to upload</p>
+            <span class="upload-hint">MP4, MOV or WebM • Max 100MB • Max 60 seconds</span>
+          </div>
+        </div>
+        
+        <!-- Hidden file input outside the clickable area -->
+        <input
+          ref="videoInputRef"
+          type="file"
+          accept="video/mp4,video/quicktime,video/webm"
+          class="file-input-hidden"
+          @change="handleVideoSelect"
+        />
+        
+        <div v-if="introVideo.uploading" class="upload-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: introVideo.progress + '%' }"></div>
+          </div>
+          <span class="progress-text">Uploading... {{ introVideo.progress }}%</span>
+        </div>
+      </div>
+
       <!-- Social Links Section -->
       <div class="settings-section">
         <div class="section-header">
@@ -389,6 +461,17 @@ export default {
       skills: [],
       certifications: [],
       externalLinks: [],
+      introVideo: {
+        url: null,
+        thumbnail: null,
+        status: null,
+        duration: null,
+        loading: false,
+        uploading: false,
+        deleting: false,
+        progress: 0
+      },
+      isDragging: false,
       loading: {
         socials: false,
         languages: false,
@@ -464,12 +547,208 @@ export default {
   methods: {
     async loadAllData() {
       await Promise.all([
+        this.loadIntroVideo(),
         this.loadSocials(),
         this.loadLanguages(),
         this.loadSkills(),
         this.loadCertifications(),
         this.loadExternalLinks()
       ])
+    },
+
+    // Intro Video
+    async loadIntroVideo() {
+      this.introVideo.loading = true
+      try {
+        // Try dedicated influencer settings endpoint first
+        let videoData = null
+        
+        try {
+          const settingsResult = await api.getInfluencerSettings()
+          if (settingsResult.success) {
+            const data = settingsResult.data?.data || settingsResult.data || {}
+            videoData = {
+              url: data.introVideoUrl,
+              thumbnail: data.introVideoThumbnail,
+              status: data.introVideoStatus,
+              duration: data.introVideoDuration
+            }
+          }
+        } catch (e) {
+          console.log('Influencer settings endpoint not available, trying profile...')
+        }
+        
+        // Fallback to profile endpoint if no video data yet
+        if (!videoData?.url) {
+          const profileResult = await api.getProfile()
+          if (profileResult.success) {
+            const user = profileResult.data?.data?.user || profileResult.data?.user || profileResult.data?.data || {}
+            
+            // Check multiple possible field locations
+            videoData = {
+              url: user.introVideoUrl || user.intro_video_url,
+              thumbnail: user.introVideoThumbnail || user.intro_video_thumbnail,
+              status: user.introVideoStatus || user.intro_video_status,
+              duration: user.introVideoDuration || user.intro_video_duration
+            }
+            
+            // If still no video data and we have username, try public influencer profile
+            if (!videoData.url && user.username) {
+              try {
+                const influencerResult = await api.getInfluencerProfile(user.username)
+                if (influencerResult.success) {
+                  const influencer = influencerResult.data?.data || influencerResult.data || {}
+                  videoData = {
+                    url: influencer.introVideoUrl || influencer.intro_video_url,
+                    thumbnail: influencer.introVideoThumbnail || influencer.intro_video_thumbnail,
+                    status: influencer.introVideoStatus || influencer.intro_video_status || 'ready',
+                    duration: influencer.introVideoDuration || influencer.intro_video_duration
+                  }
+                }
+              } catch (e) {
+                console.log('Influencer profile not available')
+              }
+            }
+          }
+        }
+        
+        // Apply the video data
+        if (videoData) {
+          this.introVideo.url = videoData.url || null
+          this.introVideo.thumbnail = videoData.thumbnail || null
+          this.introVideo.status = videoData.status || null
+          this.introVideo.duration = videoData.duration || null
+        }
+      } catch (err) {
+        console.error('Failed to load intro video:', err)
+      } finally {
+        this.introVideo.loading = false
+      }
+    },
+    
+    triggerVideoUpload() {
+      this.$refs.videoInputRef?.click()
+    },
+    
+    async handleVideoSelect(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+      await this.uploadVideo(file)
+      // Reset input so the same file can be selected again
+      event.target.value = ''
+    },
+    
+    async uploadVideo(file) {
+      // Validate file size (100MB max)
+      const maxSize = 100 * 1024 * 1024
+      if (file.size > maxSize) {
+        toast.error('Video file must be less than 100MB')
+        return
+      }
+      
+      // Validate file type
+      const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm']
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please upload an MP4, MOV, or WebM video')
+        return
+      }
+      
+      this.introVideo.uploading = true
+      this.introVideo.progress = 0
+      
+      try {
+        // Simulate progress (real progress would come from XHR)
+        const progressInterval = setInterval(() => {
+          if (this.introVideo.progress < 90) {
+            this.introVideo.progress += 10
+          }
+        }, 500)
+        
+        const result = await api.uploadIntroVideo(file)
+        
+        clearInterval(progressInterval)
+        this.introVideo.progress = 100
+        
+        if (result.success) {
+          const data = result.data?.data || result.data
+          this.introVideo.url = data.introVideoUrl
+          this.introVideo.thumbnail = data.introVideoThumbnail
+          this.introVideo.status = data.introVideoStatus
+          this.introVideo.duration = data.introVideoDuration
+          toast.success('Video uploaded successfully!')
+        } else {
+          toast.error(result.error || 'Failed to upload video')
+        }
+      } catch (err) {
+        toast.error(err.message || 'Failed to upload video')
+      } finally {
+        this.introVideo.uploading = false
+        this.introVideo.progress = 0
+      }
+    },
+    
+    async deleteIntroVideo() {
+      if (!confirm('Remove your intro video?')) return
+      
+      this.introVideo.deleting = true
+      try {
+        const result = await api.deleteIntroVideo()
+        if (result.success) {
+          this.introVideo.url = null
+          this.introVideo.thumbnail = null
+          this.introVideo.status = null
+          this.introVideo.duration = null
+          toast.success('Video removed')
+        } else {
+          toast.error(result.error || 'Failed to remove video')
+        }
+      } catch (err) {
+        toast.error(err.message)
+      } finally {
+        this.introVideo.deleting = false
+      }
+    },
+    
+    onDragOver(e) {
+      e.preventDefault()
+      this.isDragging = true
+    },
+    
+    onDragLeave() {
+      this.isDragging = false
+    },
+    
+    onDrop(e) {
+      this.isDragging = false
+      const file = e.dataTransfer?.files?.[0]
+      if (file && file.type.startsWith('video/')) {
+        this.uploadVideo(file)
+      }
+    },
+    
+    formatDuration(seconds) {
+      if (!seconds) return ''
+      const mins = Math.floor(seconds / 60)
+      const secs = Math.floor(seconds % 60)
+      return `${mins}:${secs.toString().padStart(2, '0')}`
+    },
+    
+    getVideoStatusIcon(status) {
+      const icons = {
+        processing: 'fas fa-spinner fa-spin',
+        ready: 'fas fa-check-circle',
+        failed: 'fas fa-exclamation-circle'
+      }
+      return icons[status] || 'fas fa-video'
+    },
+    
+    formatVideoStatus(status) {
+      const labels = {
+        processing: 'Processing...',
+        ready: 'Ready',
+        failed: 'Failed'
+      }
+      return labels[status] || status
     },
 
     // Socials
@@ -1130,6 +1409,211 @@ export default {
 .modal-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Intro Video Section */
+.intro-video-section .section-description {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.video-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.video-container {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 9 / 16;
+  max-height: 400px;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 280px;
+}
+
+.preview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+}
+
+.video-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.video-status.ready {
+  color: #22c55e;
+}
+
+.video-status.processing {
+  color: #f59e0b;
+}
+
+.video-status.failed {
+  color: #ef4444;
+}
+
+.video-duration {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.video-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+}
+
+.video-actions .action-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  transition: all var(--transition-normal);
+}
+
+.video-actions .action-btn.replace {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+.video-actions .action-btn.replace:hover {
+  background: var(--bg-primary);
+  border-color: var(--text-secondary);
+}
+
+.video-actions .action-btn.delete {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.video-actions .action-btn.delete:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.video-actions .action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-area {
+  border: 2px dashed var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+}
+
+.upload-area:hover {
+  border-color: var(--secondary-color);
+  background: rgba(99, 102, 241, 0.02);
+}
+
+.upload-area.drag-over {
+  border-color: var(--secondary-color);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.upload-content {
+  pointer-events: none;
+}
+
+.upload-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-md);
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-icon i {
+  font-size: 24px;
+  color: var(--secondary-color);
+}
+
+.upload-content h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.upload-content p {
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.upload-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.upload-progress {
+  margin-top: var(--spacing-md);
+  text-align: center;
+}
+
+.progress-bar {
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-sm);
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--secondary-color);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
 }
 
 .fade-enter-active,

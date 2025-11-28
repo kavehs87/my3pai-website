@@ -838,6 +838,77 @@ class ApiService {
       body: formData
     })
   }
+
+  // ========================================
+  // Intro Video API Methods
+  // ========================================
+
+  /**
+   * Get current user's influencer settings (intro video, etc.)
+   */
+  async getInfluencerSettings() {
+    return this.request('/influencer/settings')
+  }
+
+  /**
+   * Upload intro video
+   */
+  async uploadIntroVideo(file) {
+    const formData = new FormData()
+    formData.append('video', file)
+    return this.request('/influencer/intro-video', {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  /**
+   * Delete intro video
+   */
+  async deleteIntroVideo() {
+    return this.request('/influencer/intro-video', {
+      method: 'DELETE'
+    })
+  }
+
+  // ========================================
+  // Stripe Connect API Methods
+  // ========================================
+
+  /**
+   * Start Stripe Connect onboarding
+   */
+  async stripeConnectOnboard(returnUrl, refreshUrl) {
+    return this.request('/stripe/connect/onboard', {
+      method: 'POST',
+      body: { returnUrl, refreshUrl }
+    })
+  }
+
+  /**
+   * Get Stripe Connect account status
+   */
+  async getStripeConnectStatus() {
+    return this.request('/stripe/connect/status')
+  }
+
+  /**
+   * Get Stripe Express Dashboard link
+   */
+  async getStripeConnectDashboard() {
+    return this.request('/stripe/connect/dashboard', {
+      method: 'POST'
+    })
+  }
+
+  /**
+   * Disconnect Stripe account
+   */
+  async disconnectStripe() {
+    return this.request('/stripe/connect', {
+      method: 'DELETE'
+    })
+  }
 }
 
 // Create singleton instance

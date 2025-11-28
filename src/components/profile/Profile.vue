@@ -241,7 +241,7 @@ export default {
         { id: 'maps', label: 'Maps', icon: 'fas fa-map-marked-alt', count: null },
         { id: 'blog', label: 'Blog', icon: 'fas fa-blog', count: null },
         { id: 'podcast', label: 'Podcast', icon: 'fas fa-podcast', count: null },
-        { id: 'creator', label: 'About', icon: 'fas fa-id-card', count: null },
+        { id: 'creator', label: 'Creator Profile', icon: 'fas fa-id-card', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
       passwordModal: {

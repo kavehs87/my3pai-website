@@ -1,7 +1,16 @@
 <template>
   <aside class="flex flex-col gap-6 p-6 text-slate-800">
+    <!-- Intro Video -->
+    <IntroVideoPlayer
+      v-if="profile?.introVideoUrl"
+      :video-url="profile.introVideoUrl"
+      :thumbnail-url="profile.introVideoThumbnail"
+      :duration="profile.introVideoDuration"
+    />
+    
     <div class="flex flex-col items-center text-center">
-      <div class="relative mb-4">
+      <!-- Avatar - only show if no intro video -->
+      <div v-if="!profile?.introVideoUrl" class="relative mb-4">
         <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-slate-100">
           <img
             v-if="profile?.image"
@@ -20,6 +29,13 @@
         >
           <BadgeCheck class="w-5 h-5 text-white" />
         </div>
+      </div>
+      <!-- Verified badge inline when video is present -->
+      <div v-if="profile?.introVideoUrl && profile?.verified" class="flex items-center gap-1.5 mb-2">
+        <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+          <BadgeCheck class="w-3.5 h-3.5 text-white" />
+        </div>
+        <span class="text-xs font-medium text-blue-600">Verified Creator</span>
       </div>
       <h1 class="text-2xl font-bold text-slate-900">{{ profile?.name || 'Unknown' }}</h1>
       <p v-if="profile?.handle" class="text-sm font-semibold text-indigo-600 mb-1">{{ profile.handle }}</p>
@@ -295,6 +311,7 @@ import {
   Video,
   Link as LinkIcon,
 } from 'lucide-vue-next'
+import IntroVideoPlayer from './IntroVideoPlayer.vue'
 
 const props = defineProps({
   profile: {

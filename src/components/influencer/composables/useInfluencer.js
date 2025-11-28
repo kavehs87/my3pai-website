@@ -120,6 +120,10 @@ export function useInfluencer() {
         url: link.url,
         rating: link.rating,
       })),
+      // Intro video
+      introVideoUrl: data.introVideoUrl || null,
+      introVideoThumbnail: data.introVideoThumbnail || null,
+      introVideoDuration: data.introVideoDuration || null,
     }
   }
 
