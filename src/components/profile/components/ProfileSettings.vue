@@ -50,6 +50,28 @@
                 class="form-input"
               />
             </div>
+            <div class="form-group">
+              <label>Tagline <span class="label-hint">(Creator Profile)</span></label>
+              <input
+                v-model="form.tagline"
+                type="text"
+                placeholder="e.g., Mountain and lake routes specialist"
+                class="form-input"
+                maxlength="255"
+              />
+              <p class="helper-text">A short description that appears on your public profile</p>
+            </div>
+            <div class="form-group">
+              <label>Secondary Location <span class="label-hint">(Creator Profile)</span></label>
+              <input
+                v-model="form.subLocation"
+                type="text"
+                placeholder="e.g., Lives in Bern"
+                class="form-input"
+                maxlength="255"
+              />
+              <p class="helper-text">Additional location info shown on your profile</p>
+            </div>
             <button class="save-btn" @click="saveProfile">
               <i class="fas fa-save"></i>
               Save Changes
@@ -163,6 +185,8 @@ export default {
         username: '',
         bio: '',
         location: '',
+        tagline: '',
+        subLocation: '',
         currency: 'USD',
         language: 'en',
         timezone: 'America/Los_Angeles',
@@ -202,6 +226,8 @@ export default {
       this.form.username = user.username || ''
       this.form.bio = user.bio || ''
       this.form.location = user.location || ''
+      this.form.tagline = user.tagline || ''
+      this.form.subLocation = user.subLocation || user.sub_location || ''
       this.form.currency = prefs.currency || 'USD'
       this.form.language = prefs.language || 'en'
       this.form.timezone = prefs.timezone || 'America/Los_Angeles'
@@ -217,7 +243,9 @@ export default {
         lastName: this.form.lastName,
         username: this.form.username,
         bio: this.form.bio,
-        location: this.form.location
+        location: this.form.location,
+        tagline: this.form.tagline,
+        subLocation: this.form.subLocation
       }
       this.$emit('save-profile', payload)
     },
@@ -283,6 +311,12 @@ export default {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.label-hint {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
 }
 
 .form-input,

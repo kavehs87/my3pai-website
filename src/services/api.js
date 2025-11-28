@@ -465,6 +465,213 @@ class ApiService {
       body
     })
   }
+
+  // ========================================
+  // Influencer Profile API Methods
+  // ========================================
+
+  /**
+   * Get public influencer profile by username
+   * Public endpoint - no auth required
+   */
+  async getInfluencerProfile(username) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    return this.request(`/influencers/${encodeURIComponent(username)}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get current user's social links
+   */
+  async getInfluencerSocials() {
+    return this.request('/influencer/socials')
+  }
+
+  /**
+   * Create a new social link
+   */
+  async createInfluencerSocial(data) {
+    return this.request('/influencer/socials', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update an existing social link
+   */
+  async updateInfluencerSocial(id, data) {
+    return this.request(`/influencer/socials/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete a social link
+   */
+  async deleteInfluencerSocial(id) {
+    return this.request(`/influencer/socials/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Reorder social links
+   */
+  async reorderInfluencerSocials(ids) {
+    return this.request('/influencer/socials/reorder', {
+      method: 'PATCH',
+      body: { ids }
+    })
+  }
+
+  /**
+   * Get current user's languages
+   */
+  async getInfluencerLanguages() {
+    return this.request('/influencer/languages')
+  }
+
+  /**
+   * Create a new language
+   */
+  async createInfluencerLanguage(data) {
+    return this.request('/influencer/languages', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update an existing language
+   */
+  async updateInfluencerLanguage(id, data) {
+    return this.request(`/influencer/languages/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete a language
+   */
+  async deleteInfluencerLanguage(id) {
+    return this.request(`/influencer/languages/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Get current user's skills
+   */
+  async getInfluencerSkills() {
+    return this.request('/influencer/skills')
+  }
+
+  /**
+   * Create a new skill
+   */
+  async createInfluencerSkill(data) {
+    return this.request('/influencer/skills', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update an existing skill
+   */
+  async updateInfluencerSkill(id, data) {
+    return this.request(`/influencer/skills/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete a skill
+   */
+  async deleteInfluencerSkill(id) {
+    return this.request(`/influencer/skills/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Get current user's certifications
+   */
+  async getInfluencerCertifications() {
+    return this.request('/influencer/certifications')
+  }
+
+  /**
+   * Create a new certification
+   */
+  async createInfluencerCertification(data) {
+    return this.request('/influencer/certifications', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update an existing certification
+   */
+  async updateInfluencerCertification(id, data) {
+    return this.request(`/influencer/certifications/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete a certification
+   */
+  async deleteInfluencerCertification(id) {
+    return this.request(`/influencer/certifications/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Get current user's external links
+   */
+  async getInfluencerExternalLinks() {
+    return this.request('/influencer/external-links')
+  }
+
+  /**
+   * Create a new external link
+   */
+  async createInfluencerExternalLink(data) {
+    return this.request('/influencer/external-links', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update an existing external link
+   */
+  async updateInfluencerExternalLink(id, data) {
+    return this.request(`/influencer/external-links/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete an external link
+   */
+  async deleteInfluencerExternalLink(id) {
+    return this.request(`/influencer/external-links/${id}`, {
+      method: 'DELETE'
+    })
+  }
 }
 
 // Create singleton instance

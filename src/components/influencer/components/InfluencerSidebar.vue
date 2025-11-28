@@ -2,67 +2,88 @@
   <aside class="flex flex-col gap-6 p-6 text-slate-800">
     <div class="flex flex-col items-center text-center">
       <div class="relative mb-4">
-        <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
-          <img :src="PROFILE.image" :alt="PROFILE.name" class="w-full h-full object-cover" />
+        <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-slate-100">
+          <img
+            v-if="profile?.image"
+            :src="profile.image"
+            :alt="profile.name"
+            class="w-full h-full object-cover"
+          />
+          <div v-else class="w-full h-full flex items-center justify-center text-slate-400">
+            <User class="w-16 h-16" />
+          </div>
+        </div>
+        <!-- Verified badge -->
+        <div
+          v-if="profile?.verified"
+          class="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white"
+        >
+          <BadgeCheck class="w-5 h-5 text-white" />
         </div>
       </div>
-      <h1 class="text-2xl font-bold text-slate-900">{{ PROFILE.name }}</h1>
-      <p class="text-sm font-semibold text-indigo-600 mb-1">{{ PROFILE.handle }}</p>
-      <p class="text-sm text-slate-600 font-medium mb-3">
-        {{ PROFILE.tagline }}
+      <h1 class="text-2xl font-bold text-slate-900">{{ profile?.name || 'Unknown' }}</h1>
+      <p v-if="profile?.handle" class="text-sm font-semibold text-indigo-600 mb-1">{{ profile.handle }}</p>
+      <p v-if="profile?.tagline" class="text-sm text-slate-600 font-medium mb-3">
+        {{ profile.tagline }}
       </p>
       <div class="flex flex-col items-center gap-1.5 text-slate-500 text-sm mb-4">
-        <div class="flex items-center gap-1.5">
+        <div v-if="profile?.location" class="flex items-center gap-1.5">
           <MapPin class="w-3.5 h-3.5" />
-          <span>{{ PROFILE.location }}</span>
+          <span>{{ profile.location }}</span>
         </div>
-        <div class="flex items-center gap-1.5">
+        <div v-if="profile?.subLocation" class="flex items-center gap-1.5">
           <Building2 class="w-3.5 h-3.5" />
-          <span>{{ PROFILE.subLocation }}</span>
+          <span>{{ profile.subLocation }}</span>
         </div>
       </div>
-      <div class="flex items-center gap-3 text-slate-400">
-        <a href="#" class="hover:text-pink-600 transition-colors" aria-label="Instagram">
-          <Instagram class="w-5 h-5" />
-        </a>
-        <a href="#" class="hover:text-red-600 transition-colors" aria-label="YouTube">
-          <Youtube class="w-5 h-5" />
-        </a>
-        <a href="#" class="hover:text-blue-400 transition-colors" aria-label="Twitter">
-          <Twitter class="w-5 h-5" />
+      <!-- Dynamic Social Links -->
+      <div v-if="profile?.socials?.length" class="flex items-center gap-3 text-slate-400">
+        <a
+          v-for="social in profile.socials"
+          :key="social.id || social.platform"
+          :href="social.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          :class="getSocialHoverClass(social.platform)"
+          class="transition-colors"
+          :aria-label="social.platform"
+        >
+          <component :is="getSocialIcon(social.platform)" class="w-5 h-5" />
         </a>
       </div>
     </div>
 
-    <div class="bg-slate-50/80 rounded-2xl p-4 flex justify-between items-center text-center">
-      <div class="flex flex-col items-center">
+    <!-- Stats Section -->
+    <div v-if="hasStats" class="bg-slate-50/80 rounded-2xl p-4 flex justify-between items-center text-center">
+      <div v-if="profile?.stats?.rating" class="flex flex-col items-center">
         <div class="flex items-center gap-1 text-slate-900 font-bold">
           <Star class="w-4 h-4 text-yellow-400 fill-yellow-400" />
-          <span>{{ PROFILE.stats.rating }}</span>
+          <span>{{ profile.stats.rating }}</span>
         </div>
-        <span class="text-xs text-slate-500">{{ PROFILE.stats.reviews }} reviews</span>
+        <span class="text-xs text-slate-500">{{ profile.stats.reviews || 0 }} reviews</span>
       </div>
-      <div class="w-px h-8 bg-slate-200" />
-      <div class="flex flex-col items-center">
-        <span class="text-slate-900 font-bold">{{ PROFILE.stats.locations }}</span>
+      <div v-if="profile?.stats?.rating && profile?.stats?.locations" class="w-px h-8 bg-slate-200" />
+      <div v-if="profile?.stats?.locations" class="flex flex-col items-center">
+        <span class="text-slate-900 font-bold">{{ profile.stats.locations }}</span>
         <span class="text-xs text-slate-500">locations</span>
       </div>
-      <div class="w-px h-8 bg-slate-200" />
-      <div class="flex flex-col items-center">
-        <span class="text-slate-900 font-bold">{{ PROFILE.stats.mapsBuilt }}</span>
+      <div v-if="profile?.stats?.locations && profile?.stats?.mapsBuilt" class="w-px h-8 bg-slate-200" />
+      <div v-if="profile?.stats?.mapsBuilt" class="flex flex-col items-center">
+        <span class="text-slate-900 font-bold">{{ profile.stats.mapsBuilt }}</span>
         <span class="text-xs text-slate-500">maps built</span>
       </div>
-      <div class="w-px h-8 bg-slate-200" />
-      <div class="flex flex-col items-center">
-        <span class="text-slate-900 font-bold">{{ PROFILE.stats.travelersGuided }}</span>
+      <div v-if="profile?.stats?.mapsBuilt && profile?.stats?.travelersGuided" class="w-px h-8 bg-slate-200" />
+      <div v-if="profile?.stats?.travelersGuided" class="flex flex-col items-center">
+        <span class="text-slate-900 font-bold">{{ profile.stats.travelersGuided }}</span>
         <span class="text-xs text-slate-500">travelers</span>
       </div>
     </div>
 
+    <!-- Consultation CTA -->
     <div class="bg-slate-900 rounded-2xl p-5 text-white shadow-lg shadow-slate-900/10">
       <div class="flex items-start gap-4">
-        <div class="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden shrink-0">
-          <img :src="CONSULTATION.image" alt="Consultation" class="w-full h-full object-cover" />
+        <div class="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+          <Video class="w-6 h-6 text-slate-400" />
         </div>
         <div>
           <h3 class="font-bold text-lg leading-tight">1-on-1 Trip Planning</h3>
@@ -72,7 +93,7 @@
       <div class="mt-4 flex items-center justify-between">
         <div class="text-sm font-medium">
           <span class="text-slate-400">From </span>
-          <span class="text-white text-lg font-bold">\${{ CONSULTATION.price }}</span>
+          <span class="text-white text-lg font-bold">$150</span>
         </div>
         <button class="bg-white text-slate-900 px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-100 transition-colors">
           Book Now →
@@ -80,16 +101,20 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-3">
-      <div
-        v-for="link in EXTERNAL_LINKS"
+    <!-- External Links -->
+    <div v-if="profile?.externalLinks?.length" class="grid grid-cols-2 gap-3">
+      <a
+        v-for="link in profile.externalLinks"
         :key="link.id"
-        class="bg-white border border-slate-100 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+        :href="link.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="bg-white border border-slate-100 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer block"
       >
         <div class="flex items-center gap-1.5 mb-1.5">
           <div class="w-5 h-5 rounded flex items-center justify-center border border-slate-100">
-            <span :class="['text-xs font-bold', link.platform === 'Airbnb' ? 'text-rose-500' : 'text-orange-500']">
-              {{ link.platform === 'Airbnb' ? 'A' : 'G' }}
+            <span :class="['text-xs font-bold', getExternalLinkColor(link.platform)]">
+              {{ link.platform?.charAt(0)?.toUpperCase() || 'L' }}
             </span>
           </div>
           <div v-if="link.rating" class="flex items-center gap-0.5 text-[10px] font-bold text-slate-600">
@@ -98,44 +123,26 @@
           </div>
         </div>
         <h4 class="font-bold text-slate-900 text-sm leading-tight">{{ link.title }}</h4>
-        <p class="text-slate-500 text-[10px] leading-tight mt-0.5">{{ link.subtitle }}</p>
-      </div>
+        <p v-if="link.subtitle" class="text-slate-500 text-[10px] leading-tight mt-0.5">{{ link.subtitle }}</p>
+      </a>
     </div>
 
-    <div class="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-      <div class="flex h-16">
-        <div class="w-20 shrink-0">
-          <img :src="FEATURED_ACCOMMODATION.image" alt="Accommodation" class="w-full h-full object-cover" />
-        </div>
-        <div class="p-2.5 flex flex-col justify-center min-w-0">
-          <div class="flex items-center gap-1.5 mb-0.5">
-            <span class="text-[10px] font-bold text-rose-500 bg-rose-50 px-1.5 rounded">Airbnb</span>
-            <div class="flex items-center text-[10px] text-slate-500">
-              <Star class="w-2.5 h-2.5 fill-slate-900 text-slate-900 mr-0.5" />
-              <span class="text-slate-900 font-bold">{{ FEATURED_ACCOMMODATION.rating }}</span>
-              <span class="ml-0.5">({{ FEATURED_ACCOMMODATION.reviews }})</span>
-            </div>
-          </div>
-          <h4 class="text-xs font-bold text-slate-900 truncate">{{ FEATURED_ACCOMMODATION.title }}</h4>
-          <p class="text-[10px] text-slate-500 truncate">{{ FEATURED_ACCOMMODATION.location }}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="space-y-3">
+    <!-- About Section -->
+    <div v-if="bioParagraphs?.length" class="space-y-3">
       <h2 class="text-lg font-bold text-slate-900">About me</h2>
       <p v-for="(paragraph, index) in bioParagraphs" :key="index" class="text-sm text-slate-600 leading-relaxed">
         {{ paragraph }}
       </p>
     </div>
 
-    <div class="space-y-6">
-      <div>
+    <!-- Skills and Languages -->
+    <div v-if="profile?.skills?.length || profile?.languages?.length" class="space-y-6">
+      <div v-if="profile?.skills?.length">
         <h2 class="text-lg font-bold text-slate-900 mb-3">Skills and languages</h2>
         <h3 class="text-sm font-bold text-slate-700 mb-2">Skills</h3>
         <div class="flex flex-wrap gap-2">
           <span
-            v-for="skill in PROFILE.skills"
+            v-for="skill in profile.skills"
             :key="skill"
             class="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full"
           >
@@ -143,10 +150,10 @@
           </span>
         </div>
       </div>
-      <div>
+      <div v-if="profile?.languages?.length">
         <h3 class="text-sm font-bold text-slate-700 mb-3">Languages</h3>
         <div class="space-y-3">
-          <div v-for="language in PROFILE.languages" :key="language.name" class="flex items-center justify-between text-sm">
+          <div v-for="language in profile.languages" :key="language.id || language.name" class="flex items-center justify-between text-sm">
             <div class="flex items-center gap-2">
               <span class="text-base">{{ language.flag }}</span>
               <span class="text-slate-700 font-medium">{{ language.name }}</span>
@@ -157,11 +164,12 @@
       </div>
     </div>
 
-    <div class="space-y-4">
+    <!-- Certifications -->
+    <div v-if="profile?.certifications?.length" class="space-y-4">
       <h2 class="text-lg font-bold text-slate-900">Certifications and badges</h2>
       <div class="grid grid-cols-2 gap-3">
         <div
-          v-for="cert in PROFILE.certifications"
+          v-for="cert in profile.certifications"
           :key="cert"
           class="bg-slate-50 p-3 rounded-xl flex items-center gap-3"
         >
@@ -270,6 +278,8 @@ import {
   Instagram,
   Youtube,
   Twitter,
+  Facebook,
+  Linkedin,
   Star,
   Bell,
   MessageSquare,
@@ -281,13 +291,21 @@ import {
   Award,
   Home,
   BadgeCheck,
+  User,
+  Video,
+  Link as LinkIcon,
 } from 'lucide-vue-next'
-import {
-  PROFILE,
-  EXTERNAL_LINKS,
-  FEATURED_ACCOMMODATION,
-  CONSULTATION,
-} from '../constants'
+
+const props = defineProps({
+  profile: {
+    type: Object,
+    default: null,
+  },
+  bioParagraphs: {
+    type: Array,
+    default: () => [],
+  },
+})
 
 const isModalOpen = ref(false)
 const destination = ref('')
@@ -295,7 +313,57 @@ const travelStyle = ref('Adventure')
 const aiResponse = ref('')
 const loading = ref(false)
 
-const bioParagraphs = computed(() => PROFILE.bio.split('\n\n'))
+/**
+ * Check if profile has any stats to display
+ */
+const hasStats = computed(() => {
+  const stats = props.profile?.stats
+  if (!stats) return false
+  return stats.rating || stats.locations || stats.mapsBuilt || stats.travelersGuided
+})
+
+/**
+ * Get the appropriate icon component for a social platform
+ */
+const getSocialIcon = (platform) => {
+  const icons = {
+    instagram: Instagram,
+    youtube: Youtube,
+    twitter: Twitter,
+    facebook: Facebook,
+    linkedin: Linkedin,
+    tiktok: 'TikTok', // Will use text fallback
+  }
+  return icons[platform?.toLowerCase()] || LinkIcon
+}
+
+/**
+ * Get hover color class for social platform
+ */
+const getSocialHoverClass = (platform) => {
+  const classes = {
+    instagram: 'hover:text-pink-600',
+    youtube: 'hover:text-red-600',
+    twitter: 'hover:text-blue-400',
+    facebook: 'hover:text-blue-600',
+    linkedin: 'hover:text-blue-700',
+    tiktok: 'hover:text-slate-900',
+  }
+  return classes[platform?.toLowerCase()] || 'hover:text-slate-600'
+}
+
+/**
+ * Get color class for external link platform
+ */
+const getExternalLinkColor = (platform) => {
+  const colors = {
+    airbnb: 'text-rose-500',
+    getyourguide: 'text-orange-500',
+    tripadvisor: 'text-green-600',
+    booking: 'text-blue-600',
+  }
+  return colors[platform?.toLowerCase()] || 'text-slate-600'
+}
 
 const getCertificationIcon = (name) => {
   if (name.includes('Hiking')) return GraduationCap

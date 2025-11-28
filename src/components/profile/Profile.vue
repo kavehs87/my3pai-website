@@ -34,6 +34,10 @@
         v-if="activeTab === 'maps'"
       />
       
+      <ProfileCreatorSettings
+        v-if="activeTab === 'creator'"
+      />
+      
       <ProfileSettings
         ref="profileSettings"
         v-if="activeTab === 'settings'"
@@ -193,6 +197,7 @@ import ProfileHeader from './components/ProfileHeader.vue'
 import ProfileTabs from './components/ProfileTabs.vue'
 import ProfileOverview from './components/ProfileOverview.vue'
 import ProfileSettings from './components/ProfileSettings.vue'
+import ProfileCreatorSettings from './components/ProfileCreatorSettings.vue'
 import ProfileMaps from './components/profile-maps/ProfileMaps.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
@@ -206,6 +211,7 @@ export default {
     ProfileTabs,
     ProfileOverview,
     ProfileSettings,
+    ProfileCreatorSettings,
     ProfileMaps
   },
   data() {
@@ -221,6 +227,7 @@ export default {
       tabs: [
         { id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null },
         { id: 'maps', label: 'Maps', icon: 'fas fa-map-marked-alt', count: null },
+        { id: 'creator', label: 'Creator', icon: 'fas fa-user-astronaut', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
       passwordModal: {
@@ -258,7 +265,7 @@ export default {
     '$route.query.tab': {
       immediate: true,
       handler(tab) {
-        if (tab && ['overview', 'maps', 'settings'].includes(tab)) {
+        if (tab && ['overview', 'maps', 'creator', 'settings'].includes(tab)) {
           this.activeTab = tab
         } else if (!tab) {
           // Default to overview if no tab specified
@@ -270,7 +277,7 @@ export default {
   mounted() {
     // Check if there's a tab query parameter
     const tab = this.$route.query.tab
-    if (tab && ['overview', 'maps', 'settings'].includes(tab)) {
+    if (tab && ['overview', 'maps', 'creator', 'settings'].includes(tab)) {
       this.activeTab = tab
     }
     
@@ -323,6 +330,8 @@ export default {
             coverImage: user.coverImage || user.cover_image || user.coverImage || '',
             bio: user.bio || '',
             location: user.location || '',
+            tagline: user.tagline || '',
+            subLocation: user.subLocation || user.sub_location || '',
             joinedDate: user.joinedDate || user.created_at || user.joined_date || '',
             verified: user.verified || false,
             preferences: normalizedPreferences,
@@ -441,7 +450,9 @@ export default {
           lastName: formData.lastName,
           username: formData.username,
           bio: formData.bio,
-          location: formData.location
+          location: formData.location,
+          tagline: formData.tagline,
+          subLocation: formData.subLocation
         }
         
         const result = await apiService.updateProfile(apiData)
@@ -482,6 +493,8 @@ export default {
             coverImage: updatedUser.coverImage || updatedUser.cover_image || '',
             bio: updatedUser.bio || '',
             location: updatedUser.location || '',
+            tagline: updatedUser.tagline || '',
+            subLocation: updatedUser.subLocation || updatedUser.sub_location || '',
             joinedDate: updatedUser.joinedDate || updatedUser.created_at || updatedUser.joined_date || '',
             verified: updatedUser.verified || false,
             preferences: normalizedPreferences,
