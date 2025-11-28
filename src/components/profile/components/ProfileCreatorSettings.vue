@@ -469,7 +469,8 @@ export default {
         loading: false,
         uploading: false,
         deleting: false,
-        progress: 0
+        progress: 0,
+        pollInterval: null
       },
       isDragging: false,
       loading: {
@@ -542,7 +543,16 @@ export default {
     }
   },
   mounted() {
-    this.loadAllData()
+    this.loadAllData().then(() => {
+      // Start polling if video is currently processing
+      if (this.introVideo.status === 'processing') {
+        this.startVideoStatusPolling()
+      }
+    })
+  },
+  beforeUnmount() {
+    // Clean up polling interval
+    this.stopVideoStatusPolling()
   },
   methods: {
     async loadAllData() {
@@ -560,7 +570,7 @@ export default {
     async loadIntroVideo() {
       this.introVideo.loading = true
       try {
-        // Try dedicated influencer settings endpoint first
+        // Try dedicated influencer settings endpoint first (silently fail if not available)
         let videoData = null
         
         try {
@@ -574,8 +584,8 @@ export default {
               duration: data.introVideoDuration
             }
           }
-        } catch (e) {
-          console.log('Influencer settings endpoint not available, trying profile...')
+        } catch {
+          // Silently continue - endpoint may not exist yet
         }
         
         // Fallback to profile endpoint if no video data yet
@@ -675,7 +685,12 @@ export default {
           this.introVideo.thumbnail = data.introVideoThumbnail
           this.introVideo.status = data.introVideoStatus
           this.introVideo.duration = data.introVideoDuration
-          toast.success('Video uploaded successfully!')
+          toast.success('Video uploaded! Processing...')
+          
+          // Start polling if video is still processing
+          if (this.introVideo.status === 'processing') {
+            this.startVideoStatusPolling()
+          }
         } else {
           toast.error(result.error || 'Failed to upload video')
         }
@@ -684,6 +699,38 @@ export default {
       } finally {
         this.introVideo.uploading = false
         this.introVideo.progress = 0
+      }
+    },
+    
+    startVideoStatusPolling() {
+      // Clear any existing polling
+      this.stopVideoStatusPolling()
+      
+      // Poll every 3 seconds
+      this.introVideo.pollInterval = setInterval(async () => {
+        try {
+          await this.loadIntroVideo()
+          
+          // Stop polling if status is no longer processing
+          if (this.introVideo.status !== 'processing') {
+            this.stopVideoStatusPolling()
+            
+            if (this.introVideo.status === 'ready') {
+              toast.success('Video processing complete!')
+            } else if (this.introVideo.status === 'failed') {
+              toast.error('Video processing failed. Please try uploading again.')
+            }
+          }
+        } catch (err) {
+          console.error('Error polling video status:', err)
+        }
+      }, 3000)
+    },
+    
+    stopVideoStatusPolling() {
+      if (this.introVideo.pollInterval) {
+        clearInterval(this.introVideo.pollInterval)
+        this.introVideo.pollInterval = null
       }
     },
     
