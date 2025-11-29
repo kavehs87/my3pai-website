@@ -21,13 +21,33 @@
           <span class="flex items-center gap-1"><Check class="w-3 h-3 text-green-500" /> High Bitrate</span>
         </div>
       </div>
-      <button class="shrink-0 bg-slate-900 text-white px-5 py-3 rounded-xl font-bold text-sm shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all flex items-center gap-2">
+      <router-link
+        v-if="currentUsername"
+        :to="`/influencer/${currentUsername}/media-assets`"
+        class="shrink-0 bg-slate-900 text-white px-5 py-3 rounded-xl font-bold text-sm shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all flex items-center gap-2"
+      >
+        Browse Full Library <ArrowUpRight class="w-4 h-4" />
+      </router-link>
+      <button
+        v-else
+        class="shrink-0 bg-slate-900 text-white px-5 py-3 rounded-xl font-bold text-sm shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all flex items-center gap-2"
+        disabled
+      >
         Browse Full Library <ArrowUpRight class="w-4 h-4" />
       </button>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-if="loading" class="text-center py-12 text-slate-500">
+      <div class="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
+      <p>Loading assets...</p>
+    </div>
+
+    <div v-else-if="assets.length === 0" class="text-center py-12 text-slate-500">
+      <p>No media assets available yet.</p>
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <article
-        v-for="asset in MEDIA_ASSETS"
+        v-for="asset in assets"
         :key="asset.id"
         class="group relative rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all bg-slate-50"
       >
@@ -47,7 +67,7 @@
           <div class="flex items-center justify-between pt-4 border-t border-slate-200/60">
             <div class="flex flex-col">
               <span class="text-[10px] font-bold uppercase text-slate-400">License</span>
-              <span class="text-lg font-bold text-slate-900">\${{ asset.price }}</span>
+              <span class="text-lg font-bold text-slate-900">{{ formatPrice(asset.price, asset.currency) }}</span>
             </div>
             <button
               class="bg-white border border-slate-200 text-slate-900 p-2.5 rounded-lg hover:bg-slate-900 hover:text-white transition-colors"
@@ -64,15 +84,92 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, inject } from 'vue'
 import { ArrowUpRight, Film, Image as ImageIcon, Sliders, ShoppingCart, Check } from 'lucide-vue-next'
-import { MEDIA_ASSETS } from '../constants'
+import { useRouter } from 'vue-router'
+import api from '@/services/api'
+import { MEDIA_ASSETS as MOCK_MEDIA_ASSETS } from '../constants'
 
-defineEmits(['add-to-cart'])
+const props = defineProps({
+  username: {
+    type: String,
+    default: null,
+  },
+})
+
+const emit = defineEmits(['add-to-cart'])
+
+// Get username from inject if not provided as prop
+const influencerUsername = inject('influencerUsername', null)
+const currentUsername = computed(() => {
+  if (props.username) return props.username
+  if (influencerUsername?.value) return influencerUsername.value
+  return null
+})
+
+const router = useRouter()
+
+const assets = ref([])
+const loading = ref(false)
+const error = ref(null)
+const useMockData = ref(false)
 
 const typeIcons = {
   Video: Film,
   Photo: ImageIcon,
   Preset: Sliders,
+  Audio: 'Audio',
+  Template: 'Template',
+  Other: 'Other',
 }
+
+const formatPrice = (price, currency = 'USD') => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency || 'USD',
+  }).format(price)
+}
+
+const loadMediaAssets = async () => {
+  if (!currentUsername.value) {
+    // Fallback to mock data if no username
+    assets.value = MOCK_MEDIA_ASSETS
+    useMockData.value = true
+    return
+  }
+
+  loading.value = true
+  error.value = null
+
+  try {
+    const result = await api.getInfluencerMediaAssets(currentUsername.value, {
+      per_page: 20,
+    })
+
+    if (result.success && result.data) {
+      // Handle nested response structure: { success: true, data: { data: [...], meta: {...} } }
+      const responseData = result.data.data || result.data
+      assets.value = Array.isArray(responseData) ? responseData : (responseData?.data || [])
+      useMockData.value = false
+    } else {
+      // Fallback to mock data
+      console.warn('[InfluencerMedia] API failed, using mock data:', result.error)
+      assets.value = MOCK_MEDIA_ASSETS
+      useMockData.value = true
+      error.value = result.error
+    }
+  } catch (err) {
+    console.error('[InfluencerMedia] Error fetching media assets:', err)
+    assets.value = MOCK_MEDIA_ASSETS
+    useMockData.value = true
+    error.value = err.message || 'Failed to load media assets'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadMediaAssets()
+})
 </script>
 

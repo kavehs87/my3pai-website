@@ -54,6 +54,10 @@
         v-if="activeTab === 'consultation'"
       />
       
+      <ProfileMediaAssetsSettings
+        v-if="activeTab === 'media-assets'"
+      />
+      
       <ProfileSettings
         ref="profileSettings"
         v-if="activeTab === 'settings'"
@@ -218,6 +222,7 @@ import ProfileBlogSettings from './components/ProfileBlogSettings.vue'
 import ProfilePodcastSettings from './components/ProfilePodcastSettings.vue'
 import ProfileMasterclassSettings from './components/ProfileMasterclassSettings.vue'
 import ProfileConsultationSettings from './components/ProfileConsultationSettings.vue'
+import ProfileMediaAssetsSettings from './components/ProfileMediaAssetsSettings.vue'
 import ProfileMaps from './components/profile-maps/ProfileMaps.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
@@ -236,6 +241,7 @@ export default {
     ProfilePodcastSettings,
     ProfileMasterclassSettings,
     ProfileConsultationSettings,
+    ProfileMediaAssetsSettings,
     ProfileMaps
   },
   data() {
@@ -255,6 +261,7 @@ export default {
         { id: 'podcast', label: 'Podcast', icon: 'fas fa-podcast', count: null },
         { id: 'masterclass', label: 'Training', icon: 'fas fa-graduation-cap', count: null },
         { id: 'consultation', label: 'Consultations', icon: 'fas fa-video', count: null },
+        { id: 'media-assets', label: 'Digital Assets', icon: 'fas fa-photo-video', count: null },
         { id: 'creator', label: 'Creator Profile', icon: 'fas fa-id-card', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
@@ -293,7 +300,7 @@ export default {
     '$route.query.tab': {
       immediate: true,
       handler(tab) {
-        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'settings'].includes(tab)) {
+        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'settings'].includes(tab)) {
           this.activeTab = tab
         } else if (!tab) {
           // Default to overview if no tab specified
@@ -305,7 +312,7 @@ export default {
   mounted() {
     // Check if there's a tab query parameter
     const tab = this.$route.query.tab
-    if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'settings'].includes(tab)) {
+    if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'settings'].includes(tab)) {
       this.activeTab = tab
     }
     

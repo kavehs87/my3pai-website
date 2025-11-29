@@ -126,7 +126,7 @@
           <InfluencerCountryMaps @add-to-cart="handleAddToCart" />
           <InfluencerPodcast :username="currentUsername" />
           <InfluencerBlog :username="currentUsername" />
-          <InfluencerMedia @add-to-cart="handleAddToCart" />
+          <InfluencerMedia :username="currentUsername" @add-to-cart="handleAddToCart" />
           <InfluencerSocial />
 
           <footer class="pt-12 border-t border-slate-200 text-center text-slate-400 text-sm">

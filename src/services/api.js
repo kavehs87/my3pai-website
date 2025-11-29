@@ -1083,6 +1083,131 @@ class ApiService {
       method: 'PATCH'
     })
   }
+
+  // ========================================
+  // Media Assets API Methods
+  // ========================================
+
+  /**
+   * Get public media assets for an influencer (no auth)
+   */
+  async getInfluencerMediaAssets(username, params = {}) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/media-assets${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get single public media asset (no auth)
+   */
+  async getInfluencerMediaAsset(username, id) {
+    if (!username || !id) {
+      return { success: false, error: 'Username and asset ID are required.' }
+    }
+    return this.request(`/influencers/${encodeURIComponent(username)}/media-assets/${id}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get own media assets (includes inactive/draft)
+   */
+  async getMyMediaAssets(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencer/media-assets${queryString}`)
+  }
+
+  /**
+   * Create a new media asset
+   */
+  async createMediaAsset(data) {
+    return this.request('/influencer/media-assets', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update a media asset
+   */
+  async updateMediaAsset(id, data) {
+    return this.request(`/influencer/media-assets/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete a media asset
+   */
+  async deleteMediaAsset(id) {
+    return this.request(`/influencer/media-assets/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Upload asset file
+   */
+  async uploadMediaAssetFile(id, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return this.request(`/influencer/media-assets/${id}/file`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  /**
+   * Upload asset preview image
+   */
+  async uploadMediaAssetImage(id, file) {
+    const formData = new FormData()
+    formData.append('image', file)
+    return this.request(`/influencer/media-assets/${id}/image`, {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  /**
+   * Delete asset file
+   */
+  async deleteMediaAssetFile(id) {
+    return this.request(`/influencer/media-assets/${id}/file`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Delete asset preview image
+   */
+  async deleteMediaAssetImage(id) {
+    return this.request(`/influencer/media-assets/${id}/image`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Purchase a media asset
+   */
+  async purchaseMediaAsset(id) {
+    return this.request(`/media-assets/${id}/purchase`, {
+      method: 'POST'
+    })
+  }
+
+  /**
+   * Get my purchased media assets
+   */
+  async getMyPurchasedMediaAssets(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/media-assets/my-purchases${queryString}`)
+  }
 }
 
 // Create singleton instance
