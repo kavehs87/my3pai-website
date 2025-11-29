@@ -10,6 +10,8 @@ import OAuthCallback from './components/OAuthCallback.vue'
 import MapBuilder from './components/MapBuilder.vue'
 import PublishedMap from './components/published-map/PublishedMap.vue'
 import InfluencerProfile from './components/influencer/InfluencerProfile.vue'
+import MediaAssetsLibrary from './components/influencer/MediaAssetsLibrary.vue'
+import MasterclassesLibrary from './components/influencer/MasterclassesLibrary.vue'
 import './style.css'
 
 const routes = [
@@ -21,6 +23,18 @@ const routes = [
     path: '/influencer/:username?',
     component: InfluencerProfile,
     name: 'influencer-profile',
+    props: true,
+  },
+  {
+    path: '/influencer/:username/media-assets',
+    component: MediaAssetsLibrary,
+    name: 'media-assets-library',
+    props: true,
+  },
+  {
+    path: '/influencer/:username/masterclasses',
+    component: MasterclassesLibrary,
+    name: 'masterclasses-library',
     props: true,
   },
   { 

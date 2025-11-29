@@ -20,12 +20,13 @@
     </div>
 
     <!-- Masterclasses Grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <article
-        v-for="course in masterclasses"
-        :key="course.id"
-        class="group bg-white rounded-2xl p-2 shadow-sm hover:shadow-lg transition-all border border-slate-100 flex flex-col md:flex-row gap-4"
-      >
+    <div v-else class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <article
+          v-for="course in displayedMasterclasses"
+          :key="course.id"
+          class="group bg-white rounded-2xl p-2 shadow-sm hover:shadow-lg transition-all border border-slate-100 flex flex-col md:flex-row gap-4"
+        >
         <div class="relative w-full md:w-1/3 h-48 md:h-auto rounded-xl overflow-hidden shrink-0">
           <img 
             v-if="course.coverImage" 
@@ -75,13 +76,34 @@
           </div>
         </div>
       </article>
+      </div>
+      
+      <!-- Browse Complete Library Button -->
+      <div v-if="masterclasses.length > displayedCount" class="flex justify-center pt-4">
+        <router-link
+          v-if="currentUsername"
+          :to="`/influencer/${currentUsername}/masterclasses`"
+          class="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-600/20 hover:bg-purple-700 transition-all flex items-center gap-2"
+        >
+          Browse Complete Library
+          <ArrowUpRight class="w-4 h-4" />
+        </router-link>
+        <button
+          v-else
+          class="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-600/20 hover:bg-purple-700 transition-all flex items-center gap-2"
+          disabled
+        >
+          Browse Complete Library
+          <ArrowUpRight class="w-4 h-4" />
+        </button>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted, inject, watch } from 'vue'
-import { GraduationCap, Star, ShoppingCart, Heart, Lock, Loader2 } from 'lucide-vue-next'
+import { ref, computed, onMounted, inject, watch } from 'vue'
+import { GraduationCap, Star, ShoppingCart, Heart, Lock, Loader2, ArrowUpRight } from 'lucide-vue-next'
 import api from '@/services/api'
 import { MASTERCLASSES } from '../constants'
 
@@ -97,6 +119,19 @@ const emit = defineEmits(['add-to-cart'])
 const masterclasses = ref([])
 const loading = ref(false)
 const error = ref(null)
+const displayedCount = 4 // Show 2 rows (2 columns x 2 rows = 4 items)
+
+// Get username from inject if not provided as prop
+const influencerUsername = inject('influencerUsername', null)
+const currentUsername = computed(() => {
+  if (props.username) return props.username
+  if (influencerUsername?.value) return influencerUsername.value
+  return null
+})
+
+const displayedMasterclasses = computed(() => {
+  return masterclasses.value.slice(0, displayedCount)
+})
 
 const fetchMasterclasses = async () => {
   loading.value = true
@@ -104,7 +139,19 @@ const fetchMasterclasses = async () => {
   try {
     const result = await api.getInfluencerMasterclasses(props.username)
     if (result.success) {
-      masterclasses.value = result.data.data || []
+      // Handle nested data structure
+      let data = result.data
+      if (data?.data) {
+        data = data.data
+      }
+      const courses = Array.isArray(data) ? data : (data?.data || [])
+      
+      // Map to ensure consistent structure
+      masterclasses.value = courses.map(course => ({
+        ...course,
+        coverImage: course.coverImage || course.image,
+        rating: course.rating || 5.0
+      }))
     } else {
       error.value = result.error || 'Failed to load masterclasses.'
       // Fallback to mock data
