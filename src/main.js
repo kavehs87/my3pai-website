@@ -12,6 +12,9 @@ import PublishedMap from './components/published-map/PublishedMap.vue'
 import InfluencerProfile from './components/influencer/InfluencerProfile.vue'
 import MediaAssetsLibrary from './components/influencer/MediaAssetsLibrary.vue'
 import MasterclassesLibrary from './components/influencer/MasterclassesLibrary.vue'
+import TravelCollaborationDiscover from './components/travel-collaboration/pages/Discover.vue'
+import TravelCollaborationSessions from './components/travel-collaboration/pages/Sessions.vue'
+import Shell from './components/travel-collaboration/components/Layout/Shell.vue'
 import './style.css'
 
 const routes = [
@@ -48,6 +51,22 @@ const routes = [
     component: PublishedMap,
     name: 'published-map',
     props: true
+  },
+  {
+    path: '/travel-collaboration',
+    component: Shell,
+    children: [
+      {
+        path: '',
+        component: TravelCollaborationDiscover,
+        name: 'travel-collaboration-discover'
+      },
+      {
+        path: 'sessions',
+        component: TravelCollaborationSessions,
+        name: 'travel-collaboration-sessions'
+      }
+    ]
   },
 ]
 
