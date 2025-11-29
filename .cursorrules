@@ -1,0 +1,87 @@
+# my3pai.com - System Rules
+
+## 0. CRITICAL CONSTRAINTS (HIGHEST PRIORITY)
+
+1. **Google Maps Safety (ANTI-HALLUCINATION):**
+   - **NEVER** store Map instances in `data()` or `reactive()`. Vue Proxy breaks `AdvancedMarkerElement`.
+   - **MUST USE:** `beforeCreate() { this.map = null }` (Options) OR `shallowRef()` (Composition).
+   - **Check:** `if (window.google?.maps)` before loading script.
+
+2. **State:** NO Pinia/Vuex. Use `src/utils/eventBus.js`. Always `.off()` in `beforeUnmount`.
+
+3. **API:** Check `result.success` first. Public endpoints need `{ requireCsrf: false }`.
+
+4. **Env:** Must prefix `VITE_`.
+
+5. **Assets:** Public images must use absolute paths (e.g., `/logo.png`).
+
+## 1. CROSS-PROJECT WORKFLOW
+
+**Context:** User has 3 Cursor windows (Laravel Backend, Admin, Main Frontend). `docs/` is a symlink shared across windows. **Ignore `docs/` in commits.**
+
+**Task:** When new API endpoints are needed, generate a prompt for the Backend Window using this **EXACT TEMPLATE**:
+
+```text
+[LARAVEL BACKEND PROMPT]
+
+I need to add/update the following API endpoint(s) for the my3pai.com frontend:
+
+- Feature Description: [Description]
+- Endpoint: [Method] [Path]
+- Request: [JSON Structure/Multipart]
+- Response: { success: true, data: ... }
+- Auth: Sanctum
+- Validation: [Rules]
+```
+
+## 2. STACK & ARCHITECTURE
+
+- **Core:** Vue 3 (Options API for UI, Composition for Composables), Vite 5, Router 4.
+- **Style:** Tailwind + CSS Vars (`src/style.css`).
+- **Icons:** `lucide-vue-next`.
+- **Utils:** `vue-toastification`, Custom EventBus.
+- **Aliases:** `@/` = `src/`.
+
+## 3. CODING PATTERNS
+
+- **Components:** PascalCase. `<template>` → `<script>` → `<style scoped>`.
+- **Composables:** Place in `composables/`. Prefix `use...`. Return `readonly` state.
+- **Routing:** HTML5 History. **MUST** use `props: true` for params.
+- **Modals:** **MUST** use `<Teleport to="body">` (z-index fix).
+- **Forms:** Client+Server validation. Reset file inputs (`value = ''`).
+- **Lists:** Virtual scroll for large sets. Empty states required.
+
+## 4. REFERENCE SNIPPETS
+
+**A. Google Maps (Correct Init)**
+```javascript
+// OPTIONS API
+beforeCreate() { this.map = null }, // Non-reactive
+mounted() {
+  if (window.google?.maps) { this.createMap(); return }
+  // ...load script logic...
+}
+```
+
+**B. Event Bus (No Store)**
+```javascript
+import eventBus from '@/utils/eventBus.js'
+// MOUNTED: eventBus.on('name', this.handler)
+// BEFORE_UNMOUNT: eventBus.off('name', this.handler)
+```
+
+**C. API Service (Singleton)**
+```javascript
+// import apiService from '@/services/api.js'
+try {
+  const res = await apiService.getThing()
+  if (res.success) this.data = res.data
+  else this.$toast.error(res.error)
+} catch (e) { this.$toast.error('Network') }
+```
+
+**D. Accordion Logic**
+`v-for` section → `toggleSection(id)` → `<component :is="comp" v-if="open==id">`
+
+**E. Image Fallback**
+`:src="user.avatar || 'https://fallback...'"` (Handle `@error`)
