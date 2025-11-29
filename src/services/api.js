@@ -980,6 +980,108 @@ class ApiService {
       body: formData
     })
   }
+
+  // ========================================
+  // Consultation API Methods
+  // ========================================
+
+  /**
+   * Get public consultation details for an influencer (no auth)
+   */
+  async getInfluencerConsultation(username) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    return this.request(`/influencers/${encodeURIComponent(username)}/consultation`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get own consultation settings
+   */
+  async getMyConsultation() {
+    return this.request('/influencer/consultation')
+  }
+
+  /**
+   * Update or create consultation settings
+   */
+  async updateConsultation(data) {
+    return this.request('/influencer/consultation', {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Book a consultation
+   */
+  async bookConsultation(consultationId, bookingData) {
+    return this.request(`/consultations/${consultationId}/book`, {
+      method: 'POST',
+      body: bookingData
+    })
+  }
+
+  /**
+   * Get my consultation bookings (as customer)
+   */
+  async getMyConsultationBookings(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/consultations/my-bookings${queryString}`)
+  }
+
+  /**
+   * Get single booking details
+   */
+  async getConsultationBooking(id) {
+    return this.request(`/consultations/bookings/${id}`)
+  }
+
+  /**
+   * Cancel a consultation booking
+   */
+  async cancelConsultationBooking(id, reason = null) {
+    return this.request(`/consultations/bookings/${id}/cancel`, {
+      method: 'PATCH',
+      body: reason ? { reason } : {}
+    })
+  }
+
+  /**
+   * Get consultation bookings (as influencer)
+   */
+  async getInfluencerConsultationBookings(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencer/consultation/bookings${queryString}`)
+  }
+
+  /**
+   * Get single booking (as influencer)
+   */
+  async getInfluencerConsultationBooking(id) {
+    return this.request(`/influencer/consultation/bookings/${id}`)
+  }
+
+  /**
+   * Confirm a booking (influencer only)
+   */
+  async confirmConsultationBooking(id, videoCallLink = null) {
+    return this.request(`/influencer/consultation/bookings/${id}/confirm`, {
+      method: 'PATCH',
+      body: videoCallLink ? { video_call_link: videoCallLink } : {}
+    })
+  }
+
+  /**
+   * Complete a booking (influencer only)
+   */
+  async completeConsultationBooking(id) {
+    return this.request(`/influencer/consultation/bookings/${id}/complete`, {
+      method: 'PATCH'
+    })
+  }
 }
 
 // Create singleton instance

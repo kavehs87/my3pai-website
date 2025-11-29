@@ -2,17 +2,20 @@
   <div class="profile-overview">
     <div class="container">
       <ProfileStats :stats="computedStats" />
+      <MyConsultationBookings />
     </div>
   </div>
 </template>
 
 <script>
 import ProfileStats from './ProfileStats.vue'
+import MyConsultationBookings from './MyConsultationBookings.vue'
 
 export default {
   name: 'ProfileOverview',
   components: {
-    ProfileStats
+    ProfileStats,
+    MyConsultationBookings
   },
   props: {
     stats: {

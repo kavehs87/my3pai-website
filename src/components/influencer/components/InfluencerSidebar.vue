@@ -96,22 +96,25 @@
     </div>
 
     <!-- Consultation CTA -->
-    <div class="bg-slate-900 rounded-2xl p-5 text-white shadow-lg shadow-slate-900/10">
+    <div v-if="consultation && isAvailable" class="bg-slate-900 rounded-2xl p-5 text-white shadow-lg shadow-slate-900/10">
       <div class="flex items-start gap-4">
         <div class="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
           <Video class="w-6 h-6 text-slate-400" />
         </div>
         <div>
-          <h3 class="font-bold text-lg leading-tight">1-on-1 Trip Planning</h3>
-          <p class="text-slate-400 text-xs mt-1">Video call • 60 mins</p>
+          <h3 class="font-bold text-lg leading-tight">{{ consultation.title }}</h3>
+          <p class="text-slate-400 text-xs mt-1">Video call • {{ consultation.durationMinutes }} mins</p>
         </div>
       </div>
       <div class="mt-4 flex items-center justify-between">
         <div class="text-sm font-medium">
           <span class="text-slate-400">From </span>
-          <span class="text-white text-lg font-bold">$150</span>
+          <span class="text-white text-lg font-bold">{{ formatPrice(consultation.price, consultation.currency) }}</span>
         </div>
-        <button class="bg-white text-slate-900 px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-100 transition-colors">
+        <button 
+          class="bg-white text-slate-900 px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-100 transition-colors"
+          @click="isBookingModalOpen = true"
+        >
           Book Now →
         </button>
       </div>
@@ -283,11 +286,20 @@
         </button>
       </div>
     </div>
+
+    <!-- Consultation Booking Modal -->
+    <ConsultationBookingModal
+      :is-open="isBookingModalOpen"
+      :consultation="consultation"
+      :consultation-id="consultation?.id"
+      @close="isBookingModalOpen = false"
+      @booking-created="handleBookingCreated"
+    />
   </aside>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, inject } from 'vue'
 import {
   MapPin,
   Building2,
@@ -312,6 +324,8 @@ import {
   Link as LinkIcon,
 } from 'lucide-vue-next'
 import IntroVideoPlayer from './IntroVideoPlayer.vue'
+import ConsultationBookingModal from './ConsultationBookingModal.vue'
+import { useConsultation } from '../composables/useConsultation'
 
 const props = defineProps({
   profile: {
@@ -322,9 +336,32 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  username: {
+    type: String,
+    default: null,
+  },
+})
+
+// Get username from inject if not provided as prop
+const influencerUsername = inject('influencerUsername', null)
+const currentUsername = computed(() => {
+  if (props.username) return props.username
+  if (influencerUsername?.value) return influencerUsername.value
+  if (props.profile?.username) return props.profile.username
+  return null
+})
+
+// Fetch consultation data
+const { consultation, isAvailable, fetchConsultation } = useConsultation()
+
+onMounted(async () => {
+  if (currentUsername.value) {
+    await fetchConsultation(currentUsername.value)
+  }
 })
 
 const isModalOpen = ref(false)
+const isBookingModalOpen = ref(false)
 const destination = ref('')
 const travelStyle = ref('Adventure')
 const aiResponse = ref('')
@@ -431,6 +468,18 @@ const closeModal = () => {
   aiResponse.value = ''
   destination.value = ''
   travelStyle.value = 'Adventure'
+}
+
+const formatPrice = (price, currency = 'USD') => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency || 'USD',
+  }).format(price)
+}
+
+const handleBookingCreated = (booking) => {
+  isBookingModalOpen.value = false
+  // You can emit an event or show a toast here
 }
 </script>
 

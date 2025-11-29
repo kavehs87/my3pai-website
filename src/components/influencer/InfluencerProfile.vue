@@ -82,7 +82,7 @@
         <!-- Sidebar -->
         <div class="lg:col-span-4 xl:col-span-4">
           <div class="lg:sticky lg:top-8 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <InfluencerSidebar :profile="profile" :bio-paragraphs="bioParagraphs" />
+            <InfluencerSidebar :profile="profile" :bio-paragraphs="bioParagraphs" :username="currentUsername" />
           </div>
         </div>
 
