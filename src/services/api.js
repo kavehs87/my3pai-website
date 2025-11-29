@@ -112,7 +112,8 @@ class ApiService {
 
       if (!response.ok) {
         // Extract validation errors from Laravel response
-        let errorMessage = data.message || `HTTP ${response.status}: ${response.statusText}`
+        // Check for error, message, or errors fields
+        let errorMessage = data.error || data.message || `HTTP ${response.status}: ${response.statusText}`
         if (data.errors && typeof data.errors === 'object') {
           const validationErrors = Object.values(data.errors).flat()
           if (validationErrors.length > 0) {
