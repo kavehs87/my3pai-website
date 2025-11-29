@@ -1,30 +1,13 @@
 <template>
   <div class="relative w-full h-full overflow-hidden bg-slate-100 group select-none">
-    <!-- Map Background Placeholder -->
-    <div 
-      class="absolute inset-0 w-full h-full transition-transform duration-700 ease-out"
-      :style="{ transform: `scale(${1 + (zoom - 1) * 0.2})` }"
-    >
-      <img 
-        src="https://picsum.photos/1200/800?grayscale&blur=2" 
-        alt="Map Background"
-        :class="[
-          'w-full h-full object-cover transition-opacity duration-500',
-          isOfflineReady ? 'opacity-100 grayscale-[20%]' : 'opacity-80'
-        ]"
-        @error="handleImageError"
-      />
-    </div>
+    <!-- Google Maps Container -->
+    <div ref="mapEl" class="absolute inset-0 w-full h-full"></div>
     
-    <div class="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-slate-50/20 pointer-events-none" />
-
-    <!-- Radar Effect -->
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-       <div 
-         class="w-64 h-64 bg-primary-500/5 rounded-full animate-pulse border border-primary-500/20" 
-         :style="{ transform: `scale(${zoom})` }"
-       ></div>
-       <div class="absolute top-1/2 left-1/2 w-4 h-4 bg-primary-600 rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-white shadow-lg z-0"></div>
+    <div v-if="loadError" class="absolute inset-0 flex items-center justify-center bg-slate-100 z-50">
+      <div class="text-center p-4">
+        <div class="text-red-500 mb-2">⚠️</div>
+        <p class="text-sm text-slate-600">Google Maps failed to load. Please check your API key configuration.</p>
+      </div>
     </div>
 
     <!-- Offline Status -->
@@ -141,117 +124,20 @@
 
       <div class="h-px bg-slate-200/50 my-1 mx-2"></div>
 
-      <button @click="handleZoom(0.5)" class="p-2 bg-white rounded-lg shadow-lg hover:bg-slate-50 text-slate-700">
+      <button @click="handleZoomIn" class="p-2 bg-white rounded-lg shadow-lg hover:bg-slate-50 text-slate-700">
         <Plus class="w-5 h-5" />
       </button>
-      <button @click="handleZoom(-0.5)" class="p-2 bg-white rounded-lg shadow-lg hover:bg-slate-50 text-slate-700">
+      <button @click="handleZoomOut" class="p-2 bg-white rounded-lg shadow-lg hover:bg-slate-50 text-slate-700">
         <Minus class="w-5 h-5" />
       </button>
     </div>
 
-    <!-- Render Clusters/Markers -->
-    <template v-for="(cluster, index) in clusters" :key="`cluster-${index}`">
-      <button
-        v-if="cluster.length === 1"
-        :key="cluster[0].id"
-        @click="onItemSelect(cluster[0].id)"
-        :style="{ top: `${cluster[0].y}%`, left: `${cluster[0].x}%` }"
-        :class="[
-          'absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-spring',
-          activeItemId === cluster[0].id ? 'z-50 scale-125' : 'hover:scale-110 z-20'
-        ]"
-      >
-        <template v-if="activeItemId === cluster[0].id">
-          <span 
-            :class="[
-              'absolute inset-0 -m-2 rounded-full opacity-40 animate-ping',
-              getMarkerStyle(cluster[0].type, cluster[0].category).bgColor
-            ]"
-          ></span>
-          <span 
-            :class="[
-              'absolute inset-0 -m-1 rounded-full opacity-20 animate-pulse',
-              getMarkerStyle(cluster[0].type, cluster[0].category).bgColor
-            ]"
-          ></span>
-        </template>
-
-        <div :class="[
-          'absolute bottom-full mb-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-2.5 py-1 bg-white rounded-lg shadow-xl text-[11px] font-bold text-slate-800 transition-all transform origin-bottom',
-          activeItemId === cluster[0].id ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-75 translate-y-2 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0'
-        ]">
-          {{ cluster[0].priceDisplay ? cluster[0].priceDisplay : cluster[0].title }}
-          <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-white"></div>
-        </div>
-
-        <template v-if="cluster[0].category === 'CAMPAIGN'">
-          <div :class="[
-            'relative w-10 h-10 rounded-full border-2 overflow-hidden shadow-lg transition-colors bg-white',
-            activeItemId === cluster[0].id 
-              ? `${getMarkerStyle(cluster[0].type, cluster[0].category).borderColor} ring-4 ${getMarkerStyle(cluster[0].type, cluster[0].category).ringColor}` 
-              : 'border-white'
-          ]">
-            <div class="w-full h-full bg-slate-50 flex items-center justify-center p-1">
-              <img :src="cluster[0].avatarUrl" alt="" class="w-full h-full object-contain rounded-md" />
-            </div>
-            <div :class="[
-              'absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center',
-              getMarkerStyle(cluster[0].type, cluster[0].category).badgeColor
-            ]">
-              <Briefcase class="w-3 h-3 text-white" />
-            </div>
-          </div>
-        </template>
-        <template v-else>
-          <div :class="[
-            'relative w-10 h-10 rounded-full border-2 overflow-hidden shadow-lg transition-colors bg-white',
-            activeItemId === cluster[0].id 
-              ? `${getMarkerStyle(cluster[0].type, cluster[0].category).borderColor} ring-4 ${getMarkerStyle(cluster[0].type, cluster[0].category).ringColor}` 
-              : 'border-white'
-          ]">
-            <img :src="cluster[0].avatarUrl" alt="" class="w-full h-full object-cover" />
-            <div :class="[
-              'absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center',
-              getMarkerStyle(cluster[0].type, cluster[0].category).badgeColor
-            ]">
-              <Crown v-if="cluster[0].category === 'CREATOR'" class="w-3 h-3 text-white" />
-              <Users v-else-if="cluster[0].type === 'MEETUP'" class="w-3 h-3 text-white" />
-              <Camera v-else class="w-3 h-3 text-white" />
-            </div>
-          </div>
-        </template>
-
-        <div :class="[
-          'absolute top-full left-1/2 -translate-x-1/2 w-0.5 bg-slate-800/40 rounded-full',
-          activeItemId === cluster[0].id ? 'h-4' : 'h-2'
-        ]"></div>
-      </button>
-
-      <button
-        v-else
-        @click="handleZoom(0.5)"
-        :style="{ top: `${cluster.reduce((sum, p) => sum + p.y, 0) / cluster.length}%`, left: `${cluster.reduce((sum, p) => sum + p.x, 0) / cluster.length}%` }"
-        class="absolute transform -translate-x-1/2 -translate-y-1/2 z-30 transition-transform hover:scale-110 active:scale-95"
-      >
-         <div class="relative">
-            <div class="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-lg border-4 border-white shadow-xl">
-               {{ cluster.length }}
-            </div>
-            <div class="absolute -inset-1 border border-slate-800/20 rounded-full -z-10"></div>
-            <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-white bg-primary-500 flex items-center justify-center text-[8px] font-bold text-white">+</div>
-         </div>
-      </button>
-    </template>
+    <!-- Markers are rendered via Google Maps API -->
   </div>
 </template>
 
 <script>
-import { ref, computed } from 'vue'
 import { Plus, Minus, Download, Check, Loader2, WifiOff, Briefcase, Crown, Layers, Users, Camera } from 'lucide-vue-next'
-
-const BASE_LAT = 35.6580
-const BASE_LNG = 139.7016
-const BASE_ZOOM_SCALE = 800
 
 export default {
   name: 'InteractiveMap',
@@ -283,91 +169,371 @@ export default {
     }
   },
   emits: ['item-select'],
-  setup(props, { emit }) {
-    const zoom = ref(1)
-    const isOfflineReady = ref(false)
-    const isDownloading = ref(false)
-    const showFilters = ref(false)
-    const visibleCategories = ref({
-      CREATOR: true,
-      CAMPAIGN: true,
-      MEETUP: true,
-      SESSION: true
-    })
-
-    const getRawPosition = (lat, lng, scale) => {
-      const y = 50 - (lat - BASE_LAT) * scale
-      const x = 50 + (lng - BASE_LNG) * scale
-      return { x, y }
+  beforeCreate() {
+    // Store map instance non-reactively to avoid Vue Proxy issues
+    this.map = null
+    this.markers = []
+    this.AdvancedMarkerElement = null
+  },
+  data() {
+    return {
+      isOfflineReady: false,
+      isDownloading: false,
+      showFilters: false,
+      loadError: false,
+      visibleCategories: {
+        CREATOR: true,
+        CAMPAIGN: true,
+        MEETUP: true,
+        SESSION: true
+      }
     }
-
-    const visibleItems = computed(() => {
-      return props.items.filter(item => {
-        if (item.category === 'CREATOR') return visibleCategories.value.CREATOR
-        if (item.category === 'CAMPAIGN') return visibleCategories.value.CAMPAIGN
+  },
+  computed: {
+    visibleItems() {
+      return this.items.filter(item => {
+        if (item.category === 'CREATOR') return this.visibleCategories.CREATOR
+        if (item.category === 'CAMPAIGN') return this.visibleCategories.CAMPAIGN
         if (item.category === 'OFFER') {
-          if (item.type === 'MEETUP') return visibleCategories.value.MEETUP
-          return visibleCategories.value.SESSION
+          if (item.type === 'MEETUP') return this.visibleCategories.MEETUP
+          return this.visibleCategories.SESSION
         }
         return true
       })
-    })
+    }
+  },
+  watch: {
+    visibleItems: {
+      handler() {
+        this.updateMarkers()
+      },
+      deep: true
+    },
+    activeItemId() {
+      this.updateMarkers()
+    }
+  },
+  mounted() {
+    this.initGoogleMaps()
+  },
+  beforeUnmount() {
+    this.clearMarkers()
+  },
+  methods: {
+    initGoogleMaps() {
+      // Check if Google Maps is already loaded
+      if (window.google && window.google.maps && window.google.maps.Map) {
+        this.createMap()
+        return
+      }
 
-    const clusters = computed(() => {
-      const currentScale = BASE_ZOOM_SCALE * zoom.value
-      
-      const projectedItems = visibleItems.value.map(item => {
-        const { x, y } = getRawPosition(item.coords[0], item.coords[1], currentScale)
-        return { ...item, x, y }
-      })
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+      if (!apiKey) {
+        this.loadError = true
+        return
+      }
 
-      const result = []
-      const processed = new Set()
+      // Load Google Maps script
+      const script = document.createElement('script')
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=weekly&libraries=marker`
+      script.async = true
+      script.defer = true
+      script.onload = () => this.createMap()
+      script.onerror = () => { this.loadError = true }
+      document.head.appendChild(script)
+    },
 
-      projectedItems.forEach(current => {
-        if (processed.has(current.id)) return
+    createMap() {
+      try {
+        if (!window.google?.maps) {
+          this.loadError = true
+          return
+        }
 
-        const cluster = [current]
-        processed.add(current.id)
-
-        projectedItems.forEach(candidate => {
-          if (processed.has(candidate.id)) return
-
-          const dist = Math.sqrt(
-            Math.pow(current.x - candidate.x, 2) + 
-            Math.pow(current.y - candidate.y, 2)
-          )
-
-          if (dist < 8) {
-            cluster.push(candidate)
-            processed.add(candidate.id)
+        // Calculate center from items or use default
+        let center = { lat: 35.6580, lng: 139.7016 }
+        if (this.visibleItems.length > 0) {
+          const lats = this.visibleItems.map(item => item.coords[0])
+          const lngs = this.visibleItems.map(item => item.coords[1])
+          center = {
+            lat: (Math.min(...lats) + Math.max(...lats)) / 2,
+            lng: (Math.min(...lngs) + Math.max(...lngs)) / 2
           }
+        }
+
+        const mapId = import.meta.env.VITE_GOOGLE_MAP_ID || null
+        const options = {
+          center,
+          zoom: 13,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          zoomControl: false,
+          disableDefaultUI: true
+        }
+        if (mapId) options.mapId = mapId
+
+        this.map = new window.google.maps.Map(this.$refs.mapEl, options)
+
+        // Check for Advanced Markers
+        const useAdvanced = import.meta.env.VITE_USE_ADVANCED_MARKERS === 'true'
+        this.AdvancedMarkerElement = (useAdvanced && mapId && window.google?.maps?.marker?.AdvancedMarkerElement) 
+          ? window.google.maps.marker.AdvancedMarkerElement 
+          : null
+
+        // Wait for map to be ready
+        window.google.maps.event.addListenerOnce(this.map, 'idle', () => {
+          this.updateMarkers()
         })
 
-        result.push(cluster)
+        // Fit bounds to show all markers
+        this.fitBounds()
+      } catch (e) {
+        console.error('Google Maps init failed', e)
+        this.loadError = true
+      }
+    },
+
+    createMarkerElement(item) {
+      const style = this.getMarkerStyle(item.type, item.category)
+      const wrapper = document.createElement('div')
+      wrapper.className = 'relative cursor-pointer transform transition-all duration-300'
+      if (this.activeItemId === item.id) {
+        wrapper.classList.add('scale-125', 'z-50')
+      }
+
+      // Create marker content
+      const markerDiv = document.createElement('div')
+      markerDiv.className = `relative w-10 h-10 rounded-full border-2 overflow-hidden shadow-lg transition-colors bg-white ${
+        this.activeItemId === item.id 
+          ? `${style.borderColor} ring-4 ${style.ringColor}` 
+          : 'border-white'
+      }`
+
+      if (item.category === 'CAMPAIGN') {
+        const inner = document.createElement('div')
+        inner.className = 'w-full h-full bg-slate-50 flex items-center justify-center p-1'
+        const img = document.createElement('img')
+        img.src = item.avatarUrl
+        img.alt = ''
+        img.className = 'w-full h-full object-contain rounded-md'
+        inner.appendChild(img)
+        markerDiv.appendChild(inner)
+      } else {
+        const img = document.createElement('img')
+        img.src = item.avatarUrl
+        img.alt = ''
+        img.className = 'w-full h-full object-cover'
+        markerDiv.appendChild(img)
+      }
+
+      // Badge
+      const badge = document.createElement('div')
+      badge.className = `absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center ${style.badgeColor}`
+      
+      const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      iconSvg.setAttribute('width', '12')
+      iconSvg.setAttribute('height', '12')
+      iconSvg.setAttribute('viewBox', '0 0 24 24')
+      iconSvg.setAttribute('fill', 'none')
+      iconSvg.setAttribute('stroke', 'white')
+      iconSvg.setAttribute('stroke-width', '2')
+      iconSvg.setAttribute('stroke-linecap', 'round')
+      iconSvg.setAttribute('stroke-linejoin', 'round')
+      iconSvg.innerHTML = this.getIconPath(item.category, item.type)
+      badge.appendChild(iconSvg)
+      markerDiv.appendChild(badge)
+
+      // Pin tail
+      const tail = document.createElement('div')
+      tail.className = `absolute top-full left-1/2 -translate-x-1/2 w-0.5 bg-slate-800/40 rounded-full ${
+        this.activeItemId === item.id ? 'h-4' : 'h-2'
+      }`
+      markerDiv.appendChild(tail)
+
+      wrapper.appendChild(markerDiv)
+
+      // Tooltip
+      if (item.priceDisplay || item.title) {
+        const tooltip = document.createElement('div')
+        tooltip.className = `absolute bottom-full mb-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-2.5 py-1 bg-white rounded-lg shadow-xl text-[11px] font-bold text-slate-800 transition-all transform origin-bottom pointer-events-none ${
+          this.activeItemId === item.id 
+            ? 'opacity-100 scale-100 translate-y-0' 
+            : 'opacity-0 scale-75 translate-y-2'
+        }`
+        tooltip.textContent = item.priceDisplay || item.title
+        const arrow = document.createElement('div')
+        arrow.className = 'absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-white'
+        tooltip.appendChild(arrow)
+        wrapper.appendChild(tooltip)
+
+        // Show tooltip on hover
+        wrapper.addEventListener('mouseenter', () => {
+          tooltip.classList.remove('opacity-0', 'scale-75', 'translate-y-2')
+          tooltip.classList.add('opacity-100', 'scale-100', 'translate-y-0')
+        })
+        wrapper.addEventListener('mouseleave', () => {
+          if (this.activeItemId !== item.id) {
+            tooltip.classList.remove('opacity-100', 'scale-100', 'translate-y-0')
+            tooltip.classList.add('opacity-0', 'scale-75', 'translate-y-2')
+          }
+        })
+      }
+
+      // Active state rings
+      if (this.activeItemId === item.id) {
+        const ping = document.createElement('span')
+        ping.className = `absolute inset-0 -m-2 rounded-full opacity-40 animate-ping ${style.bgColor}`
+        wrapper.appendChild(ping)
+        const pulse = document.createElement('span')
+        pulse.className = `absolute inset-0 -m-1 rounded-full opacity-20 animate-pulse ${style.bgColor}`
+        wrapper.appendChild(pulse)
+      }
+
+      return wrapper
+    },
+
+    getIconPath(category, type) {
+      // Lucide icon SVG paths
+      if (category === 'CAMPAIGN') {
+        // Briefcase icon
+        return '<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect x="4" y="6" width="16" height="14" rx="2"/>'
+      } else if (category === 'CREATOR') {
+        // Crown icon (simplified)
+        return '<path d="M12 6l-2 4 2-1 2 1-2-4z"/><path d="M5 14l2-6 2 6"/><path d="M19 14l-2-6-2 6"/><path d="M3 20h18"/><path d="M4 16h16"/>'
+      } else if (type === 'MEETUP') {
+        // Users icon
+        return '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'
+      } else {
+        // Camera icon
+        return '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>'
+      }
+    },
+
+    updateMarkers() {
+      if (!this.map || !window.google?.maps) return
+
+      this.clearMarkers()
+
+      this.visibleItems.forEach(item => {
+        const position = {
+          lat: item.coords[0],
+          lng: item.coords[1]
+        }
+
+        if (this.AdvancedMarkerElement) {
+          // Use Advanced Markers
+          const markerElement = this.createMarkerElement(item)
+          const marker = new this.AdvancedMarkerElement({
+            map: this.map,
+            position,
+            content: markerElement,
+            title: item.title || item.priceDisplay || 'Marker'
+          })
+
+          markerElement.addEventListener('click', () => {
+            this.$emit('item-select', item.id)
+          })
+
+          this.markers.push(marker)
+        } else {
+          // Fallback to standard markers
+          const markerElement = this.createMarkerElement(item)
+          const iconSvg = this.createStandardMarkerIcon(item)
+          
+          const marker = new window.google.maps.Marker({
+            map: this.map,
+            position,
+            icon: iconSvg,
+            title: item.title || item.priceDisplay || 'Marker',
+            optimized: false
+          })
+
+          marker.addListener('click', () => {
+            this.$emit('item-select', item.id)
+          })
+
+          this.markers.push(marker)
+        }
       })
 
-      return result
-    })
+      this.fitBounds()
+    },
 
-    const handleZoom = (delta) => {
-      zoom.value = Math.max(0.5, Math.min(3, zoom.value + delta))
-    }
+    createStandardMarkerIcon(item) {
+      const style = this.getMarkerStyle(item.type, item.category)
+      const size = 40
+      const iconSvg = `
+        <svg width="${size}" height="${size}" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" fill="white" stroke="${this.getColorFromClass(style.borderColor)}" stroke-width="2"/>
+          <image href="${item.avatarUrl}" x="4" y="4" width="32" height="32" clip-path="circle(16px at center)"/>
+        </svg>
+      `
+      return {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(iconSvg),
+        scaledSize: new window.google.maps.Size(size, size),
+        anchor: new window.google.maps.Point(size / 2, size / 2)
+      }
+    },
 
-    const handleDownloadMap = () => {
-      if (isOfflineReady.value) return
-      isDownloading.value = true
+    getColorFromClass(className) {
+      const colorMap = {
+        'border-orange-500': '#f97316',
+        'border-purple-500': '#8b5cf6',
+        'border-primary-500': '#6366f1',
+        'border-accent-500': '#10b981'
+      }
+      return colorMap[className] || '#64748b'
+    },
+
+    clearMarkers() {
+      this.markers.forEach(marker => {
+        if (marker.setMap) marker.setMap(null)
+      })
+      this.markers = []
+    },
+
+    fitBounds() {
+      if (!this.map || !window.google?.maps || this.visibleItems.length === 0) return
+
+      const bounds = new window.google.maps.LatLngBounds()
+      this.visibleItems.forEach(item => {
+        bounds.extend({
+          lat: item.coords[0],
+          lng: item.coords[1]
+        })
+      })
+      this.map.fitBounds(bounds)
+    },
+
+    handleZoomIn() {
+      if (this.map) {
+        const currentZoom = this.map.getZoom()
+        this.map.setZoom(currentZoom + 1)
+      }
+    },
+
+    handleZoomOut() {
+      if (this.map) {
+        const currentZoom = this.map.getZoom()
+        this.map.setZoom(currentZoom - 1)
+      }
+    },
+
+    handleDownloadMap() {
+      if (this.isOfflineReady) return
+      this.isDownloading = true
       setTimeout(() => {
-        isDownloading.value = false
-        isOfflineReady.value = true
+        this.isDownloading = false
+        this.isOfflineReady = true
       }, 2500)
-    }
+    },
 
-    const toggleCategory = (category) => {
-      visibleCategories.value[category] = !visibleCategories.value[category]
-    }
+    toggleCategory(category) {
+      this.visibleCategories[category] = !this.visibleCategories[category]
+    },
 
-    const getMarkerStyle = (type, category) => {
+    getMarkerStyle(type, category) {
       switch (category) {
         case 'CAMPAIGN':
           return {
@@ -412,30 +578,6 @@ export default {
             icon: null
           }
       }
-    }
-
-    const onItemSelect = (id) => {
-      emit('item-select', id)
-    }
-
-    const handleImageError = (e) => {
-      e.target.src = 'https://picsum.photos/1200/800?grayscale&blur=2'
-    }
-
-    return {
-      zoom,
-      isOfflineReady,
-      isDownloading,
-      showFilters,
-      visibleCategories,
-      visibleItems,
-      clusters,
-      handleZoom,
-      handleDownloadMap,
-      toggleCategory,
-      getMarkerStyle,
-      onItemSelect,
-      handleImageError
     }
   }
 }
