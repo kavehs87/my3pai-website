@@ -91,7 +91,7 @@
     </div>
 
     <!-- Interactive Overlay Link -->
-    <router-link :to="`/travel-collaboration/offer/${offer.id}`" class="absolute inset-0 z-10" />
+    <router-link :to="`/travel-collaboration/offer/${offer.id}`" class="absolute inset-0 z-10" @click.stop />
   </div>
 
   <!-- STANDARD SESSION / SERVICE CARD DESIGN -->
@@ -157,7 +157,7 @@
     </div>
     
     <!-- Interactive Overlay Link -->
-    <router-link :to="`/travel-collaboration/offer/${offer.id}`" class="absolute inset-0 z-10" />
+    <router-link :to="`/travel-collaboration/offer/${offer.id}`" class="absolute inset-0 z-10" @click.stop />
   </div>
 </template>
 

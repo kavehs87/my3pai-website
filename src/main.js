@@ -14,6 +14,11 @@ import MediaAssetsLibrary from './components/influencer/MediaAssetsLibrary.vue'
 import MasterclassesLibrary from './components/influencer/MasterclassesLibrary.vue'
 import TravelCollaborationDiscover from './components/travel-collaboration/pages/Discover.vue'
 import TravelCollaborationSessions from './components/travel-collaboration/pages/Sessions.vue'
+import TravelCollaborationMeetups from './components/travel-collaboration/pages/Meetups.vue'
+import TravelCollaborationInfluencers from './components/travel-collaboration/pages/Influencers.vue'
+import TravelCollaborationCampaigns from './components/travel-collaboration/pages/Campaigns.vue'
+import TravelCollaborationCreateTrip from './components/travel-collaboration/pages/CreateTrip.vue'
+import TravelCollaborationBookingDetail from './components/travel-collaboration/pages/BookingDetail.vue'
 import Shell from './components/travel-collaboration/components/Layout/Shell.vue'
 import './style.css'
 
@@ -65,8 +70,34 @@ const routes = [
         path: 'sessions',
         component: TravelCollaborationSessions,
         name: 'travel-collaboration-sessions'
+      },
+      {
+        path: 'meetups',
+        component: TravelCollaborationMeetups,
+        name: 'travel-collaboration-meetups'
+      },
+      {
+        path: 'influencers',
+        component: TravelCollaborationInfluencers,
+        name: 'travel-collaboration-influencers'
+      },
+      {
+        path: 'campaigns',
+        component: TravelCollaborationCampaigns,
+        name: 'travel-collaboration-campaigns'
+      },
+      {
+        path: 'offer/:id',
+        component: TravelCollaborationBookingDetail,
+        name: 'travel-collaboration-booking-detail',
+        props: true
       }
     ]
+  },
+  {
+    path: '/travel-collaboration/trips/new',
+    component: TravelCollaborationCreateTrip,
+    name: 'travel-collaboration-create-trip'
   },
 ]
 
