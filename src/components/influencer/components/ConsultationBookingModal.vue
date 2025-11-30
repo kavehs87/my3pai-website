@@ -46,9 +46,22 @@
                   type="datetime-local"
                   required
                   :min="minDateTime"
-                  class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none"
+                  :class="[
+                    'w-full px-4 py-2 rounded-lg border outline-none focus:ring-2',
+                    isTimeSlotBooked
+                      ? 'border-red-300 bg-red-50 focus:ring-red-500'
+                      : 'border-slate-200 focus:ring-slate-900'
+                  ]"
                 />
-                <p class="text-xs text-slate-500 mt-1">Select a date and time for your consultation</p>
+                <div class="mt-1 space-y-1">
+                  <p class="text-xs text-slate-500">Select a date and time for your consultation</p>
+                  <p v-if="isTimeSlotBooked" class="text-xs text-red-600 font-medium">
+                    ⚠️ This time slot is already booked. Please choose another time.
+                  </p>
+                  <p v-if="loadingAvailability" class="text-xs text-slate-400">
+                    Loading availability...
+                  </p>
+                </div>
               </div>
 
               <!-- Timezone -->
@@ -93,7 +106,7 @@
               <!-- Submit Button -->
               <button
                 type="submit"
-                :disabled="loading || !bookingForm.scheduledAt || !bookingForm.timezone"
+                :disabled="loading || !bookingForm.scheduledAt || !bookingForm.timezone || isTimeSlotBooked"
                 class="w-full py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-colors"
               >
                 <span v-if="loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -149,6 +162,10 @@ const props = defineProps({
     type: Number,
     default: null,
   },
+  username: {
+    type: String,
+    default: null,
+  },
 })
 
 const emit = defineEmits(['close', 'booking-created'])
@@ -162,6 +179,9 @@ const bookingForm = ref({
 const loading = ref(false)
 const error = ref(null)
 const bookingSuccess = ref(false)
+const bookedSlots = ref([])
+const loadingAvailability = ref(false)
+const availabilityError = ref(null)
 
 // Common timezones for dropdown
 const commonTimezones = [
@@ -185,6 +205,77 @@ const minDateTime = computed(() => {
   return now.toISOString().slice(0, 16)
 })
 
+/**
+ * Check if selected time overlaps with any booked slot
+ */
+const isTimeSlotBooked = computed(() => {
+  if (!bookingForm.value.scheduledAt || bookedSlots.value.length === 0) {
+    return false
+  }
+
+  const selectedTime = new Date(bookingForm.value.scheduledAt).getTime()
+  const durationMs = (props.consultation?.durationMinutes || 60) * 60 * 1000
+  const selectedEnd = selectedTime + durationMs
+
+  return bookedSlots.value.some((slot) => {
+    const slotStart = new Date(slot.start).getTime()
+    const slotEnd = new Date(slot.end).getTime()
+
+    // Check for overlap: selected time overlaps if it starts before slot ends and ends after slot starts
+    return selectedTime < slotEnd && selectedEnd > slotStart
+  })
+})
+
+/**
+ * Fetch booked time slots for the consultation
+ */
+const fetchAvailability = async () => {
+  if (!props.consultationId) {
+    return
+  }
+
+  loadingAvailability.value = true
+  availabilityError.value = null
+
+  try {
+    // Calculate date range: next 90 days
+    // Use UTC to avoid timezone issues - ensure start_date is today in UTC
+    const now = new Date()
+    const startDate = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0, 0, 0, 0
+    ))
+    const endDate = new Date(Date.UTC(
+      startDate.getUTCFullYear(),
+      startDate.getUTCMonth(),
+      startDate.getUTCDate() + 90,
+      23, 59, 59, 999
+    ))
+
+    const params = {
+      start_date: startDate.toISOString(),
+      end_date: endDate.toISOString(),
+    }
+
+    const result = await api.getConsultationAvailability(props.consultationId, params)
+
+    if (result.success && result.data?.bookedSlots) {
+      bookedSlots.value = result.data.bookedSlots
+    } else {
+      bookedSlots.value = []
+      availabilityError.value = result.error || 'Failed to load availability'
+    }
+  } catch (err) {
+    console.error('[ConsultationBookingModal] Error fetching availability:', err)
+    bookedSlots.value = []
+    availabilityError.value = err.message || 'Failed to load availability'
+  } finally {
+    loadingAvailability.value = false
+  }
+}
+
 const formatPrice = (price, currency = 'USD') => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -195,6 +286,13 @@ const formatPrice = (price, currency = 'USD') => {
 const handleBooking = async () => {
   if (!props.consultationId) {
     error.value = 'Consultation ID is missing'
+    return
+  }
+
+  // Check if selected time overlaps with booked slots
+  if (isTimeSlotBooked.value) {
+    error.value = 'This time slot is already booked. Please select a different date and time.'
+    toast.error('Time slot unavailable. Please choose another time.')
     return
   }
 
@@ -215,6 +313,9 @@ const handleBooking = async () => {
       bookingSuccess.value = true
       emit('booking-created', result.data.booking)
       
+      // Refresh availability after successful booking
+      await fetchAvailability()
+      
       // Handle payment intent if present
       if (result.data.paymentIntent) {
         // TODO: Integrate Stripe payment element
@@ -226,8 +327,11 @@ const handleBooking = async () => {
     } else {
       // Handle 409 Conflict (time slot already booked)
       if (result.status === 409) {
-        error.value = result.error || 'This time slot is already booked. Please select a different date and time.'
-        toast.error('Time slot unavailable. Please choose another time.')
+        const errorMsg = result.error || 'Time slot already booked'
+        error.value = errorMsg + '. Please select a different date and time.'
+        toast.error(errorMsg)
+        // Refresh availability to get latest booked slots
+        await fetchAvailability()
       } else {
         error.value = result.error || 'Failed to create booking'
         toast.error(error.value)
@@ -257,13 +361,20 @@ const closeModal = () => {
 }
 
 // Watch for modal open/close
-watch(() => props.isOpen, (isOpen) => {
+watch(() => props.isOpen, async (isOpen) => {
   if (isOpen) {
     // Reset form when modal opens
     bookingForm.value.scheduledAt = ''
     bookingForm.value.notes = ''
     error.value = null
     bookingSuccess.value = false
+    bookedSlots.value = []
+    availabilityError.value = null
+    
+    // Fetch availability when modal opens
+    if (props.consultationId) {
+      await fetchAvailability()
+    }
   }
 })
 </script>

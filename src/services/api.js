@@ -1016,6 +1016,34 @@ class ApiService {
   }
 
   /**
+   * Get consultation availability (booked slots) by username
+   * Public endpoint - no auth required
+   */
+  async getConsultationAvailabilityByUsername(username, params = {}) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/consultation/availability${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get consultation availability (booked slots) by consultation ID
+   * Public endpoint - no auth required
+   */
+  async getConsultationAvailability(consultationId, params = {}) {
+    if (!consultationId) {
+      return { success: false, error: 'Consultation ID is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/consultations/${consultationId}/availability${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
    * Book a consultation
    */
   async bookConsultation(consultationId, bookingData) {
