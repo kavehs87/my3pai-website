@@ -15,7 +15,6 @@
             <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-300">New Episodes</span>
             <span v-if="episodes.length > 0" class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           </div>
-          <h2 class="text-2xl font-bold tracking-tight">WanderLuxe Audio</h2>
           <p class="text-slate-400 text-sm">Travel stories &amp; tips on the go.</p>
         </div>
       </div>
