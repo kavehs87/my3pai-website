@@ -46,8 +46,10 @@
                   type="datetime-local"
                   required
                   :min="minDateTime"
+                  :step="900"
+                  @input="validateTimeSlot"
                   :class="[
-                    'w-full px-4 py-2 rounded-lg border outline-none focus:ring-2',
+                    'w-full px-4 py-2 rounded-lg border outline-none focus:ring-2 transition-colors',
                     isTimeSlotBooked
                       ? 'border-red-300 bg-red-50 focus:ring-red-500'
                       : 'border-slate-200 focus:ring-slate-900'
@@ -55,11 +57,14 @@
                 />
                 <div class="mt-1 space-y-1">
                   <p class="text-xs text-slate-500">Select a date and time for your consultation</p>
-                  <p v-if="isTimeSlotBooked" class="text-xs text-red-600 font-medium">
+                  <p v-if="isTimeSlotBooked" class="text-xs text-red-600 font-medium animate-pulse">
                     ⚠️ This time slot is already booked. Please choose another time.
                   </p>
                   <p v-if="loadingAvailability" class="text-xs text-slate-400">
                     Loading availability...
+                  </p>
+                  <p v-if="selectedDateBookedSlots.length > 0 && !isTimeSlotBooked && bookingForm.scheduledAt" class="text-xs text-amber-600">
+                    ℹ️ Note: This date has {{ selectedDateBookedSlots.length }} booked slot(s). Please select a time that doesn't overlap.
                   </p>
                 </div>
               </div>
@@ -206,6 +211,24 @@ const minDateTime = computed(() => {
 })
 
 /**
+ * Get booked slots for the selected date (for informational display)
+ */
+const selectedDateBookedSlots = computed(() => {
+  if (!bookingForm.value.scheduledAt || bookedSlots.value.length === 0) {
+    return []
+  }
+
+  const selectedDate = new Date(bookingForm.value.scheduledAt)
+  const selectedDateStr = selectedDate.toISOString().split('T')[0] // YYYY-MM-DD
+
+  return bookedSlots.value.filter((slot) => {
+    const slotDate = new Date(slot.start)
+    const slotDateStr = slotDate.toISOString().split('T')[0]
+    return slotDateStr === selectedDateStr
+  })
+})
+
+/**
  * Check if selected time overlaps with any booked slot
  */
 const isTimeSlotBooked = computed(() => {
@@ -227,6 +250,15 @@ const isTimeSlotBooked = computed(() => {
 })
 
 /**
+ * Validate time slot on input change
+ * The computed property isTimeSlotBooked will automatically update reactively
+ */
+const validateTimeSlot = () => {
+  // Validation happens automatically via the computed property
+  // This handler ensures the validation runs on input change
+}
+
+/**
  * Fetch booked time slots for the consultation
  */
 const fetchAvailability = async () => {
@@ -240,6 +272,7 @@ const fetchAvailability = async () => {
   try {
     // Calculate date range: next 90 days
     // Use UTC to avoid timezone issues - ensure start_date is today in UTC
+    // OpenAPI spec expects date format (YYYY-MM-DD), not datetime
     const now = new Date()
     const startDate = new Date(Date.UTC(
       now.getUTCFullYear(),
@@ -254,9 +287,17 @@ const fetchAvailability = async () => {
       23, 59, 59, 999
     ))
 
+    // Format as YYYY-MM-DD (date only, per OpenAPI spec)
+    const formatDateOnly = (date) => {
+      const year = date.getUTCFullYear()
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+      const day = String(date.getUTCDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
     const params = {
-      start_date: startDate.toISOString(),
-      end_date: endDate.toISOString(),
+      start_date: formatDateOnly(startDate),
+      end_date: formatDateOnly(endDate),
     }
 
     const result = await api.getConsultationAvailability(props.consultationId, params)
