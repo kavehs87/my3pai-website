@@ -116,6 +116,8 @@
 </template>
 
 <script>
+import apiService from '@/services/api.js'
+
 export default {
   name: 'ThumbnailUpload',
   props: {
@@ -302,9 +304,13 @@ export default {
     async loadImageFromUrl(url) {
       // Try multiple strategies to load the image
       const strategies = [
-        // Strategy 1: Use proxied URL (works in development)
+        // Strategy 1: Use storage proxy endpoint (if available, best for CORS)
+        () => this.fetchImageAsBlobViaProxy(url),
+        // Strategy 2: Use API service with credentials (works if backend allows it)
+        () => this.fetchImageAsBlobViaApi(url),
+        // Strategy 3: Use proxied URL (works in development)
         () => this.fetchImageAsBlob(this.getProxiedUrl(url)),
-        // Strategy 2: Try direct fetch with CORS (works if backend has CORS configured)
+        // Strategy 4: Try direct fetch with CORS (works if backend has CORS configured)
         () => this.fetchImageAsBlob(url),
       ]
       
@@ -327,6 +333,64 @@ export default {
       // All strategies failed
       console.error('All image loading strategies failed for:', url)
       this.showCropperError('Could not load the image for editing. You can upload a new image instead.')
+    },
+    getStoragePathFromUrl(url) {
+      // Extract storage path from full URL
+      // e.g., https://api.my3pai.com/storage/maps/thumb_xxx.jpg -> /storage/maps/thumb_xxx.jpg
+      try {
+        const urlObj = new URL(url)
+        const path = urlObj.pathname
+        if (path.startsWith('/storage/')) {
+          return path
+        }
+      } catch (e) {
+        // If URL parsing fails, check if it's already a path
+        if (url.startsWith('/storage/')) {
+          return url
+        }
+      }
+      return null
+    },
+    async fetchImageAsBlobViaProxy(url) {
+      // Try to use the storage proxy endpoint if the URL is a storage path
+      const storagePath = this.getStoragePathFromUrl(url)
+      if (!storagePath) {
+        throw new Error('Not a storage URL')
+      }
+
+      // Build proxy URL through API endpoint
+      const proxyUrl = `${apiService.baseURL}/storage/proxy?url=${encodeURIComponent(storagePath)}`
+      
+      // Use API service to fetch image via proxy (with proper credentials)
+      const blob = await apiService.fetchImageAsBlob(proxyUrl)
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          resolve({
+            dataUrl: e.target.result,
+            file: new File([blob], 'thumbnail.jpg', { type: blob.type || 'image/jpeg' })
+          })
+        }
+        reader.onerror = () => reject(new Error('Failed to read blob'))
+        reader.readAsDataURL(blob)
+      })
+    },
+    async fetchImageAsBlobViaApi(url) {
+      // Use API service to fetch image with proper credentials
+      const blob = await apiService.fetchImageAsBlob(url)
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          resolve({
+            dataUrl: e.target.result,
+            file: new File([blob], 'thumbnail.jpg', { type: blob.type || 'image/jpeg' })
+          })
+        }
+        reader.onerror = () => reject(new Error('Failed to read blob'))
+        reader.readAsDataURL(blob)
+      })
     },
     async fetchImageAsBlob(url) {
       const response = await fetch(url, { mode: 'cors' })

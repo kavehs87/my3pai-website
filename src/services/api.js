@@ -1236,6 +1236,44 @@ class ApiService {
     const queryString = this.buildQueryString(params)
     return this.request(`/media-assets/my-purchases${queryString}`)
   }
+
+  /**
+   * Fetch an image as a blob with proper credentials and CORS handling
+   * This is useful for fetching images from storage that may have CORS restrictions
+   */
+  async fetchImageAsBlob(imageUrl) {
+    // If the URL is from the API origin, use credentials
+    const url = new URL(imageUrl)
+    const isApiOrigin = url.origin === this.apiOrigin
+
+    const config = {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'image/*'
+      }
+    }
+
+    // Only add credentials for same-origin requests
+    if (isApiOrigin) {
+      await this.ensureCsrf()
+      const xsrfToken = this.getXsrfToken()
+      if (xsrfToken) {
+        config.headers[XSRF_HEADER_NAME] = xsrfToken
+      }
+    }
+
+    try {
+      const response = await fetch(imageUrl, config)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`)
+      }
+      return await response.blob()
+    } catch (error) {
+      console.error('Failed to fetch image as blob:', error)
+      throw error
+    }
+  }
 }
 
 // Create singleton instance
