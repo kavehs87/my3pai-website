@@ -15,7 +15,13 @@
           <a href="#" class="nav-link">Consult</a>
           <a href="#" class="nav-link">Media</a>
           <a href="#" class="nav-link">Plan</a>
-          <router-link to="/studio" class="nav-link">Studio</router-link>
+          <router-link v-if="!showPresentationLinks" to="/studio" class="nav-link">Studio</router-link>
+          <!-- Presentation links for specific users -->
+          <template v-if="showPresentationLinks">
+            <a href="https://mocks.my3p.ai/studio/" target="_blank" rel="noopener noreferrer" class="nav-link">Studio</a>
+            <a href="https://mocks.my3p.ai/analytics/" target="_blank" rel="noopener noreferrer" class="nav-link">Analytics</a>
+            <a href="https://mocks.my3p.ai/travel/" target="_blank" rel="noopener noreferrer" class="nav-link">Travel</a>
+          </template>
         </nav>
 
         <!-- Language/Currency Selector -->
@@ -70,7 +76,13 @@
           <a href="#" class="mobile-nav-link">Consult</a>
           <a href="#" class="mobile-nav-link">Media</a>
           <a href="#" class="mobile-nav-link">Plan</a>
-          <router-link to="/studio" class="mobile-nav-link" @click="toggleMobileMenu">Studio</router-link>
+          <router-link v-if="!showPresentationLinks" to="/studio" class="mobile-nav-link" @click="toggleMobileMenu">Studio</router-link>
+          <!-- Presentation links for specific users -->
+          <template v-if="showPresentationLinks">
+            <a href="https://mocks.my3p.ai/studio/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" @click="toggleMobileMenu">Studio</a>
+            <a href="https://mocks.my3p.ai/analytics/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" @click="toggleMobileMenu">Analytics</a>
+            <a href="https://mocks.my3p.ai/travel/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" @click="toggleMobileMenu">Travel</a>
+          </template>
         </nav>
         <div class="mobile-user-actions">
           <div class="mobile-language">
@@ -125,8 +137,37 @@ export default {
       user: {
         name: '',
         email: '',
-        avatar: ''
+        avatar: '',
+        username: ''
       }
+    }
+  },
+  computed: {
+    showPresentationLinks() {
+      // Show presentation links only for specific registered users
+      const allowedUsernames = ['kavehs86', 'nikookar7', 'frzdmhb']
+      // Try multiple ways to get username
+      const username = this.user?.username || 
+                      this.user?.user_name || 
+                      this.user?.userName ||
+                      (this.user?.email ? this.user.email.split('@')[0] : '') ||
+                      ''
+      // Remove @ prefix if present
+      const cleanUsername = username.replace(/^@/, '')
+      const shouldShow = this.isLoggedIn && cleanUsername && allowedUsernames.includes(cleanUsername)
+      // Debug log (only log once per user load to avoid spam)
+      if (this.isLoggedIn && !this._debugLogged) {
+        console.log('[Header] showPresentationLinks check:', {
+          isLoggedIn: this.isLoggedIn,
+          username: cleanUsername,
+          rawUsername: username,
+          userObject: this.user,
+          allowedUsernames,
+          shouldShow
+        })
+        this._debugLogged = true
+      }
+      return shouldShow
     }
   },
   async mounted() {
@@ -198,16 +239,24 @@ export default {
             email: userData.email || '',
             avatar: userData.avatar || userData.picture || userData.photo_url || '',
             picture: userData.picture || userData.avatar,
-            photo_url: userData.photo_url || userData.avatar
+            photo_url: userData.photo_url || userData.avatar,
+            username: userData.username || userData.user_name || userData.userName || ''
           }
+          // Debug: Log user data to check username
+          console.log('[Header] User data loaded:', {
+            username: this.user.username,
+            isLoggedIn: this.isLoggedIn,
+            showPresentationLinks: this.showPresentationLinks,
+            rawUserData: userData
+          })
         } else {
           this.isLoggedIn = false
-          this.user = { name: '', email: '', avatar: '' }
+          this.user = { name: '', email: '', avatar: '', username: '' }
         }
       } catch (error) {
         console.error('Auth check failed:', error)
         this.isLoggedIn = false
-        this.user = { name: '', email: '', avatar: '' }
+        this.user = { name: '', email: '', avatar: '', username: '' }
       }
     },
     async logout() {
@@ -233,7 +282,7 @@ export default {
     },
     resetAuthState() {
       this.isLoggedIn = false
-      this.user = { name: '', email: '', avatar: '' }
+      this.user = { name: '', email: '', avatar: '', username: '' }
       this.showProfileDropdown = false
       this.showSignup = false
       this.showLogin = true
@@ -244,8 +293,21 @@ export default {
     },
     handleAuthSuccess(userData) {
       this.isLoggedIn = true
-      this.user = userData
+      // Ensure username is extracted properly
+      if (userData && typeof userData === 'object') {
+        this.user = {
+          ...userData,
+          username: userData.username || userData.user_name || userData.userName || this.user.username || ''
+        }
+      } else {
+        this.user = userData
+      }
       this.showProfileDropdown = false
+      // Debug: Log user data
+      console.log('[Header] Auth success - user data:', {
+        username: this.user.username,
+        showPresentationLinks: this.showPresentationLinks
+      })
     },
     handleProfileUpdate(updatedUser) {
       // Update user data when profile is updated (e.g., avatar change)
