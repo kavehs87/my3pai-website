@@ -19,8 +19,8 @@
           <!-- Presentation links for specific users -->
           <template v-if="showPresentationLinks">
             <a href="https://mocks.my3p.ai/studio/" target="_blank" rel="noopener noreferrer" class="nav-link">Studio</a>
-            <a href="https://mocks.my3p.ai/analytics/" target="_blank" rel="noopener noreferrer" class="nav-link">Analytics</a>
-            <a href="https://mocks.my3p.ai/travel/" target="_blank" rel="noopener noreferrer" class="nav-link">Travel</a>
+            <a href="https://mocks.my3p.ai/analytics/" target="_blank" rel="noopener noreferrer" class="nav-link">Scratch World</a>
+            <a href="https://mocks.my3p.ai/travel/" target="_blank" rel="noopener noreferrer" class="nav-link">Meet Up</a>
           </template>
         </nav>
 
@@ -80,8 +80,8 @@
           <!-- Presentation links for specific users -->
           <template v-if="showPresentationLinks">
             <a href="https://mocks.my3p.ai/studio/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" @click="toggleMobileMenu">Studio</a>
-            <a href="https://mocks.my3p.ai/analytics/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" @click="toggleMobileMenu">Analytics</a>
-            <a href="https://mocks.my3p.ai/travel/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" @click="toggleMobileMenu">Travel</a>
+            <a href="https://mocks.my3p.ai/analytics/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" @click="toggleMobileMenu">Scratch World</a>
+            <a href="https://mocks.my3p.ai/travel/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link" @click="toggleMobileMenu">Meet Up</a>
           </template>
         </nav>
         <div class="mobile-user-actions">
