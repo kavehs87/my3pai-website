@@ -224,8 +224,14 @@ const handleBooking = async () => {
         toast.success('Booking request created successfully!')
       }
     } else {
-      error.value = result.error || 'Failed to create booking'
-      toast.error(error.value)
+      // Handle 409 Conflict (time slot already booked)
+      if (result.status === 409) {
+        error.value = result.error || 'This time slot is already booked. Please select a different date and time.'
+        toast.error('Time slot unavailable. Please choose another time.')
+      } else {
+        error.value = result.error || 'Failed to create booking'
+        toast.error(error.value)
+      }
     }
   } catch (err) {
     error.value = err.message || 'An error occurred while creating the booking'
