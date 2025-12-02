@@ -41,6 +41,15 @@
                 <p class="dashboard-subtitle">{{ currentTabDescription }}</p>
               </div>
               <div class="dashboard-actions">
+                <router-link 
+                  v-if="profileData.user.username"
+                  :to="`/influencer/${profileData.user.username}`" 
+                  class="action-btn public-link"
+                  title="View your public creator page"
+                >
+                  <i class="fas fa-external-link-alt"></i>
+                  <span>View Public Page</span>
+                </router-link>
                 <button class="action-btn" @click="handleEditProfile" title="Edit Profile">
                   <i class="fas fa-user-edit"></i>
                   <span>Edit Profile</span>
@@ -1029,6 +1038,19 @@ export default {
   background: var(--bg-secondary);
   border-color: var(--secondary-color);
   color: var(--secondary-color);
+}
+
+.action-btn.public-link {
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: white;
+  text-decoration: none;
+}
+
+.action-btn.public-link:hover {
+  background: var(--secondary-hover);
+  border-color: var(--secondary-hover);
+  color: white;
 }
 
 /* Quick Stats */

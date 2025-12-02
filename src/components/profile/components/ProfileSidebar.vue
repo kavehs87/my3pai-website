@@ -13,6 +13,17 @@
         <p class="sidebar-user-email">{{ user.email }}</p>
       </div>
     </div>
+    
+    <!-- View Public Profile Link -->
+    <router-link 
+      v-if="user.username"
+      :to="`/influencer/${user.username}`" 
+      class="public-profile-link"
+      title="View your public creator page"
+    >
+      <i class="fas fa-external-link-alt"></i>
+      <span class="link-label">View Public Profile</span>
+    </router-link>
 
     <!-- Navigation -->
     <nav class="sidebar-nav">
@@ -199,6 +210,53 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Public Profile Link */
+.public-profile-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin: var(--spacing-sm) var(--spacing-md);
+  background: rgba(72, 196, 200, 0.1);
+  border: 1px solid var(--secondary-color);
+  border-radius: var(--radius-md);
+  color: var(--secondary-color);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.public-profile-link:hover {
+  background: var(--secondary-color);
+  color: white;
+}
+
+.public-profile-link i {
+  font-size: var(--font-size-xs);
+}
+
+.collapsed .public-profile-link {
+  padding: var(--spacing-sm);
+  margin: var(--spacing-sm);
+}
+
+.collapsed .public-profile-link .link-label {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .public-profile-link .link-label {
+    display: none;
+  }
+  
+  .public-profile-link {
+    padding: var(--spacing-sm);
+    margin: var(--spacing-sm);
+  }
 }
 
 /* Navigation */
