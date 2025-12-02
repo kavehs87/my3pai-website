@@ -30,6 +30,11 @@
             <button class="refresh-btn icon-only" @click="fetchMaps" :disabled="isBusy" title="Refresh maps">
               <i :class="['fas', isBusy ? 'fa-spinner fa-spin' : 'fa-rotate']"></i>
             </button>
+
+            <router-link to="/map-builder" class="create-map-btn">
+              <i class="fas fa-plus"></i>
+              <span>Create Map</span>
+            </router-link>
           </div>
         </div>
       </div>
@@ -476,6 +481,28 @@ export default {
   background: var(--bg-secondary);
   border-color: var(--secondary-color);
   color: var(--secondary-color);
+}
+
+.create-map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--secondary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.create-map-btn:hover {
+  background: var(--secondary-hover);
+  box-shadow: 0 4px 12px rgba(72, 196, 200, 0.3);
+  transform: translateY(-1px);
 }
 
 .inline-alert {

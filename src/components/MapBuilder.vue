@@ -25,9 +25,9 @@
     <!-- Container for split layout and overlay prompt -->
     <div class="split-layout-container">
       <!-- Split Layout: AddMap (left) | Map (right) -->
-      <div class="split-layout">
-        <!-- Left Side: Add Map Panel (30%) -->
-        <div class="panel-side">
+      <div class="split-layout" :class="{ 'is-resizing': isResizing }">
+        <!-- Left Side: Add Map Panel -->
+        <div class="panel-side" :style="{ width: panelWidth + 'px', flex: 'none' }">
           <AddMap 
             :visible="true" 
             :initial-map="editingMap"
@@ -39,7 +39,14 @@
           />
         </div>
 
-        <!-- Right Side: Map Container (70%) -->
+        <!-- Resizable Splitter -->
+        <ResizableSplitter
+          @drag-start="onResizeStart"
+          @drag="onResize"
+          @drag-end="onResizeEnd"
+        />
+
+        <!-- Right Side: Map Container -->
         <div class="map-side">
           <div class="map-container">
             <div ref="mapEl" class="google-map"></div>
@@ -88,6 +95,7 @@ import ThinFooter from './map-builder/components/ThinFooter.vue'
 import AddMap from './map-builder/components/AddMap.vue'
 import FirstPlacePrompt from './map-builder/components/FirstPlacePrompt.vue'
 import POIMarkers from './map-builder/components/POIMarkers.vue'
+import ResizableSplitter from './studio/components/ResizableSplitter.vue'
 import apiService from '../services/api.js'
 import { eventBus } from '../utils/eventBus.js'
 
@@ -98,7 +106,8 @@ export default {
     ThinFooter,
     AddMap,
     FirstPlacePrompt,
-    POIMarkers
+    POIMarkers,
+    ResizableSplitter
   },
   computed: {
     isEditingExisting() {
@@ -138,7 +147,12 @@ export default {
       // Map pick mode state
       isMapPickMode: false,
       mapPickClickListener: null,
-      pickModeMarker: null
+      pickModeMarker: null,
+      // Panel resize state
+      panelWidth: 420,
+      minPanelWidth: 320,
+      maxPanelWidth: 600,
+      isResizing: false
     }
   },
   beforeCreate() {
@@ -148,6 +162,15 @@ export default {
     this.map = null
   },
   async mounted() {
+    // Restore panel width from localStorage
+    const savedWidth = localStorage.getItem('mapBuilderPanelWidth')
+    if (savedWidth) {
+      const width = parseInt(savedWidth, 10)
+      if (!isNaN(width) && width >= this.minPanelWidth && width <= this.maxPanelWidth) {
+        this.panelWidth = width
+      }
+    }
+
     const authenticated = await this.ensureAuthenticated()
     if (!authenticated) return
 
@@ -648,6 +671,38 @@ export default {
       }
     },
     
+    // Panel resize methods
+    onResizeStart() {
+      this.isResizing = true
+    },
+    onResize(e) {
+      const containerRect = document.querySelector('.split-layout')?.getBoundingClientRect()
+      if (!containerRect) return
+      
+      let newWidth = e.clientX - containerRect.left
+      
+      // Clamp to min/max
+      newWidth = Math.max(this.minPanelWidth, Math.min(this.maxPanelWidth, newWidth))
+      
+      this.panelWidth = newWidth
+      
+      // Trigger map resize
+      this.$nextTick(() => {
+        if (this.map && window.google?.maps) {
+          window.google.maps.event.trigger(this.map, 'resize')
+        }
+      })
+    },
+    onResizeEnd() {
+      this.isResizing = false
+      // Final map resize
+      if (this.map && window.google?.maps) {
+        window.google.maps.event.trigger(this.map, 'resize')
+      }
+      // Save preference to localStorage
+      localStorage.setItem('mapBuilderPanelWidth', String(this.panelWidth))
+    },
+    
     // Manual test method to create a marker at specific coordinates
     createTestMarker(lat, lng, title = 'Test Marker') {
       if (!this.map) {
@@ -718,7 +773,7 @@ export default {
   overflow: hidden;
 }
 
-/* Split Layout: 30/70 vertical split */
+/* Split Layout: Resizable two-column layout */
 .split-layout {
   display: flex;
   flex-direction: row;
@@ -728,28 +783,40 @@ export default {
   min-height: 0; /* Important for flex children */
 }
 
-/* Left Side: AddMap Panel (30%) */
+.split-layout.is-resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.split-layout.is-resizing * {
+  pointer-events: none;
+}
+
+.split-layout.is-resizing .resizable-splitter {
+  pointer-events: auto;
+}
+
+/* Left Side: AddMap Panel (resizable) */
 .panel-side {
-  width: 30%;
-  flex: 0 0 30%;
   height: 100%;
   overflow: hidden;
-  border-right: 1px solid var(--border-light);
   background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
   min-height: 0; /* Important for flex children to allow scrolling */
+  min-width: 320px;
+  max-width: 600px;
 }
 
-/* Right Side: Map Container (70%) */
+/* Right Side: Map Container (flexible) */
 .map-side {
-  width: 70%;
-  flex: 0 0 70%;
+  flex: 1;
   height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  min-width: 400px;
 }
 
 .map-container {
