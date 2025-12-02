@@ -78,6 +78,13 @@
         </div>
       </div>
 
+      <!-- Profile Theme Selector -->
+      <ProfileThemeSelector
+        :current-theme="profileTheme"
+        :profile-username="profileUsername"
+        @theme-changed="handleThemeChanged"
+      />
+
       <!-- Social Links Section -->
       <div class="settings-section">
         <div class="section-header">
@@ -451,9 +458,13 @@
 <script>
 import api from '@/services/api'
 import toast from '@/utils/toast'
+import ProfileThemeSelector from './ProfileThemeSelector.vue'
 
 export default {
   name: 'ProfileCreatorSettings',
+  components: {
+    ProfileThemeSelector
+  },
   data() {
     return {
       socials: [],
@@ -539,22 +550,39 @@ export default {
         { code: 'id', name: 'Indonesian', flag: '🇮🇩' },
         { code: 'ms', name: 'Malay', flag: '🇲🇾' },
         { code: 'uk', name: 'Ukrainian', flag: '🇺🇦' }
-      ]
+      ],
+      profileTheme: 'modern',
+      profileUsername: null
     }
   },
-  mounted() {
-    this.loadAllData().then(() => {
-      // Start polling if video is currently processing
-      if (this.introVideo.status === 'processing') {
-        this.startVideoStatusPolling()
-      }
-    })
+  async mounted() {
+    await this.loadProfileData()
+    await this.loadAllData()
+    // Start polling if video is currently processing
+    if (this.introVideo.status === 'processing') {
+      this.startVideoStatusPolling()
+    }
   },
+  methods: {
+    async loadProfileData() {
+      try {
+        const result = await api.getProfile()
+        if (result.success) {
+          const user = result.data?.data?.user || result.data?.user || {}
+          this.profileTheme = user.theme || 'modern'
+          this.profileUsername = user.username || null
+        }
+      } catch (err) {
+        console.error('Failed to load profile data:', err)
+      }
+    },
+    handleThemeChanged(themeId) {
+      this.profileTheme = themeId
+    },
   beforeUnmount() {
     // Clean up polling interval
     this.stopVideoStatusPolling()
   },
-  methods: {
     async loadAllData() {
       await Promise.all([
         this.loadIntroVideo(),

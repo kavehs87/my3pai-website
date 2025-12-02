@@ -124,6 +124,8 @@ export function useInfluencer() {
       introVideoUrl: data.introVideoUrl || null,
       introVideoThumbnail: data.introVideoThumbnail || null,
       introVideoDuration: data.introVideoDuration || null,
+      // Theme
+      theme: data.theme || 'modern',
     }
   }
 

@@ -1,0 +1,13 @@
+/**
+ * Modern Theme Styles
+ * All styles specific to the Modern theme
+ */
+
+/* Theme container */
+.theme-modern {
+  /* Theme-specific styles will be added here */
+}
+
+/* Import base styles if needed */
+@import url('../../../style.css');
+
