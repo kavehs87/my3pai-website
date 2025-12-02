@@ -3,7 +3,7 @@
     <div class="container">
       <ProfileStats :stats="computedStats" />
       <CreatorToolsToggle />
-      <MyConsultationBookings />
+      <MyConsultationBookings :consultation-bookings-count="stats.consultationBookings || 0" />
     </div>
   </div>
 </template>

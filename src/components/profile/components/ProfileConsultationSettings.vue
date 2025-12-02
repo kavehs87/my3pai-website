@@ -124,20 +124,103 @@
           </div>
         </div>
 
+        <!-- Filters and Controls -->
+        <div v-if="!bookingsLoading && allBookings.length > 0" class="bookings-controls">
+          <div class="controls-row">
+            <!-- View Toggle -->
+            <div class="view-toggle">
+              <button
+                class="toggle-btn"
+                :class="{ active: filters.view === 'all' }"
+                @click="setViewFilter('all')"
+              >
+                All
+              </button>
+              <button
+                class="toggle-btn"
+                :class="{ active: filters.view === 'upcoming' }"
+                @click="setViewFilter('upcoming')"
+              >
+                Upcoming
+              </button>
+              <button
+                class="toggle-btn"
+                :class="{ active: filters.view === 'past' }"
+                @click="setViewFilter('past')"
+              >
+                Past
+              </button>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="filter-group">
+              <label class="filter-label">Status:</label>
+              <select v-model="filters.status" @change="handleStatusFilterChange" class="filter-select">
+                <option :value="null">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <!-- Sort -->
+            <div class="filter-group">
+              <label class="filter-label">Sort by:</label>
+              <select v-model="sortBy" @change="setSortBy(sortBy)" class="filter-select">
+                <option value="scheduled_at">Scheduled Date</option>
+                <option value="created_at">Created Date</option>
+                <option value="customer_name">Customer Name</option>
+                <option value="status">Status</option>
+              </select>
+              <button
+                class="sort-order-btn"
+                @click="toggleSortOrder"
+                :title="sortOrder === 'asc' ? 'Sort Ascending' : 'Sort Descending'"
+              >
+                <i :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+              </button>
+            </div>
+
+            <!-- Items Per Page -->
+            <div class="filter-group">
+              <label class="filter-label">Per page:</label>
+              <select v-model="pagination.perPage" @change="changePerPage(pagination.perPage)" class="filter-select">
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div v-if="bookingsLoading" class="loading-state">
           <i class="fas fa-spinner fa-spin"></i> Loading bookings...
         </div>
 
-        <div v-else-if="bookings.length === 0" class="empty-state">
+        <div v-else-if="filteredAndSortedBookings.length === 0" class="empty-state">
           <i class="fas fa-calendar-times"></i>
-          <h3>No bookings yet</h3>
-          <p>When clients book consultations, they'll appear here</p>
+          <h3>No bookings found</h3>
+          <p v-if="allBookings.length > 0">
+            No bookings match your current filters. Try adjusting your filter settings.
+          </p>
+          <p v-else>When clients book consultations, they'll appear here</p>
         </div>
 
-        <div v-else class="bookings-list">
-          <article
-            v-for="booking in bookings"
-            :key="booking.id"
+        <div v-else>
+          <div class="bookings-info">
+            <span class="bookings-count">
+              Showing {{ ((pagination.currentPage - 1) * pagination.perPage) + 1 }} - 
+              {{ Math.min(pagination.currentPage * pagination.perPage, filteredAndSortedBookings.length) }} 
+              of {{ filteredAndSortedBookings.length }} bookings
+            </span>
+          </div>
+          
+          <div class="bookings-list">
+            <article
+              v-for="booking in bookings"
+              :key="booking.id"
             class="booking-card"
             :class="{
               'status-pending': booking.status === 'pending',
@@ -223,6 +306,39 @@
               </template>
             </div>
           </article>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div v-if="totalPages > 1" class="pagination-controls">
+            <button
+              class="pagination-btn"
+              :disabled="pagination.currentPage === 1"
+              @click="changePage(pagination.currentPage - 1)"
+            >
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            
+            <div class="pagination-pages">
+              <button
+                v-for="page in visiblePages"
+                :key="page"
+                class="pagination-page"
+                :class="{ active: page === pagination.currentPage, disabled: page === '...' }"
+                :disabled="page === '...'"
+                @click="page !== '...' && changePage(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
+
+            <button
+              class="pagination-btn"
+              :disabled="pagination.currentPage === totalPages"
+              @click="changePage(pagination.currentPage + 1)"
+            >
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -290,17 +406,111 @@ export default {
         currency: 'USD',
         isActive: true,
       },
-      bookings: [],
+      allBookings: [], // Store all bookings for client-side operations
       bookingsStats: {
         upcoming: 0,
         total: 0,
       },
+      // Pagination, filtering, sorting
+      pagination: {
+        currentPage: 1,
+        perPage: 10,
+        total: 0,
+        lastPage: 1,
+      },
+      filters: {
+        status: null, // null = all, or comma-separated statuses
+        view: 'all', // 'all', 'upcoming', 'past'
+      },
+      sortBy: 'scheduled_at', // 'scheduled_at', 'created_at', 'customer_name', 'status'
+      sortOrder: 'desc', // 'asc', 'desc'
       confirmModal: {
         visible: false,
         bookingId: null,
         videoCallLink: '',
       },
     }
+  },
+  computed: {
+    filteredAndSortedBookings() {
+      // Bookings are already sorted by backend
+      let result = [...this.allBookings]
+
+      // Apply view filter (upcoming/past/all)
+      // Note: Backend already splits into upcoming/past, but we re-filter
+      // to ensure consistency with current date
+      if (this.filters.view === 'upcoming') {
+        result = result.filter(b => {
+          const scheduled = new Date(b.scheduledAt)
+          const now = new Date()
+          return scheduled >= now && b.status !== 'cancelled' && b.status !== 'completed'
+        })
+      } else if (this.filters.view === 'past') {
+        result = result.filter(b => {
+          const scheduled = new Date(b.scheduledAt)
+          const now = new Date()
+          return scheduled < now || b.status === 'cancelled' || b.status === 'completed'
+        })
+      }
+
+      // Apply status filter client-side
+      if (this.filters.status && this.filters.status !== null) {
+        const filterStatus = String(this.filters.status).toLowerCase().trim()
+        result = result.filter(b => {
+          const bookingStatus = String(b.status || '').toLowerCase().trim()
+          return bookingStatus === filterStatus
+        })
+      }
+
+      return result
+    },
+    paginatedBookings() {
+      const start = (this.pagination.currentPage - 1) * this.pagination.perPage
+      const end = start + this.pagination.perPage
+      return this.filteredAndSortedBookings.slice(start, end)
+    },
+    bookings() {
+      return this.paginatedBookings
+    },
+    totalPages() {
+      return Math.ceil(this.filteredAndSortedBookings.length / this.pagination.perPage)
+    },
+    visiblePages() {
+      const total = this.totalPages
+      const current = this.pagination.currentPage
+      const pages = []
+      
+      if (total <= 7) {
+        // Show all pages if 7 or fewer
+        for (let i = 1; i <= total; i++) {
+          pages.push(i)
+        }
+      } else {
+        // Always show first page
+        pages.push(1)
+        
+        if (current > 3) {
+          pages.push('...')
+        }
+        
+        // Show pages around current
+        const start = Math.max(2, current - 1)
+        const end = Math.min(total - 1, current + 1)
+        
+        for (let i = start; i <= end; i++) {
+          pages.push(i)
+        }
+        
+        if (current < total - 2) {
+          pages.push('...')
+        }
+        
+        // Always show last page
+        pages.push(total)
+      }
+      
+      return pages
+    },
   },
   mounted() {
     this.loadConsultation()
@@ -310,6 +520,25 @@ export default {
   },
   beforeUnmount() {
     eventBus.off('creator-tools-visibility-changed', this.handleVisibilityChange)
+  },
+  watch: {
+    filters: {
+      handler() {
+        this.pagination.currentPage = 1
+        // Both view and status filters are client-side, no reload needed
+      },
+      deep: true,
+    },
+    sortBy() {
+      this.pagination.currentPage = 1
+      // Reload bookings when sort changes (backend handles sorting)
+      this.loadBookings()
+    },
+    sortOrder() {
+      this.pagination.currentPage = 1
+      // Reload bookings when sort order changes (backend handles sorting)
+      this.loadBookings()
+    },
   },
   methods: {
     async loadConsultation() {
@@ -391,17 +620,34 @@ export default {
       this.bookingsLoading = true
 
       try {
-        const result = await apiService.getInfluencerConsultationBookings()
+        // Build query parameters - use backend sorting
+        // We load all bookings and do client-side filtering + pagination
+        // Status filtering is done client-side to work seamlessly with view filters
+        const params = {
+          per_page: 100, // Load enough for client-side filtering and pagination
+          sort_by: this.sortBy,
+          sort_order: this.sortOrder,
+        }
+
+        const result = await apiService.getInfluencerConsultationBookings(params)
 
         if (result.success && result.data?.data) {
           const data = result.data.data
           const upcoming = data.upcoming || []
           const past = data.past || []
-          this.bookings = [...upcoming, ...past]
-          this.bookingsStats = {
-            upcoming: upcoming.length,
-            total: this.bookings.length,
+          
+          // Store all bookings (already sorted by backend based on sortBy/sortOrder)
+          this.allBookings = [...upcoming, ...past]
+          
+          // Update stats from pagination meta if available
+          if (result.data?.meta) {
+            this.bookingsStats.total = result.data.meta.total || this.allBookings.length
+          } else {
+            this.bookingsStats.total = this.allBookings.length
           }
+          
+          // Count upcoming for stats (not filtered by status)
+          this.bookingsStats.upcoming = upcoming.length
         }
       } catch (err) {
         console.error('Error loading bookings:', err)
@@ -409,6 +655,38 @@ export default {
       } finally {
         this.bookingsLoading = false
       }
+    },
+    changePage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.pagination.currentPage = page
+        // Scroll to top of bookings section
+        this.$nextTick(() => {
+          const bookingsSection = this.$el.querySelector('.settings-section')
+          if (bookingsSection) {
+            bookingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        })
+      }
+    },
+    changePerPage(perPage) {
+      this.pagination.perPage = perPage
+      this.pagination.currentPage = 1
+    },
+    handleStatusFilterChange() {
+      this.pagination.currentPage = 1
+      // Status filter is applied client-side (no reload needed)
+    },
+    setViewFilter(view) {
+      this.filters.view = view
+      // Watcher will handle page reset, no reload needed (client-side filter)
+    },
+    setSortBy(field) {
+      this.sortBy = field
+      // Watcher will handle page reset and reload
+    },
+    toggleSortOrder() {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
+      // Watcher will handle page reset and reload
     },
 
     confirmBooking(bookingId) {
@@ -1044,6 +1322,235 @@ textarea.form-input {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Bookings Controls */
+.bookings-controls {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.view-toggle {
+  display: flex;
+  gap: var(--spacing-xs);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs);
+}
+
+.toggle-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toggle-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.toggle-btn.active {
+  background: var(--secondary-color);
+  color: white;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.filter-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.filter-select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-select:hover {
+  border-color: var(--border-medium);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 2px rgba(72, 196, 200, 0.1);
+}
+
+.sort-order-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+}
+
+.sort-order-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--border-medium);
+}
+
+.sort-order-btn i {
+  font-size: var(--font-size-sm);
+}
+
+.bookings-info {
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.bookings-count {
+  font-weight: 500;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-pages {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.pagination-page {
+  min-width: 36px;
+  height: 36px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pagination-page:hover:not(:disabled):not(.active) {
+  background: var(--bg-secondary);
+  border-color: var(--border-medium);
+}
+
+.pagination-page.active {
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: white;
+}
+
+.pagination-page.disabled {
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.pagination-page:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .view-toggle {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .toggle-btn {
+    flex: 1;
+  }
+
+  .filter-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .filter-select {
+    flex: 1;
+    max-width: 200px;
+  }
+
+  .pagination-controls {
+    flex-direction: column;
+  }
+
+  .pagination-pages {
+    order: -1;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 </style>
 

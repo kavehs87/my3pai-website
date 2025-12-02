@@ -8,7 +8,7 @@
       <i class="fas fa-spinner fa-spin"></i> Loading bookings...
     </div>
 
-    <div v-else-if="!hasBookings" class="empty-state">
+    <div v-else-if="shouldShowEmptyState" class="empty-state">
       <i class="fas fa-calendar-times"></i>
       <h3>No consultation bookings yet</h3>
       <p>Book a consultation with an influencer to get personalized trip planning advice</p>
@@ -169,6 +169,12 @@ import toast from '@/utils/toast'
 
 export default {
   name: 'MyConsultationBookings',
+  props: {
+    consultationBookingsCount: {
+      type: Number,
+      default: 0
+    }
+  },
   data() {
     return {
       loading: false,
@@ -181,6 +187,11 @@ export default {
     hasBookings() {
       return this.upcomingBookings.length > 0 || this.pastBookings.length > 0
     },
+    shouldShowEmptyState() {
+      // Show empty state only if we've loaded and confirmed there are no bookings
+      // If count from stats is 0 and loading is done, show empty state
+      return !this.loading && !this.hasBookings && this.consultationBookingsCount === 0
+    },
   },
   mounted() {
     this.loadBookings()
@@ -192,14 +203,26 @@ export default {
       try {
         const result = await apiService.getMyConsultationBookings()
 
-        if (result.success && result.data?.data) {
-          const data = result.data.data
-          this.upcomingBookings = data.upcoming || []
-          this.pastBookings = data.past || []
+        if (result.success) {
+          // Handle different response structures
+          const responseData = result.data?.data || result.data
+          if (responseData) {
+            this.upcomingBookings = responseData.upcoming || []
+            this.pastBookings = responseData.past || []
+          }
+        } else {
+          console.warn('Failed to load bookings:', result.error)
+          // Don't show error toast if endpoint might not exist yet or if count is 0
+          if (this.consultationBookingsCount > 0) {
+            toast.error(result.error || 'Failed to load bookings')
+          }
         }
       } catch (err) {
         console.error('Error loading bookings:', err)
-        toast.error('Failed to load bookings')
+        // Only show error if we expect bookings (count > 0)
+        if (this.consultationBookingsCount > 0) {
+          toast.error('Failed to load bookings')
+        }
       } finally {
         this.loading = false
       }

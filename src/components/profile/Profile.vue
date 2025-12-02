@@ -95,6 +95,15 @@
                   <span class="stat-label">Followers</span>
                 </div>
               </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-value">{{ profileData.stats.consultationsHosted || 0 }}</span>
+                  <span class="stat-label">Consultations</span>
+                </div>
+              </div>
             </div>
           </div>
 
