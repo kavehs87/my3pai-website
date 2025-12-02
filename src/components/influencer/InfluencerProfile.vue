@@ -121,7 +121,7 @@
             </button>
           </div>
 
-          <InfluencerItineraries @add-to-cart="handleAddToCart" />
+          <!-- <InfluencerItineraries @add-to-cart="handleAddToCart" /> -->
           <InfluencerMasterclasses :username="currentUsername" @add-to-cart="handleAddToCart" />
           <InfluencerCountryMaps @add-to-cart="handleAddToCart" />
           <InfluencerPodcast :username="currentUsername" />
@@ -178,7 +178,7 @@ const currentUsername = computed(() => props.username || route.params.username |
 provide('influencerUsername', currentUsername)
 
 const navItems = Object.freeze([
-  { id: 'itineraries', label: 'Itineraries' },
+  // { id: 'itineraries', label: 'Itineraries' }, // Hidden for now
   { id: 'training', label: 'Training' },
   { id: 'countries', label: 'Map' },
   { id: 'podcast', label: 'Podcast' },
