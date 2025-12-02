@@ -45,14 +45,20 @@
       <p>No media assets available yet.</p>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <article
-        v-for="asset in assets"
-        :key="asset.id"
-        class="group relative rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all bg-slate-50"
-      >
+    <div v-else>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <article
+          v-for="asset in displayedAssets"
+          :key="asset.id"
+          class="group relative rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all bg-slate-50"
+        >
         <div class="aspect-video overflow-hidden relative">
-          <img :src="asset.image" :alt="asset.title" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <img 
+            :src="asset.image || '/media-placeholder.jpg'" 
+            :alt="asset.title" 
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            @error="handleImageError"
+          />
           <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
           <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5 shadow-sm">
             <component :is="typeIcons[asset.type] ?? Sliders" class="w-3 h-3" />
@@ -79,6 +85,18 @@
           </div>
         </div>
       </article>
+      </div>
+      
+      <!-- Show More Button -->
+      <div v-if="hasMoreItems && !showAll" class="flex justify-center mt-8">
+        <button
+          @click="showAll = true"
+          class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all flex items-center gap-2"
+        >
+          Show More Assets ({{ remainingCount }} more)
+          <ArrowUpRight class="w-4 h-4" />
+        </button>
+      </div>
     </div>
   </section>
 </template>
@@ -113,6 +131,10 @@ const assets = ref([])
 const loading = ref(false)
 const error = ref(null)
 const useMockData = ref(false)
+const showAll = ref(false)
+
+// Show 2 rows initially (6 items on desktop: 3 columns × 2 rows)
+const INITIAL_ITEM_LIMIT = 6
 
 const typeIcons = {
   Video: Film,
@@ -129,6 +151,29 @@ const formatPrice = (price, currency = 'USD') => {
     currency: currency || 'USD',
   }).format(price)
 }
+
+const handleImageError = (event) => {
+  // If image fails to load, use placeholder
+  if (event.target.src !== '/media-placeholder.jpg' && !event.target.src.includes('media-placeholder')) {
+    event.target.src = '/media-placeholder.jpg'
+  }
+}
+
+// Computed properties for limiting display
+const displayedAssets = computed(() => {
+  if (showAll.value) {
+    return assets.value
+  }
+  return assets.value.slice(0, INITIAL_ITEM_LIMIT)
+})
+
+const hasMoreItems = computed(() => {
+  return assets.value.length > INITIAL_ITEM_LIMIT
+})
+
+const remainingCount = computed(() => {
+  return assets.value.length - INITIAL_ITEM_LIMIT
+})
 
 const loadMediaAssets = async () => {
   if (!currentUsername.value) {

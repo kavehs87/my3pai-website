@@ -143,6 +143,14 @@
               v-if="activeTab === 'media-assets'"
             />
             
+            <ProfileSocialSettings
+              v-if="activeTab === 'social'"
+            />
+            
+            <ProfileSocialLinksSettings
+              v-if="activeTab === 'social-links'"
+            />
+            
             <ProfileSettings
               ref="profileSettings"
               v-if="activeTab === 'settings'"
@@ -313,6 +321,8 @@ import ProfilePodcastSettings from './components/ProfilePodcastSettings.vue'
 import ProfileMasterclassSettings from './components/ProfileMasterclassSettings.vue'
 import ProfileConsultationSettings from './components/ProfileConsultationSettings.vue'
 import ProfileMediaAssetsSettings from './components/ProfileMediaAssetsSettings.vue'
+import ProfileSocialSettings from './components/ProfileSocialSettings.vue'
+import ProfileSocialLinksSettings from './components/ProfileSocialLinksSettings.vue'
 import ProfileMaps from './components/profile-maps/ProfileMaps.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
@@ -331,6 +341,8 @@ export default {
     ProfileMasterclassSettings,
     ProfileConsultationSettings,
     ProfileMediaAssetsSettings,
+    ProfileSocialSettings,
+    ProfileSocialLinksSettings,
     ProfileMaps
   },
   data() {
@@ -353,6 +365,8 @@ export default {
         { id: 'masterclass', label: 'Training', icon: 'fas fa-graduation-cap', count: null },
         { id: 'consultation', label: 'Consultations', icon: 'fas fa-video', count: null },
         { id: 'media-assets', label: 'Digital Assets', icon: 'fas fa-photo-video', count: null },
+        { id: 'social', label: 'Social Posts', icon: 'fas fa-share-alt', count: null },
+        { id: 'social-links', label: 'Social Links', icon: 'fas fa-link', count: null },
         { id: 'creator', label: 'Creator Profile', icon: 'fas fa-id-card', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
@@ -364,6 +378,8 @@ export default {
         'masterclass': 'Create and manage your training content',
         'consultation': 'Set up your consultation services',
         'media-assets': 'Manage your digital assets for sale',
+        'social': 'Manage your social media posts',
+        'social-links': 'Manage your social media profile links',
         'creator': 'Customize your public creator profile',
         'settings': 'Manage your account preferences and security'
       },
@@ -409,7 +425,7 @@ export default {
     '$route.query.tab': {
       immediate: true,
       handler(tab) {
-        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'settings'].includes(tab)) {
+        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'settings'].includes(tab)) {
           this.activeTab = tab
         } else if (!tab) {
           // Default to overview if no tab specified

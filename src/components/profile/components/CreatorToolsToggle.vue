@@ -17,7 +17,7 @@
         :class="{ disabled: !tool.enabled }"
       >
         <div class="tool-info">
-          <div class="tool-icon" :class="tool.id === 'media-assets' ? 'tool-icon-media-assets' : tool.id">
+          <div class="tool-icon" :class="tool.id === 'media-assets' ? 'tool-icon-media-assets' : tool.id === 'social-links' ? 'tool-icon-social-links' : tool.id">
             <i :class="tool.icon"></i>
           </div>
           <div class="tool-details">
@@ -94,6 +94,20 @@ export default {
           label: 'Digital Assets',
           description: 'Show your digital assets marketplace',
           icon: 'fas fa-photo-video',
+          enabled: true
+        },
+        {
+          id: 'social',
+          label: 'Social Posts',
+          description: 'Display your latest social media posts',
+          icon: 'fas fa-share-alt',
+          enabled: true
+        },
+        {
+          id: 'social-links',
+          label: 'Social Links',
+          description: 'Show your social media profile links',
+          icon: 'fas fa-link',
           enabled: true
         },
         {
@@ -271,9 +285,11 @@ export default {
 
 .tool-icon.blog,
 .tool-icon.podcast,
+.tool-icon.social,
 .tool-icon.masterclass,
 .tool-icon.consultation,
 .tool-icon-media-assets,
+.tool-icon-social-links,
 .tool-icon.creator {
   background: var(--secondary-color);
 }

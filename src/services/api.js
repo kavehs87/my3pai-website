@@ -1159,6 +1159,66 @@ class ApiService {
   }
 
   /**
+   * Get social posts (authenticated - dashboard)
+   */
+  async getInfluencerSocialPosts(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencer/social-posts${queryString}`)
+  }
+
+  /**
+   * Get public social posts for a username (no auth)
+   */
+  async getInfluencerSocialPostsPublic(username, params = {}) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/social-posts${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Create a new social post
+   */
+  async createInfluencerSocialPost(data) {
+    return this.request('/influencer/social-posts', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  /**
+   * Update an existing social post
+   */
+  async updateInfluencerSocialPost(id, data) {
+    return this.request(`/influencer/social-posts/${id}`, {
+      method: 'PUT',
+      body: data
+    })
+  }
+
+  /**
+   * Delete a social post
+   */
+  async deleteInfluencerSocialPost(id) {
+    return this.request(`/influencer/social-posts/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Reorder social posts
+   */
+  async reorderInfluencerSocialPosts(ids) {
+    return this.request('/influencer/social-posts/reorder', {
+      method: 'POST',
+      body: { ids }
+    })
+  }
+
+  /**
    * Get own media assets (includes inactive/draft)
    */
   async getMyMediaAssets(params = {}) {
