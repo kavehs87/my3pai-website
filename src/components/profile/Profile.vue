@@ -1,220 +1,292 @@
 <template>
-  <div class="profile-page">
+  <div class="dashboard-layout">
     <Header />
     
-    <div v-if="isLoading" class="loading-overlay">
-      <div class="loading-spinner">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>Loading profile...</p>
-      </div>
-    </div>
-    
-    <template v-else>
-      <ProfileHeader
+    <div class="dashboard-body">
+      <!-- Sidebar Navigation -->
+      <ProfileSidebar
+        v-if="!isLoading"
+        :active-tab="activeTab"
+        :tabs="tabs"
         :user="profileData.user"
-        @edit-profile="handleEditProfile"
-        @edit-avatar="handleEditAvatar"
-        @edit-cover="handleEditCover"
-      />
-    
-    <ProfileTabs
-      :active-tab="activeTab"
-      :tabs="tabs"
-      @tab-change="handleTabChange"
-    />
-    
-    <div class="profile-content">
-      <ProfileOverview
-        v-if="activeTab === 'overview'"
-        :stats="profileData.stats"
+        @tab-change="handleTabChange"
+        @collapse-change="handleSidebarCollapse"
       />
       
-      <ProfileMaps
-        :username="profileData.user.username"
-        v-if="activeTab === 'maps'"
-      />
-      
-      <ProfileCreatorSettings
-        v-if="activeTab === 'creator'"
-      />
-      
-      <ProfileBlogSettings
-        v-if="activeTab === 'blog'"
-      />
-      
-      <ProfilePodcastSettings
-        v-if="activeTab === 'podcast'"
-      />
-      
-      <ProfileMasterclassSettings
-        v-if="activeTab === 'masterclass'"
-      />
-      
-      <ProfileConsultationSettings
-        v-if="activeTab === 'consultation'"
-      />
-      
-      <ProfileMediaAssetsSettings
-        v-if="activeTab === 'media-assets'"
-      />
-      
-      <ProfileSettings
-        ref="profileSettings"
-        v-if="activeTab === 'settings'"
-        :key="profileData.user?.id || 'settings'"
-        :user="profileData.user || {}"
-        @save-profile="handleSaveProfile"
-        @save-preferences="handleSavePreferences"
-        @change-password="handleChangePassword"
-        @delete-account="handleDeleteAccount"
-      />
+      <!-- Mobile sidebar toggle -->
+      <button 
+        v-if="!isLoading && isMobile && sidebarCollapsed"
+        class="mobile-menu-toggle"
+        @click="toggleMobileSidebar"
+      >
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <!-- Main Content Area -->
+      <main :class="['dashboard-main', { 'sidebar-collapsed': sidebarCollapsed }]">
+        <!-- Loading State -->
+        <div v-if="isLoading" class="loading-container">
+          <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading your dashboard...</p>
+          </div>
+        </div>
+
+        <template v-else>
+          <!-- Dashboard Header -->
+          <div class="dashboard-header">
+            <div class="dashboard-header-content">
+              <div class="dashboard-title">
+                <h1>{{ currentTabLabel }}</h1>
+                <p class="dashboard-subtitle">{{ currentTabDescription }}</p>
+              </div>
+              <div class="dashboard-actions">
+                <button class="action-btn" @click="handleEditProfile" title="Edit Profile">
+                  <i class="fas fa-user-edit"></i>
+                  <span>Edit Profile</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- User Quick Stats -->
+            <div v-if="activeTab === 'overview'" class="quick-stats">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-value">{{ profileData.stats.maps || 0 }}</span>
+                  <span class="stat-label">Maps</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-map-pin"></i>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-value">{{ profileData.stats.places || 0 }}</span>
+                  <span class="stat-label">Places</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-eye"></i>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-value">{{ profileData.stats.views || 0 }}</span>
+                  <span class="stat-label">Views</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-value">{{ profileData.stats.followers || 0 }}</span>
+                  <span class="stat-label">Followers</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Area -->
+          <div class="dashboard-content">
+            <ProfileOverview
+              v-if="activeTab === 'overview'"
+              :stats="profileData.stats"
+            />
+            
+            <ProfileMaps
+              :username="profileData.user.username"
+              v-if="activeTab === 'maps'"
+            />
+            
+            <ProfileCreatorSettings
+              v-if="activeTab === 'creator'"
+            />
+            
+            <ProfileBlogSettings
+              v-if="activeTab === 'blog'"
+            />
+            
+            <ProfilePodcastSettings
+              v-if="activeTab === 'podcast'"
+            />
+            
+            <ProfileMasterclassSettings
+              v-if="activeTab === 'masterclass'"
+            />
+            
+            <ProfileConsultationSettings
+              v-if="activeTab === 'consultation'"
+            />
+            
+            <ProfileMediaAssetsSettings
+              v-if="activeTab === 'media-assets'"
+            />
+            
+            <ProfileSettings
+              ref="profileSettings"
+              v-if="activeTab === 'settings'"
+              :key="profileData.user?.id || 'settings'"
+              :user="profileData.user || {}"
+              @save-profile="handleSaveProfile"
+              @save-preferences="handleSavePreferences"
+              @change-password="handleChangePassword"
+              @delete-account="handleDeleteAccount"
+            />
+          </div>
+        </template>
+      </main>
     </div>
     
     <!-- Password Change Modal -->
-    <transition name="fade">
-      <div v-if="passwordModal.visible" class="modal-overlay">
-        <div class="modal-card">
-          <div class="modal-header">
-            <h3>Change Password</h3>
-            <button class="close-btn" @click="closePasswordModal" aria-label="Close password modal">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <form class="modal-body" @submit.prevent="submitPasswordChange">
-            <p class="helper-text">
-              Updating your password will sign you out everywhere for security.
-            </p>
-            <div v-if="userHasPassword" class="form-group">
-              <label>Current Password</label>
-              <input
-                v-model="passwordModal.currentPassword"
-                type="password"
-                class="form-input"
-                placeholder="Enter current password"
-                autocomplete="current-password"
-              />
-            </div>
-            <div class="form-group">
-              <label>{{ userHasPassword ? 'New Password' : 'Create Password' }}</label>
-              <input
-                v-model="passwordModal.newPassword"
-                type="password"
-                class="form-input"
-                placeholder="Enter new password"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label>Confirm Password</label>
-              <input
-                v-model="passwordModal.confirmPassword"
-                type="password"
-                class="form-input"
-                placeholder="Confirm new password"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-            </div>
-            <p v-if="passwordModal.error" class="error-text">{{ passwordModal.error }}</p>
-            <div class="modal-actions">
-              <button type="button" class="modal-btn ghost" @click="closePasswordModal" :disabled="passwordModal.submitting">
-                Cancel
-              </button>
-              <button type="submit" class="modal-btn primary" :disabled="passwordModal.submitting">
-                <span v-if="passwordModal.submitting">
-                  <i class="fas fa-spinner fa-spin"></i>
-                  Updating...
-                </span>
-                <span v-else>Update Password</span>
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="passwordModal.visible" class="modal-overlay">
+          <div class="modal-card">
+            <div class="modal-header">
+              <h3>Change Password</h3>
+              <button class="close-btn" @click="closePasswordModal" aria-label="Close password modal">
+                <i class="fas fa-times"></i>
               </button>
             </div>
-          </form>
-        </div>
-      </div>
-    </transition>
-
-    <!-- Account Deletion Modal -->
-    <transition name="fade">
-      <div v-if="deleteModal.visible" class="modal-overlay">
-        <div class="modal-card">
-          <div class="modal-header">
-            <h3>Delete Account</h3>
-            <button class="close-btn" @click="closeDeleteModal" aria-label="Close delete modal">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p class="helper-text warning">
-              This action permanently removes your account, trips, and data. This cannot be undone.
-            </p>
-            <form @submit.prevent="submitAccountDeletion">
+            <form class="modal-body" @submit.prevent="submitPasswordChange">
+              <p class="helper-text">
+                Updating your password will sign you out everywhere for security.
+              </p>
               <div v-if="userHasPassword" class="form-group">
-                <label>Confirm with Password</label>
+                <label>Current Password</label>
                 <input
-                  v-model="deleteModal.password"
+                  v-model="passwordModal.currentPassword"
                   type="password"
                   class="form-input"
-                  placeholder="Enter your password"
+                  placeholder="Enter current password"
                   autocomplete="current-password"
                 />
               </div>
-              <div v-else class="form-group">
-                <label>Reverify with Google</label>
-                <p class="helper-text">
-                  Because this account only uses Google sign-in, we need you to reverify your identity before deletion.
-                </p>
-                <button
-                  type="button"
-                  class="modal-btn outline"
-                  @click="reauthWithGoogle"
-                  :disabled="deleteModal.isReauthing"
-                >
-                  <span v-if="deleteModal.isReauthing">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    Waiting for Google...
-                  </span>
-                  <span v-else>
-                    <i class="fab fa-google"></i>
-                    Reverify with Google
-                  </span>
-                </button>
-                <p v-if="deleteModal.providerReauthToken" class="success-text">
-                  Google verification successful. You can now delete your account.
-                </p>
+              <div class="form-group">
+                <label>{{ userHasPassword ? 'New Password' : 'Create Password' }}</label>
+                <input
+                  v-model="passwordModal.newPassword"
+                  type="password"
+                  class="form-input"
+                  placeholder="Enter new password"
+                  autocomplete="new-password"
+                  minlength="8"
+                  required
+                />
               </div>
-              <p v-if="deleteModal.error" class="error-text">{{ deleteModal.error }}</p>
+              <div class="form-group">
+                <label>Confirm Password</label>
+                <input
+                  v-model="passwordModal.confirmPassword"
+                  type="password"
+                  class="form-input"
+                  placeholder="Confirm new password"
+                  autocomplete="new-password"
+                  minlength="8"
+                  required
+                />
+              </div>
+              <p v-if="passwordModal.error" class="error-text">{{ passwordModal.error }}</p>
               <div class="modal-actions">
-                <button type="button" class="modal-btn ghost" @click="closeDeleteModal" :disabled="deleteModal.submitting">
+                <button type="button" class="modal-btn ghost" @click="closePasswordModal" :disabled="passwordModal.submitting">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  class="modal-btn danger"
-                  :disabled="deleteModal.submitting || (!userHasPassword && !deleteModal.providerReauthToken)"
-                >
-                  <span v-if="deleteModal.submitting">
+                <button type="submit" class="modal-btn primary" :disabled="passwordModal.submitting">
+                  <span v-if="passwordModal.submitting">
                     <i class="fas fa-spinner fa-spin"></i>
-                    Deleting...
+                    Updating...
                   </span>
-                  <span v-else>Delete Account</span>
+                  <span v-else>Update Password</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
-      </div>
-    </transition>
-    </template>
+      </transition>
+    </Teleport>
+
+    <!-- Account Deletion Modal -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="deleteModal.visible" class="modal-overlay">
+          <div class="modal-card">
+            <div class="modal-header">
+              <h3>Delete Account</h3>
+              <button class="close-btn" @click="closeDeleteModal" aria-label="Close delete modal">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p class="helper-text warning">
+                This action permanently removes your account, trips, and data. This cannot be undone.
+              </p>
+              <form @submit.prevent="submitAccountDeletion">
+                <div v-if="userHasPassword" class="form-group">
+                  <label>Confirm with Password</label>
+                  <input
+                    v-model="deleteModal.password"
+                    type="password"
+                    class="form-input"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                  />
+                </div>
+                <div v-else class="form-group">
+                  <label>Reverify with Google</label>
+                  <p class="helper-text">
+                    Because this account only uses Google sign-in, we need you to reverify your identity before deletion.
+                  </p>
+                  <button
+                    type="button"
+                    class="modal-btn outline"
+                    @click="reauthWithGoogle"
+                    :disabled="deleteModal.isReauthing"
+                  >
+                    <span v-if="deleteModal.isReauthing">
+                      <i class="fas fa-spinner fa-spin"></i>
+                      Waiting for Google...
+                    </span>
+                    <span v-else>
+                      <i class="fab fa-google"></i>
+                      Reverify with Google
+                    </span>
+                  </button>
+                  <p v-if="deleteModal.providerReauthToken" class="success-text">
+                    Google verification successful. You can now delete your account.
+                  </p>
+                </div>
+                <p v-if="deleteModal.error" class="error-text">{{ deleteModal.error }}</p>
+                <div class="modal-actions">
+                  <button type="button" class="modal-btn ghost" @click="closeDeleteModal" :disabled="deleteModal.submitting">
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="modal-btn danger"
+                    :disabled="deleteModal.submitting || (!userHasPassword && !deleteModal.providerReauthToken)"
+                  >
+                    <span v-if="deleteModal.submitting">
+                      <i class="fas fa-spinner fa-spin"></i>
+                      Deleting...
+                    </span>
+                    <span v-else>Delete Account</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <script>
 import Header from '../Header.vue'
-import ProfileHeader from './components/ProfileHeader.vue'
-import ProfileTabs from './components/ProfileTabs.vue'
+import ProfileSidebar from './components/ProfileSidebar.vue'
 import ProfileOverview from './components/ProfileOverview.vue'
 import ProfileSettings from './components/ProfileSettings.vue'
 import ProfileCreatorSettings from './components/ProfileCreatorSettings.vue'
@@ -232,8 +304,7 @@ export default {
   name: 'Profile',
   components: {
     Header,
-    ProfileHeader,
-    ProfileTabs,
+    ProfileSidebar,
     ProfileOverview,
     ProfileSettings,
     ProfileCreatorSettings,
@@ -247,6 +318,8 @@ export default {
   data() {
     return {
       activeTab: 'overview',
+      sidebarCollapsed: false,
+      isMobile: false,
       profileData: {
         user: {},
         stats: {},
@@ -265,6 +338,17 @@ export default {
         { id: 'creator', label: 'Creator Profile', icon: 'fas fa-id-card', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
+      tabDescriptions: {
+        'overview': 'View your activity summary and recent updates',
+        'maps': 'Manage your travel maps and itineraries',
+        'blog': 'Write and manage your blog posts',
+        'podcast': 'Manage your podcast episodes',
+        'masterclass': 'Create and manage your training content',
+        'consultation': 'Set up your consultation services',
+        'media-assets': 'Manage your digital assets for sale',
+        'creator': 'Customize your public creator profile',
+        'settings': 'Manage your account preferences and security'
+      },
       passwordModal: {
         visible: false,
         currentPassword: '',
@@ -294,6 +378,13 @@ export default {
         user.passwordHash ??
         user.password
       )
+    },
+    currentTabLabel() {
+      const tab = this.tabs.find(t => t.id === this.activeTab)
+      return tab ? tab.label : 'Dashboard'
+    },
+    currentTabDescription() {
+      return this.tabDescriptions[this.activeTab] || ''
     }
   },
   watch: {
@@ -316,10 +407,29 @@ export default {
       this.activeTab = tab
     }
     
+    // Check screen size
+    this.checkMobile()
+    window.addEventListener('resize', this.checkMobile)
+    
     // Load profile data from API
     this.loadProfileData()
   },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.checkMobile)
+  },
   methods: {
+    checkMobile() {
+      this.isMobile = window.innerWidth < 768
+      if (this.isMobile) {
+        this.sidebarCollapsed = true
+      }
+    },
+    handleSidebarCollapse(collapsed) {
+      this.sidebarCollapsed = collapsed
+    },
+    toggleMobileSidebar() {
+      this.sidebarCollapsed = !this.sidebarCollapsed
+    },
     async loadProfileData(preserveScroll = false) {
       // Store scroll position if we want to preserve it
       const scrollY = preserveScroll ? (window.scrollY || window.pageYOffset || document.documentElement.scrollTop) : null
@@ -408,6 +518,11 @@ export default {
       this.activeTab = tab
       // Update URL without reloading
       this.$router.replace({ query: { ...this.$route.query, tab } })
+      
+      // Close sidebar on mobile after selection
+      if (this.isMobile) {
+        this.sidebarCollapsed = true
+      }
     },
     handleEditProfile() {
       this.activeTab = 'settings'
@@ -813,21 +928,37 @@ export default {
 </script>
 
 <style scoped>
-.profile-page {
+/* Dashboard Layout */
+.dashboard-layout {
   min-height: 100vh;
   background: var(--bg-secondary);
 }
 
-.profile-content {
-  padding: 0;
+.dashboard-body {
+  display: flex;
+  min-height: calc(100vh - 64px);
 }
 
-.loading-overlay {
-  min-height: 60vh;
+/* Main Content */
+.dashboard-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-main.sidebar-collapsed {
+  margin-left: 0;
+}
+
+/* Loading Container */
+.loading-container {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
+  min-height: 400px;
 }
 
 .loading-spinner {
@@ -846,6 +977,145 @@ export default {
   margin: 0;
 }
 
+/* Dashboard Header */
+.dashboard-header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-light);
+  padding: var(--spacing-xl) var(--spacing-2xl);
+}
+
+.dashboard-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.dashboard-title h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.dashboard-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+}
+
+/* Quick Stats */
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--secondary-color) 0%, #3aa8ab 100%);
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: var(--font-size-lg);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Content Area */
+.dashboard-content {
+  flex: 1;
+  padding: var(--spacing-xl) var(--spacing-2xl);
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  left: var(--spacing-md);
+  bottom: var(--spacing-lg);
+  width: 48px;
+  height: 48px;
+  background: var(--secondary-color);
+  border: none;
+  border-radius: var(--radius-full);
+  color: white;
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(72, 196, 200, 0.4);
+  z-index: 99;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(72, 196, 200, 0.5);
+}
+
+/* Modal Styles */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1000,6 +1270,7 @@ export default {
   margin: 0;
 }
 
+/* Transitions */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
@@ -1009,5 +1280,72 @@ export default {
 .fade-leave-to {
   opacity: 0;
 }
-</style>
 
+/* Responsive */
+@media (max-width: 1024px) {
+  .dashboard-header {
+    padding: var(--spacing-lg);
+  }
+
+  .dashboard-content {
+    padding: var(--spacing-lg);
+  }
+
+  .quick-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: var(--spacing-md);
+  }
+
+  .dashboard-header-content {
+    flex-direction: column;
+  }
+
+  .dashboard-title h1 {
+    font-size: var(--font-size-xl);
+  }
+
+  .dashboard-content {
+    padding: var(--spacing-md);
+  }
+
+  .quick-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .stat-card {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: var(--font-size-base);
+  }
+
+  .stat-value {
+    font-size: var(--font-size-lg);
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .action-btn span {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .quick-stats {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
