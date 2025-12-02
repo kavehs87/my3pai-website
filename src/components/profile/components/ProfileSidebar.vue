@@ -172,6 +172,9 @@ export default {
 .sidebar-avatar {
   width: 48px;
   height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -181,6 +184,8 @@ export default {
 .collapsed .sidebar-avatar {
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  min-height: 40px;
 }
 
 .sidebar-user-info {
@@ -421,6 +426,18 @@ export default {
   .profile-sidebar {
     width: 72px;
     min-width: 72px;
+  }
+
+  .sidebar-user {
+    justify-content: center;
+    padding: var(--spacing-md);
+  }
+
+  .sidebar-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
   }
 
   .sidebar-user-info {
