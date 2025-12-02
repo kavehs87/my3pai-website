@@ -418,6 +418,7 @@ export default {
         total: 0,
         lastPage: 1,
       },
+      useBackendFiltering: false, // Whether to use backend filtering/sorting vs client-side
       filters: {
         status: null, // null = all, or comma-separated statuses
         view: 'all', // 'all', 'upcoming', 'past'
@@ -432,13 +433,17 @@ export default {
     }
   },
   computed: {
+    // Check if all records are loaded (client-side mode) or we need backend filtering
+    allRecordsLoaded() {
+      if (!this.pagination.total) return false
+      return this.allBookings.length >= this.pagination.total
+    },
     filteredAndSortedBookings() {
-      // Bookings are already sorted by backend
+      // Bookings are already sorted by backend (if backend filtering)
+      // Status is already filtered by backend (if backend filtering)
       let result = [...this.allBookings]
 
-      // Apply view filter (upcoming/past/all)
-      // Note: Backend already splits into upcoming/past, but we re-filter
-      // to ensure consistency with current date
+      // Always apply view filter client-side (backend returns upcoming/past separately)
       if (this.filters.view === 'upcoming') {
         result = result.filter(b => {
           const scheduled = new Date(b.scheduledAt)
@@ -453,8 +458,9 @@ export default {
         })
       }
 
-      // Apply status filter client-side
-      if (this.filters.status && this.filters.status !== null) {
+      // Apply status filter client-side only if NOT using backend filtering
+      // (backend already filtered if useBackendFiltering is true)
+      if (!this.useBackendFiltering && this.filters.status && this.filters.status !== null) {
         const filterStatus = String(this.filters.status).toLowerCase().trim()
         result = result.filter(b => {
           const bookingStatus = String(b.status || '').toLowerCase().trim()
@@ -462,9 +468,51 @@ export default {
         })
       }
 
+      // Client-side sorting only if all records loaded (not using backend filtering)
+      if (this.allRecordsLoaded && !this.useBackendFiltering) {
+        result.sort((a, b) => {
+          let aVal, bVal
+
+          switch (this.sortBy) {
+            case 'scheduled_at':
+              aVal = new Date(a.scheduledAt || 0)
+              bVal = new Date(b.scheduledAt || 0)
+              break
+            case 'created_at':
+              aVal = new Date(a.createdAt || a.scheduledAt || 0)
+              bVal = new Date(b.createdAt || b.scheduledAt || 0)
+              break
+            case 'customer_name':
+              aVal = (a.customer?.name || '').toLowerCase()
+              bVal = (b.customer?.name || '').toLowerCase()
+              break
+            case 'status':
+              aVal = (a.status || '').toLowerCase()
+              bVal = (b.status || '').toLowerCase()
+              break
+            default:
+              return 0
+          }
+
+          if (this.sortBy === 'customer_name' || this.sortBy === 'status') {
+            return this.sortOrder === 'asc'
+              ? aVal.localeCompare(bVal)
+              : bVal.localeCompare(aVal)
+          } else {
+            return this.sortOrder === 'asc' ? aVal - bVal : bVal - aVal
+          }
+        })
+      }
+
       return result
     },
     paginatedBookings() {
+      // If using backend pagination, bookings are already paginated
+      if (this.useBackendFiltering) {
+        return this.filteredAndSortedBookings
+      }
+      
+      // Client-side pagination
       const start = (this.pagination.currentPage - 1) * this.pagination.perPage
       const end = start + this.pagination.perPage
       return this.filteredAndSortedBookings.slice(start, end)
@@ -473,7 +521,16 @@ export default {
       return this.paginatedBookings
     },
     totalPages() {
+      if (this.useBackendFiltering) {
+        return this.pagination.lastPage || 1
+      }
       return Math.ceil(this.filteredAndSortedBookings.length / this.pagination.perPage)
+    },
+    totalFilteredCount() {
+      if (this.useBackendFiltering) {
+        return this.pagination.total
+      }
+      return this.filteredAndSortedBookings.length
     },
     visiblePages() {
       const total = this.totalPages
@@ -523,20 +580,25 @@ export default {
   },
   watch: {
     filters: {
-      handler() {
+      handler(newVal, oldVal) {
         this.pagination.currentPage = 1
-        // Both view and status filters are client-side, no reload needed
+        
+        // If using backend filtering and status changed, reload
+        if (this.useBackendFiltering && oldVal && newVal.status !== oldVal.status) {
+          this.loadBookings()
+        }
+        // View filter is always client-side, no reload needed
       },
       deep: true,
     },
     sortBy() {
       this.pagination.currentPage = 1
-      // Reload bookings when sort changes (backend handles sorting)
+      // Always reload when sort changes (either backend or will trigger reload if switching modes)
       this.loadBookings()
     },
     sortOrder() {
       this.pagination.currentPage = 1
-      // Reload bookings when sort order changes (backend handles sorting)
+      // Always reload when sort order changes
       this.loadBookings()
     },
   },
@@ -616,17 +678,33 @@ export default {
       }
     },
 
-    async loadBookings() {
+    async loadBookings(forceBackendMode = false) {
       this.bookingsLoading = true
 
       try {
-        // Build query parameters - use backend sorting
-        // We load all bookings and do client-side filtering + pagination
-        // Status filtering is done client-side to work seamlessly with view filters
+        // Build query parameters
         const params = {
-          per_page: 100, // Load enough for client-side filtering and pagination
           sort_by: this.sortBy,
           sort_order: this.sortOrder,
+        }
+        
+        // Determine if we should use backend filtering
+        // Force backend mode if explicitly requested, or if already in backend mode
+        const shouldUseBackend = forceBackendMode || this.useBackendFiltering
+        
+        // Add status filter if using backend filtering
+        if (shouldUseBackend && this.filters.status) {
+          params.status = this.filters.status
+        }
+        
+        if (shouldUseBackend) {
+          // Use backend pagination and filtering
+          params.per_page = this.pagination.perPage
+          params.page = this.pagination.currentPage
+        } else {
+          // Try to load all records (up to 100) for client-side filtering
+          params.per_page = 100
+          params.page = 1
         }
 
         const result = await apiService.getInfluencerConsultationBookings(params)
@@ -635,19 +713,38 @@ export default {
           const data = result.data.data
           const upcoming = data.upcoming || []
           const past = data.past || []
+          const loadedBookings = [...upcoming, ...past]
           
-          // Store all bookings (already sorted by backend based on sortBy/sortOrder)
-          this.allBookings = [...upcoming, ...past]
-          
-          // Update stats from pagination meta if available
+          // Get total from pagination meta
+          let total = loadedBookings.length
           if (result.data?.meta) {
-            this.bookingsStats.total = result.data.meta.total || this.allBookings.length
-          } else {
-            this.bookingsStats.total = this.allBookings.length
+            total = result.data.meta.total || total
+            this.pagination.lastPage = result.data.meta.last_page || Math.ceil(total / this.pagination.perPage)
           }
           
-          // Count upcoming for stats (not filtered by status)
+          // Check if we need to switch to backend filtering mode
+          if (!shouldUseBackend && total > loadedBookings.length) {
+            // More records exist than we loaded - switch to backend filtering mode
+            this.useBackendFiltering = true
+            this.pagination.total = total
+            this.pagination.currentPage = 1
+            // Reload with backend pagination
+            await this.loadBookings(true)
+            return
+          }
+          
+          // Store bookings
+          this.allBookings = loadedBookings
+          this.pagination.total = total
+          
+          // Update stats
+          this.bookingsStats.total = total
           this.bookingsStats.upcoming = upcoming.length
+          
+          // If using client-side filtering and all records loaded, update lastPage
+          if (!shouldUseBackend && total <= loadedBookings.length) {
+            this.pagination.lastPage = Math.ceil(loadedBookings.length / this.pagination.perPage)
+          }
         }
       } catch (err) {
         console.error('Error loading bookings:', err)
@@ -659,6 +756,10 @@ export default {
     changePage(page) {
       if (page >= 1 && page <= this.totalPages) {
         this.pagination.currentPage = page
+        // If using backend filtering, reload for new page
+        if (this.useBackendFiltering) {
+          this.loadBookings(true)
+        }
         // Scroll to top of bookings section
         this.$nextTick(() => {
           const bookingsSection = this.$el.querySelector('.settings-section')
@@ -671,10 +772,15 @@ export default {
     changePerPage(perPage) {
       this.pagination.perPage = perPage
       this.pagination.currentPage = 1
+      // Reload if using backend filtering
+      if (this.useBackendFiltering) {
+        this.loadBookings(true)
+      }
     },
     handleStatusFilterChange() {
       this.pagination.currentPage = 1
-      // Status filter is applied client-side (no reload needed)
+      // If using backend filtering, watcher will reload
+      // If client-side, computed property handles it
     },
     setViewFilter(view) {
       this.filters.view = view
