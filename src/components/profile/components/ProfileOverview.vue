@@ -2,6 +2,7 @@
   <div class="profile-overview">
     <div class="container">
       <ProfileStats :stats="computedStats" />
+      <CreatorToolsToggle />
       <MyConsultationBookings />
     </div>
   </div>
@@ -10,12 +11,14 @@
 <script>
 import ProfileStats from './ProfileStats.vue'
 import MyConsultationBookings from './MyConsultationBookings.vue'
+import CreatorToolsToggle from './CreatorToolsToggle.vue'
 
 export default {
   name: 'ProfileOverview',
   components: {
     ProfileStats,
-    MyConsultationBookings
+    MyConsultationBookings,
+    CreatorToolsToggle
   },
   props: {
     stats: {

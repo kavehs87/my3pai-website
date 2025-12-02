@@ -1,6 +1,13 @@
 <template>
   <div class="podcast-settings">
     <div class="container">
+      <DisabledFeatureBanner 
+        :is-enabled="isEnabled" 
+        feature-name="Podcast"
+        tool-id="podcast"
+        @enabled="handleEnabled"
+      />
+      
       <div class="settings-intro">
         <h1><i class="fas fa-podcast"></i> Podcast Episodes</h1>
         <p>Create and manage your podcast episodes. Premium episodes require a subscription to listen.</p>
@@ -170,13 +177,19 @@
 <script>
 import api from '@/services/api'
 import toast from '@/utils/toast'
+import DisabledFeatureBanner from './DisabledFeatureBanner.vue'
+import eventBus from '@/utils/eventBus'
 
 export default {
   name: 'ProfilePodcastSettings',
+  components: {
+    DisabledFeatureBanner
+  },
   data() {
     return {
       podcastEpisodes: [],
       loading: false,
+      isEnabled: true,
       audioUploading: false,
       modal: {
         visible: false,
@@ -207,6 +220,11 @@ export default {
   },
   mounted() {
     this.loadPodcastEpisodes()
+    this.loadVisibilityStatus()
+    eventBus.on('creator-tools-visibility-changed', this.handleVisibilityChange)
+  },
+  beforeUnmount() {
+    eventBus.off('creator-tools-visibility-changed', this.handleVisibilityChange)
   },
   methods: {
     async loadPodcastEpisodes() {
@@ -222,6 +240,26 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    async loadVisibilityStatus() {
+      try {
+        const result = await api.getCreatorToolsVisibility()
+        if (result.success) {
+          const settings = result.data?.data || result.data || {}
+          this.isEnabled = settings.podcast !== false // Default to true if not set
+        }
+      } catch (err) {
+        console.error('Failed to load visibility status:', err)
+        this.isEnabled = true
+      }
+    },
+    handleVisibilityChange(data) {
+      if (data.toolId === 'podcast') {
+        this.isEnabled = data.enabled
+      }
+    },
+    handleEnabled() {
+      this.isEnabled = true
     },
     formatDate(dateString) {
       if (!dateString) return ''

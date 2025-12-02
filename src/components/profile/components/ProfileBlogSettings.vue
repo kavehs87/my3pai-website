@@ -1,6 +1,13 @@
 <template>
   <div class="blog-settings">
     <div class="container">
+      <DisabledFeatureBanner 
+        :is-enabled="isEnabled" 
+        feature-name="Blog"
+        tool-id="blog"
+        @enabled="handleEnabled"
+      />
+      
       <div class="settings-intro">
         <h1><i class="fas fa-blog"></i> Blog Posts</h1>
         <p>Create and manage your blog posts. Premium posts are only visible to subscribers.</p>
@@ -141,16 +148,20 @@
 import api from '@/services/api'
 import toast from '@/utils/toast'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
+import DisabledFeatureBanner from './DisabledFeatureBanner.vue'
+import eventBus from '@/utils/eventBus'
 
 export default {
   name: 'ProfileBlogSettings',
   components: {
-    RichTextEditor
+    RichTextEditor,
+    DisabledFeatureBanner
   },
   data() {
     return {
       blogPosts: [],
       loading: false,
+      isEnabled: true,
       modal: {
         visible: false,
         editId: null,
@@ -176,6 +187,12 @@ export default {
   },
   mounted() {
     this.loadBlogPosts()
+    this.loadVisibilityStatus()
+    // Listen for visibility changes from Overview page
+    eventBus.on('creator-tools-visibility-changed', this.handleVisibilityChange)
+  },
+  beforeUnmount() {
+    eventBus.off('creator-tools-visibility-changed', this.handleVisibilityChange)
   },
   methods: {
     async loadBlogPosts() {
@@ -191,6 +208,29 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    async loadVisibilityStatus() {
+      try {
+        const result = await api.getCreatorToolsVisibility()
+        if (result.success) {
+          const settings = result.data?.data || result.data || {}
+          this.isEnabled = settings.blog !== false // Default to true if not set
+        }
+      } catch (err) {
+        console.error('Failed to load visibility status:', err)
+        // Default to enabled if we can't load settings
+        this.isEnabled = true
+      }
+    },
+    handleVisibilityChange(data) {
+      // Update banner if blog visibility changed
+      if (data.toolId === 'blog') {
+        this.isEnabled = data.enabled
+      }
+    },
+    handleEnabled() {
+      // Update local state when feature is enabled
+      this.isEnabled = true
     },
     formatDate(dateString) {
       if (!dateString) return ''

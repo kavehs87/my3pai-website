@@ -1,6 +1,13 @@
 <template>
   <div class="consultation-settings">
     <div class="container">
+      <DisabledFeatureBanner 
+        :is-enabled="isEnabled" 
+        feature-name="Consultations"
+        tool-id="consultation"
+        @enabled="handleEnabled"
+      />
+      
       <div class="settings-intro">
         <h1><i class="fas fa-video"></i> Consultation Settings</h1>
         <p>Configure your 1-on-1 trip planning consultation service. Set your pricing, duration, and availability.</p>
@@ -259,12 +266,18 @@
 <script>
 import apiService from '@/services/api'
 import toast from '@/utils/toast'
+import DisabledFeatureBanner from './DisabledFeatureBanner.vue'
+import eventBus from '@/utils/eventBus'
 
 export default {
   name: 'ProfileConsultationSettings',
+  components: {
+    DisabledFeatureBanner
+  },
   data() {
     return {
       loading: false,
+      isEnabled: true,
       saving: false,
       error: null,
       bookingsLoading: false,
@@ -292,6 +305,11 @@ export default {
   mounted() {
     this.loadConsultation()
     this.loadBookings()
+    this.loadVisibilityStatus()
+    eventBus.on('creator-tools-visibility-changed', this.handleVisibilityChange)
+  },
+  beforeUnmount() {
+    eventBus.off('creator-tools-visibility-changed', this.handleVisibilityChange)
   },
   methods: {
     async loadConsultation() {
@@ -318,6 +336,27 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+
+    async loadVisibilityStatus() {
+      try {
+        const result = await apiService.getCreatorToolsVisibility()
+        if (result.success) {
+          const settings = result.data?.data || result.data || {}
+          this.isEnabled = settings.consultation !== false // Default to true if not set
+        }
+      } catch (err) {
+        console.error('Failed to load visibility status:', err)
+        this.isEnabled = true
+      }
+    },
+    handleVisibilityChange(data) {
+      if (data.toolId === 'consultation') {
+        this.isEnabled = data.enabled
+      }
+    },
+    handleEnabled() {
+      this.isEnabled = true
     },
 
     async saveConsultation() {

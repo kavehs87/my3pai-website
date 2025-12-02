@@ -1,6 +1,13 @@
 <template>
   <div class="masterclass-settings">
     <div class="container">
+      <DisabledFeatureBanner 
+        :is-enabled="isEnabled" 
+        feature-name="Training & Masterclasses"
+        tool-id="masterclass"
+        @enabled="handleEnabled"
+      />
+      
       <div class="settings-intro">
         <h1><i class="fas fa-graduation-cap"></i> Training & Masterclasses</h1>
         <p>Create and manage your training courses and masterclasses. Premium courses require purchase.</p>
@@ -158,16 +165,20 @@
 import api from '@/services/api'
 import toast from '@/utils/toast'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
+import DisabledFeatureBanner from './DisabledFeatureBanner.vue'
+import eventBus from '@/utils/eventBus'
 
 export default {
   name: 'ProfileMasterclassSettings',
   components: {
-    RichTextEditor
+    RichTextEditor,
+    DisabledFeatureBanner
   },
   data() {
     return {
       masterclasses: [],
       loading: false,
+      isEnabled: true,
       modal: {
         visible: false,
         editId: null,
@@ -195,6 +206,11 @@ export default {
   },
   mounted() {
     this.loadMasterclasses()
+    this.loadVisibilityStatus()
+    eventBus.on('creator-tools-visibility-changed', this.handleVisibilityChange)
+  },
+  beforeUnmount() {
+    eventBus.off('creator-tools-visibility-changed', this.handleVisibilityChange)
   },
   methods: {
     async loadMasterclasses() {
@@ -210,6 +226,26 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    async loadVisibilityStatus() {
+      try {
+        const result = await api.getCreatorToolsVisibility()
+        if (result.success) {
+          const settings = result.data?.data || result.data || {}
+          this.isEnabled = settings.masterclass !== false // Default to true if not set
+        }
+      } catch (err) {
+        console.error('Failed to load visibility status:', err)
+        this.isEnabled = true
+      }
+    },
+    handleVisibilityChange(data) {
+      if (data.toolId === 'masterclass') {
+        this.isEnabled = data.enabled
+      }
+    },
+    handleEnabled() {
+      this.isEnabled = true
     },
     formatDate(dateString) {
       if (!dateString) return ''

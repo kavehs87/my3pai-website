@@ -852,6 +852,23 @@ class ApiService {
   }
 
   /**
+   * Get creator tools visibility settings
+   */
+  async getCreatorToolsVisibility() {
+    return this.request('/influencer/creator-tools-visibility')
+  }
+
+  /**
+   * Update creator tools visibility settings
+   */
+  async updateCreatorToolsVisibility(settings) {
+    return this.request('/influencer/creator-tools-visibility', {
+      method: 'PUT',
+      body: settings
+    })
+  }
+
+  /**
    * Upload intro video
    */
   async uploadIntroVideo(file) {

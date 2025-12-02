@@ -1,6 +1,13 @@
 <template>
   <div class="media-assets-settings">
     <div class="container">
+      <DisabledFeatureBanner 
+        :is-enabled="isEnabled" 
+        feature-name="Digital Assets"
+        tool-id="media-assets"
+        @enabled="handleEnabled"
+      />
+      
       <div class="settings-intro">
         <h1><i class="fas fa-photo-video"></i> Digital Assets & Stock</h1>
         <p>Create and manage your digital assets marketplace. Sell stock footage, photo packs, LUTs, presets, and more.</p>
@@ -172,13 +179,19 @@
 <script>
 import api from '@/services/api'
 import toast from '@/utils/toast'
+import DisabledFeatureBanner from './DisabledFeatureBanner.vue'
+import eventBus from '@/utils/eventBus'
 
 export default {
   name: 'ProfileMediaAssetsSettings',
+  components: {
+    DisabledFeatureBanner
+  },
   data() {
     return {
       mediaAssets: [],
       loading: false,
+      isEnabled: true,
       modal: {
         visible: false,
         editId: null,
@@ -208,6 +221,11 @@ export default {
   },
   mounted() {
     this.loadMediaAssets()
+    this.loadVisibilityStatus()
+    eventBus.on('creator-tools-visibility-changed', this.handleVisibilityChange)
+  },
+  beforeUnmount() {
+    eventBus.off('creator-tools-visibility-changed', this.handleVisibilityChange)
   },
   methods: {
     async loadMediaAssets() {
@@ -225,6 +243,27 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    async loadVisibilityStatus() {
+      try {
+        const result = await api.getCreatorToolsVisibility()
+        if (result.success) {
+          const settings = result.data?.data || result.data || {}
+          // API uses 'media-assets' with hyphen
+          this.isEnabled = settings['media-assets'] !== false // Default to true if not set
+        }
+      } catch (err) {
+        console.error('Failed to load visibility status:', err)
+        this.isEnabled = true
+      }
+    },
+    handleVisibilityChange(data) {
+      if (data.toolId === 'media-assets') {
+        this.isEnabled = data.enabled
+      }
+    },
+    handleEnabled() {
+      this.isEnabled = true
     },
     formatPrice(price, currency = 'USD') {
       return new Intl.NumberFormat('en-US', {
