@@ -309,7 +309,7 @@ export default {
 }
 
 .settings-intro h1 i {
-  color: #3b82f6;
+  color: var(--secondary-color);
 }
 
 .settings-intro p {
@@ -355,7 +355,7 @@ export default {
 }
 
 .add-btn {
-  background: #3b82f6;
+  background: var(--secondary-color);
   color: white;
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -370,7 +370,7 @@ export default {
 }
 
 .add-btn:hover {
-  background: #2563eb;
+  background: var(--secondary-hover);
   transform: translateY(-1px);
 }
 
@@ -616,8 +616,8 @@ export default {
 
 .form-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px var(--secondary-light);
 }
 
 .char-count {
@@ -645,7 +645,7 @@ export default {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #3b82f6;
+  accent-color: var(--secondary-color);
 }
 
 .text-amber {
@@ -667,8 +667,8 @@ export default {
 }
 
 .file-upload-area:hover {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.02);
+  border-color: var(--secondary-color);
+  background: var(--secondary-light);
 }
 
 .file-input {
@@ -732,12 +732,12 @@ export default {
 }
 
 .modal-btn.primary {
-  background: #3b82f6;
+  background: var(--secondary-color);
   color: #fff;
 }
 
 .modal-btn.primary:hover {
-  background: #2563eb;
+  background: var(--secondary-hover);
 }
 
 .modal-btn:disabled {

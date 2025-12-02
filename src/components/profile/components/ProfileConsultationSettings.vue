@@ -505,7 +505,7 @@ export default {
 }
 
 .settings-intro h1 i {
-  color: #06b6d4;
+  color: var(--secondary-color);
 }
 
 .settings-intro p {
@@ -540,7 +540,7 @@ export default {
 }
 
 .section-header h2 i {
-  color: #06b6d4;
+  color: var(--secondary-color);
 }
 
 .stats-row {
@@ -605,7 +605,7 @@ export default {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #06b6d4;
+  accent-color: var(--secondary-color);
 }
 
 .helper-text {
@@ -636,8 +636,8 @@ export default {
 
 .form-input:focus {
   outline: none;
-  border-color: #06b6d4;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px var(--secondary-light);
 }
 
 textarea.form-input {
@@ -658,7 +658,7 @@ textarea.form-input {
 }
 
 .save-btn {
-  background: #06b6d4;
+  background: var(--secondary-color);
   color: white;
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -674,7 +674,7 @@ textarea.form-input {
 }
 
 .save-btn:hover:not(:disabled) {
-  background: #0891b2;
+  background: var(--secondary-hover);
   transform: translateY(-1px);
 }
 
@@ -984,12 +984,12 @@ textarea.form-input {
 }
 
 .modal-btn.primary {
-  background: #06b6d4;
+  background: var(--secondary-color);
   color: white;
 }
 
 .modal-btn.primary:hover:not(:disabled) {
-  background: #0891b2;
+  background: var(--secondary-hover);
 }
 
 .modal-btn:disabled {

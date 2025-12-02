@@ -374,7 +374,7 @@ export default {
 }
 
 .settings-intro h1 i {
-  color: #8b5cf6;
+  color: var(--secondary-color);
 }
 
 .settings-intro p {
@@ -420,7 +420,7 @@ export default {
 }
 
 .add-btn {
-  background: #8b5cf6;
+  background: var(--secondary-color);
   color: white;
   border: none;
   padding: var(--spacing-xs) var(--spacing-md);
@@ -436,7 +436,7 @@ export default {
 }
 
 .add-btn:hover {
-  background: #7c3aed;
+  background: var(--secondary-hover);
   transform: translateY(-1px);
 }
 
@@ -532,7 +532,7 @@ export default {
 }
 
 .badge.type {
-  background: #8b5cf6;
+  background: var(--secondary-color);
   color: white;
 }
 
@@ -573,7 +573,7 @@ export default {
 
 .asset-meta .price {
   font-weight: 700;
-  color: #8b5cf6;
+  color: var(--secondary-color);
   font-size: var(--font-size-sm);
 }
 
@@ -691,8 +691,8 @@ export default {
 
 .form-input:focus {
   outline: none;
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px var(--secondary-light);
 }
 
 .char-count {
@@ -735,7 +735,7 @@ export default {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #8b5cf6;
+  accent-color: var(--secondary-color);
 }
 
 .text-green {
@@ -753,8 +753,8 @@ export default {
 }
 
 .file-upload-area:hover {
-  border-color: #8b5cf6;
-  background: var(--bg-secondary);
+  border-color: var(--secondary-color);
+  background: var(--secondary-light);
 }
 
 .file-input {
@@ -835,12 +835,12 @@ export default {
 }
 
 .modal-btn.primary {
-  background: #8b5cf6;
+  background: var(--secondary-color);
   color: white;
 }
 
 .modal-btn.primary:hover:not(:disabled) {
-  background: #7c3aed;
+  background: var(--secondary-hover);
 }
 
 .modal-btn:disabled {

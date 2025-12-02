@@ -367,7 +367,7 @@ export default {
 }
 
 .settings-intro h1 i {
-  color: #8b5cf6;
+  color: var(--secondary-color);
 }
 
 .settings-intro p {
@@ -413,7 +413,7 @@ export default {
 }
 
 .add-btn {
-  background: #8b5cf6;
+  background: var(--secondary-color);
   color: white;
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -428,7 +428,7 @@ export default {
 }
 
 .add-btn:hover {
-  background: #7c3aed;
+  background: var(--secondary-hover);
   transform: translateY(-1px);
 }
 
@@ -492,7 +492,7 @@ export default {
   width: 80px;
   height: 80px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  background: linear-gradient(135deg, var(--secondary-color), var(--secondary-hover));
   background-size: cover;
   background-position: center;
   position: relative;
@@ -521,7 +521,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8b5cf6;
+  color: var(--secondary-color);
   font-size: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -712,8 +712,8 @@ export default {
 
 .form-input:focus {
   outline: none;
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px var(--secondary-light);
 }
 
 .char-count {
@@ -741,7 +741,7 @@ export default {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #8b5cf6;
+  accent-color: var(--secondary-color);
 }
 
 .text-amber {
@@ -768,7 +768,7 @@ export default {
 }
 
 .upload-section h4 i {
-  color: #8b5cf6;
+  color: var(--secondary-color);
 }
 
 .file-upload-area {
@@ -783,13 +783,13 @@ export default {
 }
 
 .file-upload-area:hover {
-  border-color: #8b5cf6;
-  background: rgba(139, 92, 246, 0.02);
+  border-color: var(--secondary-color);
+  background: var(--secondary-light);
 }
 
 .file-upload-area.has-file {
-  border-color: #22c55e;
-  background: rgba(34, 197, 94, 0.05);
+  border-color: var(--success-color);
+  background: rgba(16, 185, 129, 0.05);
 }
 
 .file-input {
@@ -820,7 +820,7 @@ export default {
 .upload-progress {
   margin-top: var(--spacing-sm);
   text-align: center;
-  color: #8b5cf6;
+  color: var(--secondary-color);
   font-size: var(--font-size-sm);
 }
 
@@ -865,12 +865,12 @@ export default {
 }
 
 .modal-btn.primary {
-  background: #8b5cf6;
+  background: var(--secondary-color);
   color: #fff;
 }
 
 .modal-btn.primary:hover {
-  background: #7c3aed;
+  background: var(--secondary-hover);
 }
 
 .modal-btn:disabled {
