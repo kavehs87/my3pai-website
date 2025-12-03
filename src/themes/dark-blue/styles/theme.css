@@ -77,3 +77,37 @@
   font-family: 'Inter', sans-serif;
 }
 
+
+.container {
+  /* max-width: 1200px;
+  margin: 0 auto;
+  padding: inherit var(--spacing-lg) !important; */
+}
+
+.py-20 {
+  padding-top: 5rem !important;
+  padding-bottom: 5rem !important;
+}
+
+.pt-28 {
+  padding-top: 7rem !important;
+}
+
+.pb-20 {
+  padding-bottom: 5rem !important;
+}
+
+.px-4 {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+.px-6 {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+.px-8 {
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}

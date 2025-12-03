@@ -90,6 +90,11 @@
         v-else-if="currentView === 'socials'"
         @back="currentView = 'home'"
       />
+      <ConsultationView
+        v-else-if="currentView === 'consultation'"
+        @back="currentView = 'home'"
+        @book="handleBookSuccess"
+      />
       <div v-else-if="currentView !== 'home'" class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
         <div class="text-center text-text-muted">
           <p>{{ currentView }} view - Coming soon</p>
@@ -119,6 +124,7 @@ import BlogPostView from './views/BlogPostView.vue'
 import AssetsView from './views/AssetsView.vue'
 import PodcastsView from './views/PodcastsView.vue'
 import SocialsView from './views/SocialsView.vue'
+import ConsultationView from './views/ConsultationView.vue'
 import { useInfluencer } from '@/shared/influencer/composables/useInfluencer'
 import './styles/theme.css'
 
@@ -207,6 +213,11 @@ const handleCheckout = () => {
 const handleBookClick = () => {
   currentView.value = 'consultation'
   window.scrollTo(0, 0)
+}
+
+const handleBookSuccess = () => {
+  // Booking success is handled in ConsultationView
+  // Could show toast or redirect here if needed
 }
 
 const handleViewPost = (post) => {

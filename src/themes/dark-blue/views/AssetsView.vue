@@ -1,6 +1,6 @@
 <template>
   <div>
-    <LicensingModal v-if="showLicense" @close="showLicense = false" />
+    <LicensingModal :is-open="showLicense" @close="showLicense = false" />
 
     <div class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen bg-surface">
       <div class="flex justify-between items-center mb-8">

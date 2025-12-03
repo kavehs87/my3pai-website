@@ -1,6 +1,6 @@
 <template>
   <div>
-    <LicensingModal v-if="showLicense" @close="showLicense = false" />
+    <LicensingModal :is-open="showLicense" @close="showLicense = false" />
 
     <!-- Hero Section -->
     <Hero :profile="profile" :bio-paragraphs="bioParagraphs" @book-click="$emit('book-click')" />
