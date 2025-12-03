@@ -22,6 +22,7 @@ export function useConsultation() {
     error.value = null
 
     try {
+      // No timezone parameter - backend returns data in influencer's timezone
       const result = await api.getInfluencerConsultation(username)
 
       if (result.success && result.data?.data) {

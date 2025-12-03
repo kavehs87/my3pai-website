@@ -103,12 +103,24 @@
               </div>
               <div class="form-group">
                 <label>Timezone</label>
-                <select v-model="form.timezone" class="form-input">
-                  <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                  <option value="America/New_York">Eastern Time (ET)</option>
-                  <option value="Europe/London">London (GMT)</option>
-                  <option value="Asia/Tokyo">Tokyo (JST)</option>
+                <select v-model="form.timezone" class="form-input timezone-select">
+                  <optgroup
+                    v-for="(timezones, group) in timezonesByGroup"
+                    :key="group"
+                    :label="group"
+                  >
+                    <option
+                      v-for="tz in timezones"
+                      :key="tz.value"
+                      :value="tz.value"
+                    >
+                      {{ formatTimezoneLabel(tz.value) }}
+                    </option>
+                  </optgroup>
                 </select>
+                <p class="helper-text">
+                  Your timezone: <strong>{{ detectedTimezone }}</strong>
+                </p>
               </div>
             </div>
             
@@ -325,6 +337,7 @@
 <script>
 import api from '@/services/api'
 import toast from '@/utils/toast'
+import { TIMEZONES, getTimezonesByGroup, getUserTimezone, formatTimezoneLabel } from '@/utils/timezones'
 
 export default {
   name: 'ProfileSettings',
@@ -347,13 +360,14 @@ export default {
         subLocation: '',
         currency: 'USD',
         language: 'en',
-        timezone: 'America/Los_Angeles',
+        timezone: getUserTimezone() || 'America/Los_Angeles',
         notifications: {
           email: true,
           push: true,
           marketing: false
         }
       },
+      detectedTimezone: getUserTimezone(),
       stripe: {
         loading: true,
         connected: false,
@@ -371,6 +385,9 @@ export default {
     }
   },
   computed: {
+    timezonesByGroup() {
+      return getTimezonesByGroup()
+    },
     stripeStatusIcon() {
       switch (this.stripe.status) {
         case 'active':
@@ -416,6 +433,9 @@ export default {
     this.handleStripeCallback()
   },
   methods: {
+    formatTimezoneLabel(tzValue) {
+      return formatTimezoneLabel(tzValue)
+    },
     initializeForm() {
       const user = this.user
       if (!user || !user.id) {
@@ -436,7 +456,7 @@ export default {
       this.form.subLocation = user.subLocation || user.sub_location || ''
       this.form.currency = prefs.currency || 'USD'
       this.form.language = prefs.language || 'en'
-      this.form.timezone = prefs.timezone || 'America/Los_Angeles'
+      this.form.timezone = prefs.timezone || getUserTimezone() || 'UTC'
       this.form.notifications = {
         email: notifications.email ?? prefs.notifications_email ?? true,
         push: notifications.push ?? prefs.notifications_push ?? true,
@@ -707,6 +727,10 @@ export default {
   .preferences-row {
     grid-template-columns: 1fr;
   }
+}
+
+.timezone-select {
+  min-height: 42px;
 }
 
 .checkbox-group {

@@ -1006,11 +1006,12 @@ class ApiService {
   /**
    * Get public consultation details for an influencer (no auth)
    */
-  async getInfluencerConsultation(username) {
+  async getInfluencerConsultation(username, params = {}) {
     if (!username) {
       return { success: false, error: 'Username is required.' }
     }
-    return this.request(`/influencers/${encodeURIComponent(username)}/consultation`, {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/consultation${queryString}`, {
       requireCsrf: false
     })
   }
@@ -1061,12 +1062,45 @@ class ApiService {
   }
 
   /**
+   * Get consultation calendar availability (day-level status)
+   * Public endpoint - no auth required
+   */
+  async getConsultationCalendarAvailability(username, params = {}) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/consultation/availability/calendar${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
+   * Get available time slots for a specific date
+   * Public endpoint - no auth required
+   */
+  async getConsultationTimeSlots(username, params = {}) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    if (!params.date) {
+      return { success: false, error: 'Date parameter is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/consultation/availability/slots${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
    * Book a consultation
+   * Public endpoint - no auth required
    */
   async bookConsultation(consultationId, bookingData) {
     return this.request(`/consultations/${consultationId}/book`, {
       method: 'POST',
-      body: bookingData
+      body: bookingData,
+      requireCsrf: false
     })
   }
 

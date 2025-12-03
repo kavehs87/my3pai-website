@@ -95,6 +95,59 @@
             </div>
           </div>
 
+          <!-- Working Hours Configuration -->
+          <div class="form-group working-hours-section">
+            <label class="section-label">
+              <i class="fas fa-clock"></i> Working Hours
+            </label>
+            <p class="helper-text">Set your available hours for each day of the week. Clients can only book during these times.</p>
+            
+            <div class="working-hours-list">
+              <div
+                v-for="(day, index) in weekDays"
+                :key="day.key"
+                class="working-hour-item"
+              >
+                <div class="day-header">
+                  <label class="day-checkbox-label">
+                    <input
+                      v-model="form.workingHours[day.key].enabled"
+                      type="checkbox"
+                      class="day-checkbox"
+                    />
+                    <span class="day-name">{{ day.name }}</span>
+                  </label>
+                </div>
+                
+                <div v-if="form.workingHours[day.key].enabled" class="day-hours">
+                  <div class="time-input-group">
+                    <label class="time-label">Start Time</label>
+                    <input
+                      v-model="form.workingHours[day.key].start"
+                      type="time"
+                      class="form-input time-input"
+                      required
+                    />
+                  </div>
+                  <span class="time-separator">to</span>
+                  <div class="time-input-group">
+                    <label class="time-label">End Time</label>
+                    <input
+                      v-model="form.workingHours[day.key].end"
+                      type="time"
+                      class="form-input time-input"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div v-else class="day-unavailable">
+                  <span class="unavailable-text">Unavailable</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="error" class="error-message">
             <i class="fas fa-exclamation-circle"></i> {{ error }}
           </div>
@@ -405,7 +458,25 @@ export default {
         price: 150,
         currency: 'USD',
         isActive: true,
+        workingHours: {
+          monday: { enabled: true, start: '09:00', end: '17:00' },
+          tuesday: { enabled: true, start: '09:00', end: '17:00' },
+          wednesday: { enabled: true, start: '09:00', end: '17:00' },
+          thursday: { enabled: true, start: '09:00', end: '17:00' },
+          friday: { enabled: true, start: '09:00', end: '17:00' },
+          saturday: { enabled: false, start: null, end: null },
+          sunday: { enabled: false, start: null, end: null },
+        },
       },
+      weekDays: [
+        { key: 'monday', name: 'Monday' },
+        { key: 'tuesday', name: 'Tuesday' },
+        { key: 'wednesday', name: 'Wednesday' },
+        { key: 'thursday', name: 'Thursday' },
+        { key: 'friday', name: 'Friday' },
+        { key: 'saturday', name: 'Saturday' },
+        { key: 'sunday', name: 'Sunday' },
+      ],
       allBookings: [], // Store all bookings for client-side operations
       bookingsStats: {
         upcoming: 0,
@@ -612,6 +683,31 @@ export default {
 
         if (result.success && result.data?.data) {
           const consultation = result.data.data
+          
+          // Load working hours from API or use defaults
+          let workingHours = {
+            monday: { enabled: true, start: '09:00', end: '17:00' },
+            tuesday: { enabled: true, start: '09:00', end: '17:00' },
+            wednesday: { enabled: true, start: '09:00', end: '17:00' },
+            thursday: { enabled: true, start: '09:00', end: '17:00' },
+            friday: { enabled: true, start: '09:00', end: '17:00' },
+            saturday: { enabled: false, start: null, end: null },
+            sunday: { enabled: false, start: null, end: null },
+          }
+          
+          if (consultation.workingHours) {
+            // Merge API working hours with defaults
+            Object.keys(workingHours).forEach(day => {
+              if (consultation.workingHours[day]) {
+                workingHours[day] = {
+                  enabled: consultation.workingHours[day].enabled !== false,
+                  start: consultation.workingHours[day].start || null,
+                  end: consultation.workingHours[day].end || null,
+                }
+              }
+            })
+          }
+          
           this.form = {
             title: consultation.title || '1-on-1 Trip Planning',
             description: consultation.description || '',
@@ -619,6 +715,7 @@ export default {
             price: consultation.price || 150,
             currency: consultation.currency || 'USD',
             isActive: consultation.isActive !== false,
+            workingHours,
           }
         }
       } catch (err) {
@@ -655,6 +752,25 @@ export default {
       this.error = null
 
       try {
+        // Prepare working hours for API (only include enabled days with valid times)
+        const workingHours = {}
+        Object.keys(this.form.workingHours).forEach(day => {
+          const dayConfig = this.form.workingHours[day]
+          if (dayConfig.enabled && dayConfig.start && dayConfig.end) {
+            workingHours[day] = {
+              enabled: true,
+              start: dayConfig.start,
+              end: dayConfig.end,
+            }
+          } else {
+            workingHours[day] = {
+              enabled: false,
+              start: null,
+              end: null,
+            }
+          }
+        })
+        
         const result = await apiService.updateConsultation({
           title: this.form.title,
           description: this.form.description,
@@ -662,6 +778,7 @@ export default {
           price: this.form.price,
           currency: this.form.currency,
           is_active: this.form.isActive,
+          working_hours: workingHours,
         })
 
         if (result.success) {
@@ -1072,6 +1189,160 @@ textarea.form-input {
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
   text-align: right;
+}
+
+/* Working Hours Section */
+.working-hours-section {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.section-label i {
+  color: var(--secondary-color);
+}
+
+.working-hours-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.working-hour-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-fast);
+}
+
+.working-hour-item:hover {
+  border-color: var(--border-medium);
+}
+
+.day-header {
+  min-width: 120px;
+}
+
+.day-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.day-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--secondary-color);
+}
+
+.day-name {
+  font-size: var(--font-size-base);
+}
+
+.day-hours {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.time-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex: 1;
+}
+
+.time-label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.time-input {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.time-input:hover {
+  border-color: var(--border-medium);
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 2px rgba(72, 196, 200, 0.1);
+}
+
+.time-separator {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: var(--spacing-lg);
+}
+
+.day-unavailable {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm);
+}
+
+.unavailable-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .working-hour-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .day-header {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .day-hours {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .time-separator {
+    margin-top: 0;
+    text-align: center;
+  }
 }
 
 .form-actions {
