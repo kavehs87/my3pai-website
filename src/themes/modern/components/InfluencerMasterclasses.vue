@@ -105,7 +105,7 @@
 import { ref, computed, onMounted, inject, watch } from 'vue'
 import { GraduationCap, Star, ShoppingCart, Heart, Lock, Loader2, ArrowUpRight } from 'lucide-vue-next'
 import api from '@/services/api'
-import { MASTERCLASSES } from '@/components/influencer/constants'
+import { MASTERCLASSES } from '@/shared/influencer/constants'
 
 const props = defineProps({
   username: {

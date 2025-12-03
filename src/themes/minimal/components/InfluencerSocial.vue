@@ -94,7 +94,7 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import { Youtube, Instagram, Facebook, Play, Music2 } from 'lucide-vue-next'
 import api from '@/services/api'
-import { YOUTUBE_VIDEOS, SHORT_FORM_CONTENT } from '@/components/influencer/constants'
+import { YOUTUBE_VIDEOS, SHORT_FORM_CONTENT } from '@/shared/influencer/constants'
 
 const props = defineProps({
   username: {

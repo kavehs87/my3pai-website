@@ -127,7 +127,7 @@
 <script setup>
 import { ref } from 'vue'
 import { MapPin, X, ArrowUpRight, Tag, ShoppingCart } from 'lucide-vue-next'
-import { COUNTRIES } from '@/components/influencer/constants'
+import { COUNTRIES } from '@/shared/influencer/constants'
 
 const emits = defineEmits(['add-to-cart'])
 const selectedCountry = ref(null)

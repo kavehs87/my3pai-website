@@ -325,7 +325,7 @@ import {
 } from 'lucide-vue-next'
 import IntroVideoPlayer from './IntroVideoPlayer.vue'
 import ConsultationBookingModal from './ConsultationBookingModal.vue'
-import { useConsultation } from '@/components/influencer/composables/useConsultation'
+import { useConsultation } from '@/shared/influencer/composables/useConsultation'
 
 const props = defineProps({
   profile: {

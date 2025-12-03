@@ -96,7 +96,7 @@
 import { ref, onMounted, inject } from 'vue'
 import { Play, Lock, Mic, Headphones, BarChart3, Loader2 } from 'lucide-vue-next'
 import api from '@/services/api'
-import { PODCAST_EPISODES } from '@/components/influencer/constants'
+import { PODCAST_EPISODES } from '@/shared/influencer/constants'
 
 const props = defineProps({
   username: {

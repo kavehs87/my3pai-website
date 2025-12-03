@@ -106,7 +106,7 @@ import { ref, computed, onMounted, inject } from 'vue'
 import { ArrowUpRight, Film, Image as ImageIcon, Sliders, ShoppingCart, Check } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
-import { MEDIA_ASSETS as MOCK_MEDIA_ASSETS } from '@/components/influencer/constants'
+import { MEDIA_ASSETS as MOCK_MEDIA_ASSETS } from '@/shared/influencer/constants'
 
 const props = defineProps({
   username: {

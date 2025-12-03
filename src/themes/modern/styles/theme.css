@@ -3,11 +3,11 @@
  * All styles specific to the Modern theme
  */
 
+/* Import base styles first (must be at top) */
+@import url('../../../style.css');
+
 /* Theme container */
 .theme-modern {
   /* Theme-specific styles will be added here */
 }
-
-/* Import base styles if needed */
-@import url('../../../style.css');
 

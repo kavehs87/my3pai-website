@@ -9,9 +9,9 @@ import Profile from './components/profile/Profile.vue'
 import OAuthCallback from './components/OAuthCallback.vue'
 import MapBuilder from './components/MapBuilder.vue'
 import PublishedMap from './components/published-map/PublishedMap.vue'
-import InfluencerProfile from './components/influencer/InfluencerProfile.vue'
-import MediaAssetsLibrary from './components/influencer/MediaAssetsLibrary.vue'
-import MasterclassesLibrary from './components/influencer/MasterclassesLibrary.vue'
+import InfluencerProfile from './shared/influencer/InfluencerProfile.vue'
+import MediaAssetsLibrary from './shared/influencer/MediaAssetsLibrary.vue'
+import MasterclassesLibrary from './shared/influencer/MasterclassesLibrary.vue'
 import './style.css'
 
 const routes = [

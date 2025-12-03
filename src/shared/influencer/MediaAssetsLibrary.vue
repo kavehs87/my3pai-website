@@ -220,7 +220,7 @@
 import { ref, computed, onMounted, watch, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Film, Image as ImageIcon, Sliders, ShoppingCart, Check, AlertCircle, X, ArrowLeft } from 'lucide-vue-next'
-import InfluencerSidebar from './components/InfluencerSidebar.vue'
+import InfluencerSidebar from '@/themes/modern/components/InfluencerSidebar.vue'
 import { useInfluencer } from './composables/useInfluencer'
 import api from '@/services/api'
 import { MEDIA_ASSETS as MOCK_MEDIA_ASSETS } from './constants'

@@ -213,7 +213,7 @@
 import { ref, computed, onMounted, watch, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GraduationCap, Star, ShoppingCart, Heart, Lock, Check, AlertCircle, ArrowLeft } from 'lucide-vue-next'
-import InfluencerSidebar from './components/InfluencerSidebar.vue'
+import InfluencerSidebar from '@/themes/modern/components/InfluencerSidebar.vue'
 import { useInfluencer } from './composables/useInfluencer'
 import api from '@/services/api'
 import { MASTERCLASSES } from './constants'

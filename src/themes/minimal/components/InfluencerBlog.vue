@@ -65,7 +65,7 @@
 import { ref, onMounted, inject } from 'vue'
 import { ArrowRight, BookOpen, Lock, Loader2 } from 'lucide-vue-next'
 import api from '@/services/api'
-import { BLOG_POSTS } from '@/components/influencer/constants'
+import { BLOG_POSTS } from '@/shared/influencer/constants'
 
 const props = defineProps({
   username: {
