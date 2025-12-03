@@ -53,16 +53,16 @@
         <span class="text-sm text-slate-500 font-medium">Media Library</span>
       </div>
 
-      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 p-4 lg:p-8 pt-24 lg:pt-8">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 p-4 lg:p-8 pt-24 lg:pt-8">
         <!-- Sidebar -->
-        <div class="lg:col-span-4 xl:col-span-4">
-          <div class="lg:sticky lg:top-8 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="lg:col-span-3 xl:col-span-3">
+          <div class="lg:sticky lg:top-8 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <InfluencerSidebar :profile="profile" :bio-paragraphs="bioParagraphs" :username="currentUsername" />
           </div>
         </div>
 
         <!-- Content - Media Assets Library -->
-        <div class="lg:col-span-8 xl:col-span-8 space-y-8 pb-20">
+        <div class="lg:col-span-9 xl:col-span-9 space-y-8 pb-20">
           <!-- Sticky Back Navigation (Desktop) -->
           <div class="hidden lg:flex sticky top-8 z-30 mb-4">
             <router-link
@@ -220,10 +220,10 @@
 import { ref, computed, onMounted, watch, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Film, Image as ImageIcon, Sliders, ShoppingCart, Check, AlertCircle, X, ArrowLeft } from 'lucide-vue-next'
-import InfluencerSidebar from '@/themes/modern/components/InfluencerSidebar.vue'
-import { useInfluencer } from './composables/useInfluencer'
+import InfluencerSidebar from './components/InfluencerSidebar.vue'
+import { useInfluencer } from '@/shared/influencer/composables/useInfluencer'
 import api from '@/services/api'
-import { MEDIA_ASSETS as MOCK_MEDIA_ASSETS } from './constants'
+import { MEDIA_ASSETS as MOCK_MEDIA_ASSETS } from '@/shared/influencer/constants'
 
 const route = useRoute()
 const router = useRouter()

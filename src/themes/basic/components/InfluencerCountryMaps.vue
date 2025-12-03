@@ -1,8 +1,8 @@
 <template>
   <section id="countries" class="space-y-6">
     <div class="flex items-baseline justify-between">
-      <h2 class="text-2xl font-bold text-slate-900">Destinations</h2>
-      <span class="text-xs font-mono text-slate-400">{{ COUNTRIES.length }} COUNTRIES VISITED</span>
+      <h2 class="text-2xl font-bold text-blue-900">Destinations</h2>
+      <span class="text-xs font-mono text-gray-600 font-bold">{{ COUNTRIES.length }} COUNTRIES VISITED</span>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <article

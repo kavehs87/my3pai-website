@@ -1,10 +1,10 @@
 <template>
   <section id="training" class="space-y-6">
     <div class="flex items-center gap-2">
-      <div class="p-2 bg-purple-100 rounded-lg">
-        <GraduationCap class="w-5 h-5 text-purple-600" />
+      <div class="p-2 bg-blue-100 rounded-lg border-2 border-blue-300">
+        <GraduationCap class="w-5 h-5 text-blue-600" />
       </div>
-      <h2 class="text-2xl font-bold text-slate-900">Training &amp; Masterclasses</h2>
+      <h2 class="text-2xl font-bold text-blue-900">Training &amp; Masterclasses</h2>
     </div>
 
     <!-- Loading State -->
@@ -25,7 +25,7 @@
         <article
           v-for="course in displayedMasterclasses"
           :key="course.id"
-          class="group bg-white rounded-2xl p-2 shadow-sm hover:shadow-lg transition-all border border-slate-100 flex flex-col md:flex-row gap-4"
+          class="group bg-white rounded-lg p-3 border-2 border-blue-300 hover:border-blue-500 transition-all flex flex-col md:flex-row gap-4"
         >
         <div class="relative w-full md:w-1/3 h-48 md:h-auto rounded-xl overflow-hidden shrink-0">
           <img 
@@ -34,18 +34,18 @@
             :alt="course.title" 
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
           />
-          <div v-else class="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-            <GraduationCap class="w-12 h-12 text-purple-400 opacity-50" />
+          <div v-else class="w-full h-full bg-blue-100 border-2 border-blue-300 flex items-center justify-center">
+            <GraduationCap class="w-12 h-12 text-blue-500" />
           </div>
           <div v-if="course.isPremium" class="absolute top-2 left-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded-full flex items-center gap-1">
+            <span class="text-xs font-bold uppercase text-yellow-700 bg-yellow-100 px-2 py-1 rounded border-2 border-yellow-400 flex items-center gap-1">
               <Lock class="w-3 h-3" /> Premium
             </span>
           </div>
         </div>
         <div class="py-2 px-2 md:py-4 md:pr-4 flex flex-col flex-grow">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+            <span class="text-xs font-bold uppercase text-blue-700 bg-blue-100 px-2 py-1 rounded border border-blue-300">
               {{ course.type || 'Course' }}
             </span>
             <div v-if="course.rating" class="flex items-center gap-1">
@@ -53,20 +53,20 @@
               <span class="text-xs text-slate-400">{{ course.rating.toFixed(1) }}</span>
             </div>
           </div>
-          <h3 class="font-bold text-lg text-slate-900 mb-2">
+          <h3 class="font-bold text-lg text-blue-900 mb-2">
             {{ course.title }}
           </h3>
-          <p v-if="course.description" class="text-sm text-slate-500 mb-4 line-clamp-2">
+          <p v-if="course.description" class="text-sm text-gray-600 mb-4 line-clamp-2">
             {{ course.description }}
           </p>
-          <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
-            <span class="text-lg font-bold text-slate-900">${{ course.price || 0 }}</span>
+          <div class="flex items-center justify-between mt-auto pt-4 border-t-2 border-blue-200">
+            <span class="text-lg font-bold text-blue-900">${{ course.price || 0 }}</span>
             <div class="flex items-center gap-2">
-              <button class="p-2 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-500 transition-colors" aria-label="Save masterclass">
+              <button class="p-2 rounded border border-gray-300 hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors" aria-label="Save masterclass">
                 <Heart class="w-4 h-4" />
               </button>
               <button
-                class="text-sm font-bold bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2 transition-colors shadow-lg shadow-purple-600/20 active:scale-95"
+                class="text-sm font-bold bg-blue-500 text-white px-4 py-2 rounded border-2 border-blue-600 hover:bg-blue-600 flex items-center gap-2 transition-colors active:scale-95"
                 @click="$emit('add-to-cart', course)"
               >
                 <ShoppingCart class="w-4 h-4" />
@@ -83,14 +83,14 @@
         <router-link
           v-if="currentUsername"
           :to="`/influencer/${currentUsername}/masterclasses`"
-          class="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-600/20 hover:bg-purple-700 transition-all flex items-center gap-2"
+          class="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold text-sm border-2 border-blue-600 hover:bg-blue-600 transition-all flex items-center gap-2"
         >
           Browse Complete Library
           <ArrowUpRight class="w-4 h-4" />
         </router-link>
         <button
           v-else
-          class="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-600/20 hover:bg-purple-700 transition-all flex items-center gap-2"
+          class="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold text-sm border-2 border-blue-600 hover:bg-blue-600 transition-all flex items-center gap-2"
           disabled
         >
           Browse Complete Library

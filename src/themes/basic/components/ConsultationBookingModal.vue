@@ -6,11 +6,11 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         @click.self="closeModal"
       >
-        <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold text-slate-900">Book Consultation</h2>
+        <div class="bg-white rounded-lg w-full max-w-lg p-6 border-4 border-blue-400 max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6 border-b-2 border-blue-300 pb-4">
+            <h2 class="text-2xl font-bold text-blue-900">Book Consultation</h2>
             <button
-              class="text-slate-400 hover:text-slate-600 transition-colors"
+              class="text-blue-500 hover:text-blue-700 transition-colors p-1 border-2 border-blue-300 rounded hover:border-blue-500"
               @click="closeModal"
               aria-label="Close modal"
             >
@@ -20,15 +20,15 @@
 
           <div v-if="consultation" class="space-y-6">
             <!-- Consultation Details -->
-            <div class="bg-slate-50 rounded-xl p-4">
-              <h3 class="font-bold text-lg text-slate-900 mb-1">{{ consultation.title }}</h3>
-              <p class="text-sm text-slate-600 mb-3">{{ consultation.description }}</p>
-              <div class="flex items-center gap-4 text-sm text-slate-600">
+            <div class="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
+              <h3 class="font-bold text-lg text-blue-900 mb-1">{{ consultation.title }}</h3>
+              <p class="text-sm text-gray-600 mb-3">{{ consultation.description }}</p>
+              <div class="flex items-center gap-4 text-sm text-gray-600">
                 <span class="flex items-center gap-1">
                   <Video class="w-4 h-4" />
                   {{ consultation.durationMinutes }} minutes
                 </span>
-                <span class="font-bold text-slate-900">
+                <span class="font-bold text-blue-900">
                   {{ formatPrice(consultation.price, consultation.currency) }}
                 </span>
               </div>
@@ -38,7 +38,7 @@
             <form v-if="!bookingSuccess" class="space-y-4" @submit.prevent="handleBooking">
               <!-- Date & Time -->
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">
+                <label class="block text-sm font-medium text-blue-900 mb-2">
                   Date & Time <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -49,21 +49,21 @@
                   :step="900"
                   @input="validateTimeSlot"
                   :class="[
-                    'w-full px-4 py-2 rounded-lg border outline-none focus:ring-2 transition-colors',
+                    'w-full px-4 py-2 rounded-lg border-2 outline-none transition-colors',
                     isTimeSlotBooked
-                      ? 'border-red-300 bg-red-50 focus:ring-red-500'
-                      : 'border-slate-200 focus:ring-slate-900'
+                      ? 'border-red-400 bg-red-50'
+                      : 'border-blue-300 focus:border-blue-500'
                   ]"
                 />
                 <div class="mt-1 space-y-1">
-                  <p class="text-xs text-slate-500">Select a date and time for your consultation</p>
-                  <p v-if="isTimeSlotBooked" class="text-xs text-red-600 font-medium animate-pulse">
+                  <p class="text-xs text-gray-600">Select a date and time for your consultation</p>
+                  <p v-if="isTimeSlotBooked" class="text-xs text-red-600 font-bold">
                     ⚠️ This time slot is already booked. Please choose another time.
                   </p>
-                  <p v-if="loadingAvailability" class="text-xs text-slate-400">
+                  <p v-if="loadingAvailability" class="text-xs text-gray-500">
                     Loading availability...
                   </p>
-                  <p v-if="selectedDateBookedSlots.length > 0 && !isTimeSlotBooked && bookingForm.scheduledAt" class="text-xs text-amber-600">
+                  <p v-if="selectedDateBookedSlots.length > 0 && !isTimeSlotBooked && bookingForm.scheduledAt" class="text-xs text-amber-700 font-medium">
                     ℹ️ Note: This date has {{ selectedDateBookedSlots.length }} booked slot(s). Please select a time that doesn't overlap.
                   </p>
                 </div>
@@ -71,13 +71,13 @@
 
               <!-- Timezone -->
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">
+                <label class="block text-sm font-medium text-blue-900 mb-2">
                   Timezone <span class="text-red-500">*</span>
                 </label>
                 <select
                   v-model="bookingForm.timezone"
                   required
-                  class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none"
+                  class="w-full px-4 py-2 rounded-lg border-2 border-blue-300 focus:border-blue-500 outline-none"
                 >
                   <option value="">Select timezone...</option>
                   <option v-for="tz in commonTimezones" :key="tz.value" :value="tz.value">
@@ -88,7 +88,7 @@
 
               <!-- Notes -->
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">
+                <label class="block text-sm font-medium text-blue-900 mb-2">
                   Notes (Optional)
                 </label>
                 <textarea
@@ -96,15 +96,15 @@
                   rows="4"
                   maxlength="1000"
                   placeholder="Tell the influencer about your trip plans, specific questions, or any special requirements..."
-                  class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none resize-none"
+                  class="w-full px-4 py-2 rounded-lg border-2 border-blue-300 focus:border-blue-500 outline-none resize-none"
                 ></textarea>
-                <p class="text-xs text-slate-500 mt-1">
+                <p class="text-xs text-gray-600 mt-1">
                   {{ bookingForm.notes?.length || 0 }}/1000 characters
                 </p>
               </div>
 
               <!-- Error Message -->
-              <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div v-if="error" class="bg-red-50 border-2 border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm font-bold">
                 {{ error }}
               </div>
 
@@ -112,7 +112,7 @@
               <button
                 type="submit"
                 :disabled="loading || !bookingForm.scheduledAt || !bookingForm.timezone || isTimeSlotBooked"
-                class="w-full py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-colors"
+                class="w-full py-3 bg-blue-500 text-white rounded-lg font-bold border-2 border-blue-600 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-colors"
               >
                 <span v-if="loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <template v-else>
@@ -123,15 +123,15 @@
 
             <!-- Success State -->
             <div v-else class="text-center space-y-4">
-              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <div class="w-16 h-16 bg-green-100 border-2 border-green-400 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle class="w-8 h-8 text-green-600" />
               </div>
-              <h3 class="text-xl font-bold text-slate-900">Booking Request Sent!</h3>
-              <p class="text-slate-600">
+              <h3 class="text-xl font-bold text-blue-900">Booking Request Sent!</h3>
+              <p class="text-gray-600">
                 Your consultation booking request has been created. Please complete the payment to confirm your booking.
               </p>
               <button
-                class="w-full py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                class="w-full py-3 bg-blue-500 text-white rounded-lg font-bold border-2 border-blue-600 hover:bg-blue-600 transition-colors"
                 @click="closeModal"
               >
                 Close
@@ -140,7 +140,7 @@
           </div>
 
           <div v-else class="text-center py-8">
-            <p class="text-slate-600">Loading consultation details...</p>
+            <p class="text-gray-600">Loading consultation details...</p>
           </div>
         </div>
       </div>

@@ -51,16 +51,16 @@
       </div>
     </div>
 
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 p-4 lg:p-8 pt-24 lg:pt-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 p-4 lg:p-8 pt-24 lg:pt-8">
       <!-- Sidebar -->
-      <div class="lg:col-span-4 xl:col-span-4">
-        <div class="lg:sticky lg:top-8 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="lg:col-span-3 xl:col-span-3">
+        <div class="lg:sticky lg:top-8 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <Sidebar :profile="profile" :bio-paragraphs="bioParagraphs" :username="username" />
         </div>
       </div>
 
       <!-- Content -->
-      <div class="lg:col-span-8 xl:col-span-8 space-y-16 pb-20">
+      <div class="lg:col-span-9 xl:col-span-9 space-y-16 pb-20">
         <div class="hidden lg:flex sticky top-8 z-30 justify-between items-center">
           <nav
             class="bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-slate-200/60 p-2 inline-flex gap-1 overflow-x-auto max-w-[70vw]"

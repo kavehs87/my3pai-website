@@ -1,5 +1,5 @@
 <template>
-  <section id="media" class="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-8">
+  <section id="media" class="bg-white rounded-lg p-6 border-2 border-blue-400 space-y-6">
     <div class="flex flex-col md:flex-row justify-between gap-6 md:items-end">
       <div class="max-w-xl">
         <div class="flex items-center gap-2 mb-2">
@@ -7,8 +7,8 @@
             Creative Shop
           </span>
         </div>
-        <h2 class="text-3xl font-bold text-slate-900 mb-3">Digital Assets &amp; Stock</h2>
-        <p class="text-slate-500 text-base leading-relaxed">
+        <h2 class="text-3xl font-bold text-blue-900 mb-3">Digital Assets &amp; Stock</h2>
+        <p class="text-gray-600 text-base leading-relaxed">
           Elevate your content with my professional-grade materials.
           Purchase <span class="text-slate-900 font-medium">4K drone footage</span>,
           <span class="text-slate-900 font-medium"> RAW photo packs</span>, and
@@ -24,13 +24,13 @@
       <router-link
         v-if="currentUsername"
         :to="`/influencer/${currentUsername}/media-assets`"
-        class="shrink-0 bg-slate-900 text-white px-5 py-3 rounded-xl font-bold text-sm shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all flex items-center gap-2"
+        class="shrink-0 bg-blue-500 text-white px-5 py-3 rounded-lg font-bold text-sm border-2 border-blue-600 hover:bg-blue-600 transition-all flex items-center gap-2"
       >
         Browse Full Library <ArrowUpRight class="w-4 h-4" />
       </router-link>
       <button
         v-else
-        class="shrink-0 bg-slate-900 text-white px-5 py-3 rounded-xl font-bold text-sm shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all flex items-center gap-2"
+        class="shrink-0 bg-blue-500 text-white px-5 py-3 rounded-lg font-bold text-sm border-2 border-blue-600 hover:bg-blue-600 transition-all flex items-center gap-2"
         disabled
       >
         Browse Full Library <ArrowUpRight class="w-4 h-4" />
@@ -50,7 +50,7 @@
         <article
           v-for="asset in displayedAssets"
           :key="asset.id"
-          class="group relative rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all bg-slate-50"
+          class="group relative rounded-lg overflow-hidden border-2 border-blue-300 hover:border-blue-500 transition-all bg-blue-50"
         >
         <div class="aspect-video overflow-hidden relative">
           <img 

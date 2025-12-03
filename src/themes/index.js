@@ -4,22 +4,36 @@
  */
 
 import ModernTheme from './modern/Profile.vue'
-import MinimalTheme from './minimal/Profile.vue'
+import BasicTheme from './basic/Profile.vue'
+
+// Lazy load library pages - loaded dynamically based on theme
+const ModernMasterclassesLibrary = () => import('./modern/MasterclassesLibrary.vue')
+const ModernMediaAssetsLibrary = () => import('./modern/MediaAssetsLibrary.vue')
+const BasicMasterclassesLibrary = () => import('./basic/MasterclassesLibrary.vue')
+const BasicMediaAssetsLibrary = () => import('./basic/MediaAssetsLibrary.vue')
 
 export const themes = {
   modern: {
     id: 'modern',
     name: 'Modern',
     component: ModernTheme,
+    pages: {
+      masterclasses: ModernMasterclassesLibrary,
+      mediaAssets: ModernMediaAssetsLibrary
+    },
     preview: '/theme-previews/modern.jpg',
     description: 'Clean and contemporary design'
   },
-  minimal: {
-    id: 'minimal',
-    name: 'Minimal',
-    component: MinimalTheme,
-    preview: '/theme-previews/minimal.jpg',
-    description: 'Simple and elegant design'
+  basic: {
+    id: 'basic',
+    name: 'Basic',
+    component: BasicTheme,
+    pages: {
+      masterclasses: BasicMasterclassesLibrary,
+      mediaAssets: BasicMediaAssetsLibrary
+    },
+    preview: '/theme-previews/basic.jpg',
+    description: 'Simple and straightforward design'
   }
 }
 
@@ -47,5 +61,26 @@ export const getAvailableThemes = () => {
  */
 export const themeExists = (themeId) => {
   return !!themes[themeId]
+}
+
+/**
+ * Get theme page component by page type
+ * @param {string} themeId - Theme identifier
+ * @param {string} pageType - Page type ('masterclasses' or 'mediaAssets')
+ * @returns {Promise|Component} Theme page component
+ */
+export const getThemePage = async (themeId, pageType) => {
+  const theme = getTheme(themeId)
+  if (theme?.pages?.[pageType]) {
+    const pageLoader = theme.pages[pageType]
+    return typeof pageLoader === 'function' ? await pageLoader() : pageLoader
+  }
+  // Fallback to modern theme
+  const fallbackTheme = themes.modern
+  if (fallbackTheme?.pages?.[pageType]) {
+    const pageLoader = fallbackTheme.pages[pageType]
+    return typeof pageLoader === 'function' ? await pageLoader() : pageLoader
+  }
+  return null
 }
 

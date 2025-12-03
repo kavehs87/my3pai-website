@@ -10,8 +10,8 @@ import OAuthCallback from './components/OAuthCallback.vue'
 import MapBuilder from './components/MapBuilder.vue'
 import PublishedMap from './components/published-map/PublishedMap.vue'
 import InfluencerProfile from './shared/influencer/InfluencerProfile.vue'
-import MediaAssetsLibrary from './shared/influencer/MediaAssetsLibrary.vue'
-import MasterclassesLibrary from './shared/influencer/MasterclassesLibrary.vue'
+import MediaAssetsLibraryRoute from './shared/influencer/routes/MediaAssetsLibraryRoute.vue'
+import MasterclassesLibraryRoute from './shared/influencer/routes/MasterclassesLibraryRoute.vue'
 import './style.css'
 
 const routes = [
@@ -27,13 +27,13 @@ const routes = [
   },
   {
     path: '/influencer/:username/media-assets',
-    component: MediaAssetsLibrary,
+    component: MediaAssetsLibraryRoute,
     name: 'media-assets-library',
     props: true,
   },
   {
     path: '/influencer/:username/masterclasses',
-    component: MasterclassesLibrary,
+    component: MasterclassesLibraryRoute,
     name: 'masterclasses-library',
     props: true,
   },

@@ -1,0 +1,31 @@
+/**
+ * Basic Theme Styles
+ * Simple, clean design with distinct blue color scheme
+ */
+
+/* Import base styles first (must be at top) */
+@import url('../../../style.css');
+
+/* Basic theme container */
+.theme-basic {
+  /* Override colors */
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --bg-primary: #ffffff;
+  --bg-secondary: #eff6ff;
+  --text-primary: #1e3a8a;
+  --border-color: #93c5fd;
+}
+
+/* Simple, clean styling */
+.theme-basic button {
+  font-family: Arial, sans-serif;
+}
+
+.theme-basic h1,
+.theme-basic h2,
+.theme-basic h3 {
+  font-family: Arial, sans-serif;
+  color: #1e3a8a;
+}
+
