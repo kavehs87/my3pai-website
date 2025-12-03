@@ -5,9 +5,9 @@
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-        <div class="lg:col-span-7 flex flex-col sm:flex-row gap-8 items-center sm:items-start">
+        <div class="lg:col-span-6 flex flex-col sm:flex-row gap-8 items-center sm:items-start min-w-0 overflow-hidden">
           <!-- Portrait Video -->
-          <div class="w-full sm:w-[320px] shrink-0">
+          <div class="w-full sm:w-[320px] shrink-0 flex-shrink-0">
             <div class="bg-white p-1 rounded-[2.5rem] shadow-xl shadow-primary/5 border border-slate-100">
               <div class="relative aspect-[9/16] rounded-[2rem] overflow-hidden group cursor-pointer">
                 <img
@@ -29,11 +29,11 @@
           </div>
 
           <!-- Vertical Stats -->
-          <div class="flex flex-row sm:flex-col flex-wrap gap-4 w-full">
+          <div class="flex flex-row sm:flex-col flex-wrap gap-4 sm:gap-8 w-full min-w-0 flex-1">
             <div
               v-for="(stat, i) in stats"
               :key="i"
-              class="bg-white p-4 rounded-2xl shadow-md border border-slate-50 flex items-center gap-4 sm:w-full hover:-translate-y-1 transition-transform flex-1 sm:flex-none"
+              class="bg-white p-4 rounded-2xl shadow-md border border-slate-50 flex items-center gap-8 sm:w-full hover:-translate-y-1 transition-transform flex-1 sm:flex-none min-w-0"
             >
               <div :class="['p-3 rounded-xl', stat.bg, stat.color, 'flex-shrink-0']">
                 <component :is="stat.icon" class="w-6 h-6" />
@@ -48,7 +48,7 @@
           </div>
         </div>
 
-        <div class="lg:col-span-5 flex flex-col justify-center h-full">
+        <div class="lg:col-span-6 flex flex-col justify-center h-full min-w-0">
           <div class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100 w-fit mb-6">
             <CheckCircle2 class="w-5 h-5 text-secondary" />
             <span class="text-sm font-semibold text-primary">Verified Travel Expert</span>
@@ -102,6 +102,8 @@ import {
   Youtube,
   Facebook,
   Linkedin,
+  Link2,
+  Video,
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -148,6 +150,13 @@ const stats = computed(() => {
       color: 'text-secondary',
       bg: 'bg-teal-50',
     },
+    {
+      label: 'Consultings',
+      value: stats.consultations || stats.consultationsCount || 0,
+      icon: Video,
+      color: 'text-purple-500',
+      bg: 'bg-purple-50',
+    },
   ]
 })
 
@@ -159,21 +168,35 @@ const bioText = computed(() => {
 })
 
 const socialLinks = computed(() => {
-  const socials = props.profile?.socialLinks || []
+  // Get social links from profile - the field is 'socials' (array of {platform, url, handle})
+  const profileSocials = props.profile?.socials || []
+  
+  // Only show icons if we have social links data
+  if (!Array.isArray(profileSocials) || profileSocials.length === 0) {
+    return []
+  }
+
+  // Map profile social links to icons
   const iconMap = {
     instagram: Instagram,
     youtube: Youtube,
     facebook: Facebook,
     linkedin: Linkedin,
+    tiktok: Link2, // TikTok - using Link2 as generic icon since lucide doesn't have TikTok
+    other: Link2, // Other - using Link2 as generic link icon
   }
 
-  return socials
-    .filter((s) => s.url && iconMap[s.platform?.toLowerCase()])
-    .map((s) => ({
-      platform: s.platform,
-      url: s.url,
-      icon: iconMap[s.platform?.toLowerCase()],
-    }))
+  // Map all social links to icons (use Link2 for unknown platforms)
+  return profileSocials
+    .filter((s) => s.url) // Only include links with URLs
+    .map((s) => {
+      const platform = s.platform?.toLowerCase()
+      return {
+        platform: platform || 'other',
+        icon: iconMap[platform] || iconMap.other || Link2,
+        url: s.url,
+      }
+    })
 })
 </script>
 
