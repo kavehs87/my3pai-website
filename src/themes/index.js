@@ -5,6 +5,7 @@
 
 import ModernTheme from './modern/Profile.vue'
 import BasicTheme from './basic/Profile.vue'
+import DarkBlueTheme from './dark-blue/Profile.vue'
 
 // Lazy load library pages - loaded dynamically based on theme
 const ModernMasterclassesLibrary = () => import('./modern/MasterclassesLibrary.vue')
@@ -34,6 +35,17 @@ export const themes = {
     },
     preview: '/theme-previews/basic.jpg',
     description: 'Simple and straightforward design'
+  },
+  'dark-blue': {
+    id: 'dark-blue',
+    name: 'Dark Blue',
+    component: DarkBlueTheme,
+    pages: {
+      masterclasses: ModernMasterclassesLibrary, // Use modern for now, can create theme-specific later
+      mediaAssets: ModernMediaAssetsLibrary
+    },
+    preview: '/theme-previews/dark-blue.jpg',
+    description: 'Professional dark blue theme with teal accents'
   }
 }
 
