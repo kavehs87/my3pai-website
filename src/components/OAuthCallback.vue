@@ -53,8 +53,13 @@ export default {
       this.isError = true
       this.statusTitle = 'Unable to complete sign in'
       this.statusDescription = message || 'Please return to the login page and try again.'
+      
+      // Try to redirect to original route on error, otherwise go to home
+      const redirectPath = sessionStorage.getItem('oauth_redirect_path') || '/'
+      sessionStorage.removeItem('oauth_redirect_path')
+      
       this.redirectTimer = setTimeout(() => {
-        this.$router.push('/?auth_error=1')
+        this.$router.push(`${redirectPath}?auth_error=1`)
       }, 2500)
     }
   },
@@ -75,7 +80,11 @@ export default {
         await this.mergeGuestCart()
         
         eventBus.emit('auth-success', result.data)
-        this.$router.push('/')
+        
+        // Redirect to the original route if stored, otherwise go to home
+        const redirectPath = sessionStorage.getItem('oauth_redirect_path') || '/'
+        sessionStorage.removeItem('oauth_redirect_path')
+        this.$router.push(redirectPath)
         return
       }
 

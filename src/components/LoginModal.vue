@@ -188,6 +188,10 @@ export default {
     },
     
     loginWithGoogle() {
+      // Store current route before redirecting to OAuth
+      const currentRoute = this.$route.fullPath
+      sessionStorage.setItem('oauth_redirect_path', currentRoute)
+      
       // The backend now finishes login via HTTP-only cookies, so the callback page only needs to read /api/me.
       window.location.href = apiService.getGoogleAuthUrl()
     },

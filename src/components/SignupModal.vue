@@ -166,14 +166,29 @@ export default {
         if (result.success) {
           let user = result?.data?.user || result?.data?.data || null
 
-          if (!user) {
-            const profileResult = await apiService.getCurrentUser()
-            if (profileResult.success) {
-              user = profileResult.data
+          // After registration, verify that the session is established
+          // If not, explicitly log in to establish the session
+          const authCheck = await apiService.getCurrentUser()
+          if (!authCheck.success) {
+            // Session not established, explicitly log in
+            const loginResult = await apiService.login({
+              email: this.form.email,
+              password: this.form.password
+            })
+            
+            if (loginResult.success) {
+              // Get user data after login
+              const profileResult = await apiService.getCurrentUser()
+              if (profileResult.success) {
+                user = profileResult.data
+              }
             } else {
-              this.errorMessage = profileResult.error || 'Account created, but we could not load your profile.'
+              this.errorMessage = 'Account created, but automatic login failed. Please sign in manually.'
               return
             }
+          } else {
+            // Session is established, use the user data from auth check
+            user = authCheck.data
           }
 
           this.$emit('signup-success', user)
@@ -191,6 +206,10 @@ export default {
     },
     
     signupWithGoogle() {
+      // Store current route before redirecting to OAuth
+      const currentRoute = this.$route.fullPath
+      sessionStorage.setItem('oauth_redirect_path', currentRoute)
+      
       // The backend now manages the session with HTTP-only cookies, so the callback page just looks up /api/me.
       window.location.href = apiService.getGoogleAuthUrl()
     },
