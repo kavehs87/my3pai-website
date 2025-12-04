@@ -160,10 +160,28 @@ export default {
           return
         }
 
-        this.errorMessage = result.error || 'Login failed'
+        // Show detailed error message from backend
+        let errorMsg = result.error || 'Login failed'
+        
+        // For 500 errors, log the full error data to help debug backend issue
+        if (result.status === 500) {
+          console.error('Login 500 error details:', result.data)
+          errorMsg = result.data?.message || result.data?.error || 'Server error occurred during login. Please check the console for details.'
+        }
+        
+        this.errorMessage = errorMsg
       } catch (error) {
         console.error('Login failed:', error)
-        this.errorMessage = error.message || 'Login failed. Please check your credentials and try again.'
+        console.error('Error details:', error)
+        
+        // Provide more specific error messages
+        if (error.status === 500) {
+          this.errorMessage = 'Server error occurred during login. Please check the console for details.'
+        } else if (error.status === 401 || error.status === 422) {
+          this.errorMessage = error.message || 'Invalid email or password. Please check your credentials and try again.'
+        } else {
+          this.errorMessage = error.message || 'Login failed. Please check your credentials and try again.'
+        }
       } finally {
         this.isLoading = false
       }

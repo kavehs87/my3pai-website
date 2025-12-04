@@ -165,7 +165,15 @@ class ApiService {
         }
       }
 
-      const data = await response.json()
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        // If response is not valid JSON, read as text for error details
+        const text = await response.text()
+        console.error(`API Response is not valid JSON (${response.status}):`, text)
+        throw new Error(`Server returned invalid response: ${response.status} ${response.statusText}`)
+      }
 
       if (!response.ok) {
         // Extract validation errors from Laravel response
@@ -179,6 +187,7 @@ class ApiService {
         }
         const error = new Error(errorMessage)
         error.status = response.status
+        error.data = data // Include full error data for debugging
         throw error
       }
 
@@ -188,8 +197,12 @@ class ApiService {
       // Only log unexpected errors
       if (!(isCartEndpoint && error.status === 419)) {
         console.error('API Request failed:', error)
+        // Log full error details for debugging
+        if (error.data) {
+          console.error('Error data:', error.data)
+        }
       }
-      return { success: false, error: error.message, status: error.status || null }
+      return { success: false, error: error.message, status: error.status || null, data: error.data || null }
     }
   }
 
