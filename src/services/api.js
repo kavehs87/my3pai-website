@@ -1186,8 +1186,8 @@ class ApiService {
   async bookConsultation(consultationId, bookingData) {
     return this.request(`/consultations/${consultationId}/book`, {
       method: 'POST',
-      body: bookingData,
-      requireCsrf: false
+      body: bookingData
+      // CSRF is required for authenticated POST requests (default behavior)
     })
   }
 

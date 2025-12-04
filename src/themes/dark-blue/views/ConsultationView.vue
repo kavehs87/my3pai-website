@@ -234,6 +234,22 @@
       </div>
     </div>
   </div>
+
+  <!-- Login Modal -->
+  <LoginModal
+    :is-open="showLogin"
+    @close="showLogin = false"
+    @login-success="handleLoginSuccess"
+    @switch-to-signup="handleSwitchToSignup"
+  />
+
+  <!-- Signup Modal -->
+  <SignupModal
+    :is-open="showSignup"
+    @close="showSignup = false"
+    @signup-success="handleSignupSuccess"
+    @switch-to-login="handleSwitchToLogin"
+  />
 </template>
 
 <script setup>
@@ -241,9 +257,12 @@ import { ref, computed, onMounted, watch, inject } from 'vue'
 import { ArrowLeft, CalendarIcon, Clock, Check, ChevronLeft, ChevronRight, Info } from 'lucide-vue-next'
 import { formatTimezoneLabel } from '@/utils/timezones'
 import PriceDisplay from '../components/PriceDisplay.vue'
+import LoginModal from '@/components/LoginModal.vue'
+import SignupModal from '@/components/SignupModal.vue'
 import { useConsultation } from '@/shared/influencer/composables/useConsultation'
 import api from '@/services/api'
 import { convertTime, formatTime12Hour, isTimeSlotPast, convertDateTimeToUTC } from '@/utils/timezone'
+import eventBus from '@/utils/eventBus.js'
 
 const emit = defineEmits(['back', 'book'])
 
@@ -260,6 +279,10 @@ const loadingCalendar = ref(false)
 const loadingTimeSlots = ref(false)
 const calendarError = ref(null)
 const timeSlotsError = ref(null)
+const showLogin = ref(false)
+const showSignup = ref(false)
+const isAuthenticated = ref(false)
+const pendingBooking = ref(null) // Store booking data when user needs to login first
 
 // Timezone handling - all conversions done on UI side
 const influencerTimezone = ref(null) // Will be set from API response
@@ -556,9 +579,84 @@ const handleDateSelect = (day) => {
   }
 }
 
+// Check authentication status
+const checkAuthStatus = async () => {
+  try {
+    isAuthenticated.value = await api.isAuthenticated()
+  } catch (error) {
+    console.error('Auth check failed:', error)
+    isAuthenticated.value = false
+  }
+}
+
+// Store booking data and proceed with booking
+const proceedWithBooking = async () => {
+  if (!pendingBooking.value) return
+
+  const bookingData = pendingBooking.value
+  pendingBooking.value = null
+  isSubmitting.value = true
+
+  try {
+    const result = await api.bookConsultation(consultation.value.id, bookingData)
+
+    if (result.success) {
+      isBooked.value = true
+      emit('book')
+      // Refresh calendar to update availability
+      await fetchCalendarAvailability()
+    } else {
+      throw new Error(result.error || 'Failed to book consultation')
+    }
+  } catch (error) {
+    console.error('Booking error:', error)
+    alert(error.message || 'Failed to book consultation. Please try again.')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 const handleBook = async () => {
   if (!selectedDate.value || !selectedTime.value || !consultation.value?.id || !influencerTimezone.value) return
 
+  // Check authentication first
+  await checkAuthStatus()
+
+  if (!isAuthenticated.value) {
+    // Store booking data for after login
+    const selectedSlot = timeSlots.value.find((s) => s.time === selectedTime.value)
+    if (!selectedSlot) {
+      alert('Selected time slot not found')
+      return
+    }
+
+    const customerTime24 = selectedSlot.rawTimeInCustomerTZ
+    if (!customerTime24) {
+      alert('Time slot time not found')
+      return
+    }
+
+    const scheduledAtUTC = convertDateTimeToUTC(
+      selectedDate.value.date,
+      customerTime24,
+      customerTimezone.value
+    )
+
+    if (!scheduledAtUTC) {
+      alert('Failed to convert booking time to UTC')
+      return
+    }
+
+    // Store booking data and show login modal
+    pendingBooking.value = {
+      scheduled_at: scheduledAtUTC,
+      notes: formData.value.topic || null,
+    }
+    showLogin.value = true
+    return
+  }
+
+  // User is authenticated, proceed with booking
   isSubmitting.value = true
 
   try {
@@ -602,11 +700,45 @@ const handleBook = async () => {
     }
   } catch (error) {
     console.error('Booking error:', error)
-    // TODO: Show error toast
     alert(error.message || 'Failed to book consultation. Please try again.')
   } finally {
     isSubmitting.value = false
   }
+}
+
+// Handle successful login
+const handleLoginSuccess = async (userData) => {
+  showLogin.value = false
+  isAuthenticated.value = true
+  eventBus.emit('auth-success', userData)
+  
+  // If there's a pending booking, proceed with it
+  if (pendingBooking.value) {
+    await proceedWithBooking()
+  }
+}
+
+// Handle successful signup
+const handleSignupSuccess = async (userData) => {
+  showSignup.value = false
+  isAuthenticated.value = true
+  eventBus.emit('auth-success', userData)
+  
+  // If there's a pending booking, proceed with it
+  if (pendingBooking.value) {
+    await proceedWithBooking()
+  }
+}
+
+// Switch between login and signup modals
+const handleSwitchToSignup = () => {
+  showLogin.value = false
+  showSignup.value = true
+}
+
+const handleSwitchToLogin = () => {
+  showSignup.value = false
+  showLogin.value = true
 }
 
 // Watch for consultation to load, then fetch calendar
@@ -627,10 +759,22 @@ watch(
 )
 
 onMounted(async () => {
+  // Check authentication status on mount
+  await checkAuthStatus()
+  
   if (currentUsername.value) {
     // No timezone parameter - backend returns data in influencer's timezone
     await fetchConsultation(currentUsername.value)
   }
+  
+  // Listen for auth success events (e.g., from other components)
+  eventBus.on('auth-success', async () => {
+    await checkAuthStatus()
+    // If there's a pending booking, proceed with it
+    if (pendingBooking.value && isAuthenticated.value) {
+      await proceedWithBooking()
+    }
+  })
 })
 </script>
 
