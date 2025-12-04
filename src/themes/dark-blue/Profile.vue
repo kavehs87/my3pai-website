@@ -2,20 +2,21 @@
   <div class="min-h-screen bg-surface font-sans selection:bg-secondary selection:text-white flex flex-col theme-dark-blue" data-theme="dark-blue">
     <!-- Navigation -->
     <Navigation
-      :cart-count="cart.length"
+      :cart-count="cartCount"
       :current-view="currentView"
       @menu-click="mobileMenuOpen = true"
       @navigate="handleNavigate"
       @cart-click="isCartOpen = true"
+      @show-login="showLogin = true"
+      @show-signup="showSignup = true"
     />
 
     <!-- Cart Drawer -->
     <CartDrawer
       :is-open="isCartOpen"
-      :items="cart"
       @close="isCartOpen = false"
-      @remove="removeFromCart"
       @checkout="handleCheckout"
+      @cart-updated="handleCartUpdated"
     />
 
     <!-- Mobile Menu Overlay -->
@@ -26,16 +27,30 @@
       <button @click="mobileMenuOpen = false" class="absolute top-6 right-6 text-white p-2">
         <X class="w-8 h-8" />
       </button>
-      <div class="flex flex-col gap-8 text-center">
+      <div class="flex flex-col gap-8 text-center w-full max-w-sm">
         <a
           v-for="item in ['Profile', 'Courses', 'Maps', 'Blog', 'Assets']"
           :key="item"
           :href="`#${item.toLowerCase()}`"
           @click.prevent="handleMobileNav(item)"
-          class="text-2xl font-bold text-white hover:text-secondary"
+          class="text-2xl font-bold text-white hover:text-secondary transition-colors"
         >
           {{ item }}
         </a>
+        <div class="pt-4 border-t border-white/20 flex flex-col gap-4">
+          <button
+            @click="mobileMenuOpen = false; showLogin = true"
+            class="px-6 py-3 bg-white text-primary rounded-lg font-semibold hover:bg-white/90 transition-colors"
+          >
+            Sign In
+          </button>
+          <button
+            @click="mobileMenuOpen = false; showSignup = true"
+            class="px-6 py-3 bg-secondary text-white rounded-lg font-semibold hover:bg-secondary/90 transition-colors"
+          >
+            Sign Up
+          </button>
+        </div>
       </div>
     </div>
 
@@ -107,6 +122,22 @@
 
     <!-- Footer -->
     <Footer v-if="currentView !== 'checkout' && currentView !== 'success'" :profile="finalProfile" />
+
+    <!-- Login Modal -->
+    <LoginModal
+      :isOpen="showLogin"
+      @close="showLogin = false"
+      @login-success="handleLoginSuccess"
+      @switch-to-signup="showLogin = false; showSignup = true"
+    />
+
+    <!-- Signup Modal -->
+    <SignupModal
+      :isOpen="showSignup"
+      @close="showSignup = false"
+      @signup-success="handleSignupSuccess"
+      @switch-to-login="showSignup = false; showLogin = true"
+    />
   </div>
 </template>
 
@@ -125,7 +156,12 @@ import AssetsView from './views/AssetsView.vue'
 import PodcastsView from './views/PodcastsView.vue'
 import SocialsView from './views/SocialsView.vue'
 import ConsultationView from './views/ConsultationView.vue'
+import LoginModal from '@/components/LoginModal.vue'
+import SignupModal from '@/components/SignupModal.vue'
 import { useInfluencer } from '@/shared/influencer/composables/useInfluencer'
+import apiService from '@/services/api.js'
+import toast from '@/utils/toast.js'
+import eventBus from '@/utils/eventBus.js'
 import './styles/theme.css'
 
 const props = defineProps({
@@ -168,11 +204,13 @@ const finalProfile = computed(() => props.profile || fetchedProfile.value)
 const finalBioParagraphs = computed(() => props.bioParagraphs.length > 0 ? props.bioParagraphs : fetchedBioParagraphs.value)
 
 // State
-const cart = ref([])
+const cartCount = ref(0)
 const isCartOpen = ref(false)
 const mobileMenuOpen = ref(false)
 const currentView = ref('home')
 const selectedPost = ref(null)
+const showLogin = ref(false)
+const showSignup = ref(false)
 
 // Currency context
 const currency = ref({ code: 'USD', symbol: '$', rate: 1 })
@@ -187,15 +225,71 @@ const currentUsername = computed(() => props.username || finalProfile.value?.use
 provide('influencerUsername', currentUsername)
 
 // Methods
-const addToCart = (item) => {
-  cart.value = [...cart.value, item]
-  isCartOpen.value = true
+const mapItemTypeToApi = (type) => {
+  const typeMap = {
+    'course': 'masterclass',
+    'masterclass': 'masterclass',
+    'asset': 'media_asset',
+    'media_asset': 'media_asset',
+    'map': 'map', // Maps are now supported (after backend implements map item_type)
+    'consultation': 'consultation',
+  }
+  return typeMap[type] || null
 }
 
-const removeFromCart = (id) => {
-  const index = cart.value.findIndex((item) => item.id === id)
-  if (index !== -1) {
-    cart.value.splice(index, 1)
+const addToCart = async (item) => {
+  try {
+    // Check if this item type is supported
+    const itemType = mapItemTypeToApi(item.type)
+    
+    if (!itemType) {
+      toast.error('This item type is not yet available for purchase.')
+      return
+    }
+
+    // Convert frontend item format to backend API format
+    const itemData = {
+      item_type: itemType,
+      item_id: item.id,
+      quantity: 1,
+    }
+
+    // Add metadata if provided (e.g., for consultations)
+    if (item.metadata) {
+      itemData.metadata = item.metadata
+    }
+
+    const response = await apiService.addCartItem(itemData)
+    
+    if (response.success) {
+      toast.success(`${item.title} added to cart`)
+      isCartOpen.value = true
+      // Update cart count from response
+      if (response.data && response.data.items) {
+        cartCount.value = response.data.items.length
+      }
+    } else {
+      toast.error(response.error || 'Failed to add item to cart')
+    }
+  } catch (error) {
+    console.error('Error adding to cart:', error)
+    toast.error('Failed to add item to cart. Please try again.')
+  }
+}
+
+const handleCartUpdated = (count) => {
+  cartCount.value = count
+}
+
+const fetchCartCount = async () => {
+  try {
+    const response = await apiService.getCart()
+    if (response.success && response.data) {
+      cartCount.value = response.data.items?.length || 0
+    }
+  } catch (error) {
+    console.error('Error fetching cart count:', error)
+    // Silently fail - cart count is not critical for page load
   }
 }
 
@@ -240,6 +334,20 @@ const handleMobileNav = (item) => {
   }
 }
 
+const handleLoginSuccess = (userData) => {
+  showLogin.value = false
+  // Emit auth success event for Navigation component
+  eventBus.emit('auth-success', userData)
+  toast.success('Welcome back!')
+}
+
+const handleSignupSuccess = (userData) => {
+  showSignup.value = false
+  // Emit auth success event for Navigation component
+  eventBus.emit('auth-success', userData)
+  toast.success('Account created successfully!')
+}
+
 // Load profile on mount if needed
 onMounted(async () => {
   if (!props.profile && props.username) {
@@ -247,6 +355,9 @@ onMounted(async () => {
   } else if (!props.profile && !props.username && props.useMockData) {
     loadMockData()
   }
+  
+  // Fetch initial cart count
+  await fetchCartCount()
 })
 </script>
 

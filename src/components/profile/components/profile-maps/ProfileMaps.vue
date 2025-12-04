@@ -298,6 +298,8 @@ export default {
         summary: summarySource || 'Add a short summary from the studio to describe this map.',
         locationLabel: locationBits.join(', '),
         isPublished: raw.isPublished ?? raw.is_published ?? false,
+        isForSale: raw.isForSale ?? raw.is_for_sale ?? false,
+        price: raw.price ? parseFloat(raw.price) : null,
         thumbnail: raw.thumbnailUrl || raw.thumbnail_url || raw.thumbnail || '',
         poiCount: raw.poiCount ?? raw.poi_count ?? pois.length,
         lastUpdated: raw.updatedAt || raw.updated_at || raw.created_at || null,

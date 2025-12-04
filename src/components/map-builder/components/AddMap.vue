@@ -30,6 +30,42 @@
             placeholder="Upload map thumbnail"
             v-model="formData.thumbnail"
           />
+          <div class="pricing-section">
+            <div class="pricing-toggle-card">
+              <div class="pricing-toggle-header">
+                <div class="pricing-toggle-info">
+                  <h3 class="pricing-toggle-title">Sell this map</h3>
+                  <p class="pricing-toggle-subtitle">Allow users to purchase access to this map</p>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    v-model="formData.isForSale"
+                    class="toggle-switch-input"
+                  />
+                  <span class="toggle-switch-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div v-if="formData.isForSale" class="field-group">
+            <label for="map-price">Price <span>*</span></label>
+            <div class="price-input-wrapper">
+              <span class="price-currency">$</span>
+              <input
+                id="map-price"
+                type="number"
+                v-model.number="formData.price"
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                :class="{ 'has-error': priceError }"
+                class="price-input"
+              />
+            </div>
+            <p v-if="priceError" class="error-text">{{ priceError }}</p>
+            <p v-else class="field-hint">Set the price users will pay to access this map</p>
+          </div>
           <div v-if="formData.pointsOfInterest.length" class="poi-list">
             <div
               v-for="(poi, index) in formData.pointsOfInterest"
@@ -152,13 +188,16 @@ export default {
       formData: {
         title: '',
         thumbnail: null,
-        pointsOfInterest: []
+        pointsOfInterest: [],
+        isForSale: false,
+        price: null
       },
       originalThumbnailUrl: null,
       showPOIForm: false,
       poiForm: this.createEmptyPOIForm(),
       editingPoiIndex: null,
       titleError: '',
+      priceError: '',
       remoteMapId: null,
       pendingPoiDeletions: [],
       submissionState: {
@@ -260,7 +299,11 @@ export default {
       this.formData.title = safeMap.title || ''
       this.formData.thumbnail = safeMap.thumbnailUrl || null
       this.originalThumbnailUrl = safeMap.thumbnailUrl || null
+      this.formData.isForSale = safeMap.isForSale || false
+      // Convert price string to number if it exists (backend returns as string)
+      this.formData.price = safeMap.price ? parseFloat(safeMap.price) : null
       this.titleError = ''
+      this.priceError = ''
       this.pendingPoiDeletions = []
       this.editingPoiIndex = null
 
@@ -497,6 +540,24 @@ export default {
         return false
       }
       this.titleError = ''
+      
+      // Validate price if map is for sale
+      if (this.formData.isForSale) {
+        const price = this.formData.price
+        if (price === null || price === undefined || price === '') {
+          this.priceError = 'Price is required when map is for sale'
+          return false
+        }
+        if (typeof price === 'number' && (price < 0 || !Number.isFinite(price))) {
+          this.priceError = 'Price must be a valid positive number'
+          return false
+        }
+        if (typeof price === 'string' && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
+          this.priceError = 'Price must be a valid positive number'
+          return false
+        }
+      }
+      this.priceError = ''
       return true
     },
     startSubmission(mode) {
@@ -610,6 +671,14 @@ export default {
         payload.isPublished = true
       } else if (mode === 'draft') {
         payload.isPublished = false
+      }
+      // Add pricing information
+      if (this.formData.isForSale) {
+        payload.isForSale = true
+        payload.price = this.formData.price ? parseFloat(this.formData.price) : null
+      } else {
+        payload.isForSale = false
+        payload.price = null
       }
       if (!this.remoteMapId) {
         this.updateSubmission('Creating map', 'Sending map details')
@@ -1067,7 +1136,9 @@ export default {
       this.formData = {
         title: '',
         thumbnail: null,
-        pointsOfInterest: []
+        pointsOfInterest: [],
+        isForSale: false,
+        price: null
       }
       this.originalThumbnailUrl = null
       this.remoteMapId = null
@@ -1238,6 +1309,147 @@ export default {
   color: var(--error-color, #ef4444);
   font-size: var(--font-size-xs);
   margin: 0;
+}
+
+.pricing-section {
+  margin: var(--spacing-md) 0;
+}
+
+.pricing-toggle-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-normal);
+}
+
+.pricing-toggle-card:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-tertiary);
+}
+
+.pricing-toggle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.pricing-toggle-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pricing-toggle-title {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.pricing-toggle-subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-medium);
+  transition: all var(--transition-normal);
+  border-radius: 28px;
+}
+
+.toggle-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: all var(--transition-normal);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch-input:checked + .toggle-switch-slider {
+  background-color: var(--primary-color);
+}
+
+.toggle-switch-input:checked + .toggle-switch-slider:before {
+  transform: translateX(20px);
+}
+
+.toggle-switch-input:focus + .toggle-switch-slider {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.toggle-switch:hover .toggle-switch-slider {
+  opacity: 0.9;
+}
+
+.price-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.price-currency {
+  position: absolute;
+  left: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.price-input {
+  width: 100%;
+  padding: var(--spacing-sm);
+  padding-left: calc(var(--spacing-sm) + 20px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.price-input.has-error {
+  border-color: var(--error-color, #ef4444);
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.15);
+}
+
+.field-hint {
+  color: var(--text-light);
+  font-size: var(--font-size-xs);
+  margin: var(--spacing-xs) 0 0 0;
 }
 
 .poi-list {

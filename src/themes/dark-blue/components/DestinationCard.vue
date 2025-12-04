@@ -1,5 +1,8 @@
 <template>
-  <div class="relative group rounded-3xl overflow-hidden aspect-[3/4] cursor-pointer">
+  <div 
+    class="relative group rounded-3xl overflow-hidden aspect-[3/4] cursor-pointer"
+    @click="handleCardClick"
+  >
     <img
       :src="dest.image"
       :alt="dest.country"
@@ -13,14 +16,19 @@
     </div>
 
     <div class="absolute bottom-0 left-0 right-0 p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-      <PriceDisplay :amount="dest.price" class="text-secondary font-bold text-lg mb-1 block" />
+      <PriceDisplay :amount="priceAsNumber" class="text-secondary font-bold text-lg mb-1 block" />
       <p class="text-white/90 text-sm mb-4 line-clamp-2">{{ dest.description }}</p>
       <div class="flex items-center justify-between">
         <span class="text-white/60 text-xs">{{ dest.poiCount }} Points of Interest</span>
         <button
           @click.stop="handleAddToCart"
-          class="w-10 h-10 rounded-full bg-white text-primary flex items-center justify-center hover:bg-secondary hover:text-white transition-colors"
-          title="Add to Cart"
+          :class="[
+            'w-10 h-10 rounded-full flex items-center justify-center transition-colors',
+            priceAsNumber > 0
+              ? 'bg-white text-primary hover:bg-secondary hover:text-white'
+              : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+          ]"
+          :title="priceAsNumber > 0 ? 'Add to Cart' : 'Free'"
         >
           <ShoppingCart class="w-5 h-5" />
         </button>
@@ -30,6 +38,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ShoppingCart } from 'lucide-vue-next'
 import PriceDisplay from './PriceDisplay.vue'
 
@@ -38,15 +48,39 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  username: {
+    type: String,
+    default: null,
+  },
 })
 
 const emit = defineEmits(['add-to-cart'])
+const router = useRouter()
+
+// Convert price to number (handles string prices from API)
+const priceAsNumber = computed(() => {
+  const price = props.dest.price
+  if (price === null || price === undefined) return 0
+  if (typeof price === 'number') return price
+  if (typeof price === 'string') {
+    const parsed = parseFloat(price)
+    return isNaN(parsed) ? 0 : parsed
+  }
+  return 0
+})
+
+const handleCardClick = () => {
+  // Navigate to published map if username and slug are available
+  if (props.username && props.dest.slug) {
+    router.push(`/u/${props.username}/${props.dest.slug}`)
+  }
+}
 
 const handleAddToCart = () => {
   emit('add-to-cart', {
     id: props.dest.id,
     title: `Travel Guide: ${props.dest.country}`,
-    price: props.dest.price,
+    price: priceAsNumber.value,
     image: props.dest.image,
     type: 'map',
   })

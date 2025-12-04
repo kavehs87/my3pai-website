@@ -73,6 +73,7 @@
 
 <script>
 import apiService from '../services/api.js'
+import { getGuestSessionId, clearGuestSessionId, hasGuestSessionId } from '../utils/sessionManager.js'
 
 export default {
   name: 'LoginModal',
@@ -98,6 +99,37 @@ export default {
       this.$emit('close')
     },
     
+    /**
+     * Merge guest cart into user cart after login
+     */
+    async mergeGuestCart() {
+      if (!hasGuestSessionId()) {
+        return // No guest cart to merge
+      }
+
+      try {
+        const sessionId = getGuestSessionId()
+        const mergeResult = await apiService.mergeCart(sessionId)
+        
+        if (mergeResult.success) {
+          // Clear guest session ID after successful merge
+          clearGuestSessionId()
+        } else {
+          // Show error to user if merge fails
+          if (this.$toast) {
+            this.$toast.error(mergeResult.error || 'Failed to merge your cart items. Please add them again.')
+          } else {
+            console.error('Cart merge failed:', mergeResult.error)
+          }
+        }
+      } catch (error) {
+        console.error('Error merging guest cart:', error)
+        if (this.$toast) {
+          this.$toast.error('Failed to merge your cart items. Please add them again.')
+        }
+      }
+    },
+    
     async handleLogin() {
       this.isLoading = true
       this.errorMessage = ''
@@ -119,6 +151,9 @@ export default {
               return
             }
           }
+
+          // Merge guest cart silently after successful login
+          await this.mergeGuestCart()
 
           this.$emit('login-success', user)
           this.closeModal()

@@ -40,7 +40,7 @@
         />
         <div class="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 hide-scrollbar md:grid md:grid-cols-2 lg:grid-cols-3 md:pb-0 mb-12">
           <div v-for="dest in displayedMaps" :key="dest.id" class="min-w-[85%] md:min-w-0 snap-center">
-            <DestinationCard :dest="dest" @add-to-cart="handleAddToCart" />
+            <DestinationCard :dest="dest" :username="currentUsername" @add-to-cart="handleAddToCart" />
           </div>
         </div>
         <div class="text-center">
@@ -290,6 +290,7 @@ const fetchCourses = async () => {
 
 // Helper to get flag emoji from country code
 const getFlagEmoji = (countryCode) => {
+  if (!countryCode) return ''
   const codePoints = countryCode
     .toUpperCase()
     .split('')
@@ -297,18 +298,69 @@ const getFlagEmoji = (countryCode) => {
   return String.fromCodePoint(...codePoints)
 }
 
+// Helper to extract country info from map POIs
+const extractCountryFromMap = (map) => {
+  // Try to get country from POIs if available
+  if (map.pois && map.pois.length > 0) {
+    const poiWithCountry = map.pois.find(p => p.country || p.countryCode)
+    if (poiWithCountry) {
+      return {
+        country: poiWithCountry.country || 'Unknown',
+        flag: poiWithCountry.countryCode ? getFlagEmoji(poiWithCountry.countryCode) : '',
+        countryCode: poiWithCountry.countryCode
+      }
+    }
+  }
+  // Fallback to map title
+  return {
+    country: map.title || 'Map',
+    flag: '',
+    countryCode: null
+  }
+}
+
 const fetchMaps = async () => {
-  // TODO: Fetch maps from API when endpoint is available
-  // For now, use mock data from constants
-  maps.value = COUNTRIES.map((country) => ({
-    id: country.id,
-    country: country.name,
-    flag: getFlagEmoji(country.flagCode),
-    image: country.image,
-    description: country.description,
-    poiCount: country.pointsOfInterestCount,
-    price: country.mapPrice,
-  }))
+  if (!currentUsername.value) return
+  loading.value.maps = true
+  try {
+    const result = await api.getInfluencerMaps(currentUsername.value, { per_page: 3 })
+    if (result.success) {
+      let data = result.data
+      if (data?.data) data = data.data
+      const mapsData = Array.isArray(data) ? data : data?.maps || data?.data || []
+      
+      // Transform API response to match DestinationCard format
+      maps.value = mapsData
+        .filter(map => map.isPublished) // Only show published maps
+        .map((map) => {
+          const countryInfo = extractCountryFromMap(map)
+          return {
+            id: map.id,
+            country: countryInfo.country,
+            flag: countryInfo.flag,
+            image: map.thumbnailUrl || '/media-placeholder.jpg',
+            description: map.title || 'Travel guide',
+            poiCount: map.poiCount || 0,
+            price: map.price || 0, // Maps may not have price, default to 0
+            slug: map.slug,
+            title: map.title
+          }
+        })
+    } else {
+      // If endpoint doesn't exist (404) or other error, silently use empty array
+      // This allows the UI to work while backend endpoint is being implemented
+      maps.value = []
+    }
+  } catch (err) {
+    // Silently handle errors - endpoint may not exist yet
+    // Only log in development
+    if (import.meta.env.DEV) {
+      console.warn('Maps endpoint not available yet:', err.message)
+    }
+    maps.value = []
+  } finally {
+    loading.value.maps = false
+  }
 }
 
 const fetchBlogPosts = async () => {

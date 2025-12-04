@@ -11,6 +11,7 @@
 <script>
 import apiService from '../services/api.js'
 import eventBus from '../utils/eventBus.js'
+import { getGuestSessionId, clearGuestSessionId, hasGuestSessionId } from '../utils/sessionManager.js'
 
 export default {
   name: 'OAuthCallback',
@@ -21,6 +22,33 @@ export default {
       isError: false,
       redirectTimer: null
     }
+  },
+  methods: {
+    /**
+     * Merge guest cart into user cart after OAuth login
+     */
+    async mergeGuestCart() {
+      if (!hasGuestSessionId()) {
+        return // No guest cart to merge
+      }
+
+      try {
+        const sessionId = getGuestSessionId()
+        const mergeResult = await apiService.mergeCart(sessionId)
+        
+        if (mergeResult.success) {
+          // Clear guest session ID after successful merge
+          clearGuestSessionId()
+        } else {
+          // Show error to user if merge fails
+          console.error('Cart merge failed:', mergeResult.error)
+          // Note: We don't show toast here as user is on callback page
+          // Error will be shown via eventBus if needed
+        }
+      } catch (error) {
+        console.error('Error merging guest cart:', error)
+      }
+    },
   },
   async mounted() {
     const urlParams = new URLSearchParams(window.location.search)
@@ -35,6 +63,9 @@ export default {
       const result = await apiService.getCurrentUser()
 
       if (result.success) {
+        // Merge guest cart silently after successful OAuth login
+        await this.mergeGuestCart()
+        
         eventBus.emit('auth-success', result.data)
         this.$router.push('/')
         return

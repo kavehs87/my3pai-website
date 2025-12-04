@@ -6,6 +6,7 @@
         :user-name="userName"
         :pois-count="filteredPOIs.length"
         :view-mode="viewMode"
+        :map="map"
         @view-mode-changed="handleViewModeChange"
         @sort-changed="handleSortChange"
       />

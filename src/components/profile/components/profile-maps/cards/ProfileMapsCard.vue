@@ -1,9 +1,13 @@
 <template>
   <article class="map-card">
-    <div class="card-media" :class="{ 'has-thumbnail': hasThumbnail }" :style="coverStyle">
+      <div class="card-media" :class="{ 'has-thumbnail': hasThumbnail }" :style="coverStyle">
       <div class="status-badge" :class="statusClass">
         <i :class="statusIcon"></i>
         <span>{{ statusLabel }}</span>
+      </div>
+      <div v-if="map.isForSale && map.price" class="price-badge">
+        <i class="fas fa-dollar-sign"></i>
+        <span>{{ formattedPrice }}</span>
       </div>
       
       <div v-if="!hasThumbnail" class="media-placeholder">
@@ -70,6 +74,15 @@
         <div class="location-row" v-if="map.locationLabel">
             <i class="fas fa-globe-americas"></i>
           <span class="location-text">{{ map.locationLabel }}</span>
+        </div>
+        
+        <!-- Pricing Info Row -->
+        <div v-if="map.isForSale" class="pricing-row">
+          <div class="pricing-info">
+            <i class="fas fa-tag"></i>
+            <span class="pricing-label">For Sale</span>
+            <span v-if="map.price" class="pricing-value">{{ formattedPrice }}</span>
+          </div>
         </div>
         
         <!-- Tags Row -->
@@ -220,6 +233,15 @@ export default {
     },
     hasTags() {
       return Array.isArray(this.map.tags) && this.map.tags.length > 0
+    },
+    formattedPrice() {
+      if (!this.map.price) return ''
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(this.map.price)
     }
   },
   methods: {
@@ -508,6 +530,62 @@ export default {
   background: var(--bg-tertiary);
   border-color: var(--secondary-color);
   color: var(--secondary-color);
+}
+
+/* Price Badge */
+.price-badge {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 2;
+  background: rgba(34, 197, 94, 0.95);
+  color: white;
+}
+
+.price-badge i {
+  font-size: 0.7rem;
+}
+
+/* Pricing Row */
+.pricing-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  border-top: 1px solid var(--border-light);
+}
+
+.pricing-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.pricing-info i {
+  color: var(--secondary-color);
+}
+
+.pricing-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pricing-value {
+  font-weight: 700;
+  color: var(--secondary-color);
+  margin-left: auto;
 }
 
 /* Card Actions */

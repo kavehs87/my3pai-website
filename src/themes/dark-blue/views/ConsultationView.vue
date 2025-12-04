@@ -33,22 +33,51 @@
         </p>
 
         <div class="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-primary/5 border border-slate-100">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-primary flex items-center gap-2">
-              <CalendarIcon class="w-5 h-5 text-secondary" />
-              {{ currentMonthYear }}
-            </h3>
-            <div class="flex gap-4 text-xs font-medium">
-              <div class="flex items-center gap-1">
-                <div class="w-3 h-3 bg-emerald-100 rounded-full"></div> Available
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <button
+                  @click="goToPreviousMonth"
+                  class="p-2 rounded-lg hover:bg-slate-50 transition-colors text-text-muted hover:text-primary"
+                  :disabled="loadingCalendar"
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft class="w-5 h-5" />
+                </button>
+                <h3 class="text-xl font-bold text-primary flex items-center gap-2 min-w-[200px] justify-center">
+                  <CalendarIcon class="w-5 h-5 text-secondary" />
+                  {{ currentMonthYear }}
+                </h3>
+                <button
+                  @click="goToNextMonth"
+                  class="p-2 rounded-lg hover:bg-slate-50 transition-colors text-text-muted hover:text-primary"
+                  :disabled="loadingCalendar"
+                  aria-label="Next month"
+                >
+                  <ChevronRight class="w-5 h-5" />
+                </button>
               </div>
-              <div class="flex items-center gap-1">
-                <div class="w-3 h-3 bg-orange-100 rounded-full"></div> Limited
-              </div>
-              <div class="flex items-center gap-1">
-                <div class="w-3 h-3 bg-slate-100 rounded-full"></div> Full
+              <div class="flex gap-4 text-xs font-medium">
+                <div class="flex items-center gap-1">
+                  <div class="w-3 h-3 bg-emerald-100 rounded-full"></div> Available
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="w-3 h-3 bg-orange-100 rounded-full"></div> Limited
+                </div>
+                <div class="flex items-center gap-1">
+                  <div class="w-3 h-3 bg-slate-100 rounded-full"></div> Full
+                </div>
               </div>
             </div>
+          </div>
+
+          <!-- Timezone Notice -->
+          <div v-if="influencerTimezone" class="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-start gap-2">
+            <Info class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <p class="text-xs text-blue-800">
+              <span class="font-medium">Time zone:</span>
+              All times are displayed in {{ formattedInfluencerTimezone }}. Times will be automatically converted to your local time zone.
+            </p>
           </div>
 
           <!-- Day Headers -->
@@ -71,9 +100,17 @@
 
           <!-- Calendar Grid -->
           <div v-else class="grid grid-cols-7 gap-3">
+            <!-- Empty cells for days before month starts -->
+            <div
+              v-for="emptyDay in emptyDaysAtStart"
+              :key="`empty-${emptyDay}`"
+              class="aspect-square"
+            ></div>
+            
+            <!-- Actual calendar days -->
             <button
               v-for="(day, i) in calendarDays"
-              :key="i"
+              :key="day.date || i"
               :disabled="day.status === 'full' || day.status === 'unavailable'"
               @click="handleDateSelect(day)"
               :class="[
@@ -81,7 +118,7 @@
                 getCellColor(day.status, selectedDate?.date === day.date)
               ]"
             >
-              <span class="text-lg font-bold">{{ i + 1 }}</span>
+              <span class="text-lg font-bold">{{ new Date(day.date).getDate() }}</span>
               <span v-if="day.status !== 'full'" class="text-[10px] font-medium opacity-80">
                 {{ day.slotsAvailable }} slots
               </span>
@@ -201,7 +238,8 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, inject } from 'vue'
-import { ArrowLeft, CalendarIcon, Clock, Check } from 'lucide-vue-next'
+import { ArrowLeft, CalendarIcon, Clock, Check, ChevronLeft, ChevronRight, Info } from 'lucide-vue-next'
+import { formatTimezoneLabel } from '@/utils/timezones'
 import PriceDisplay from '../components/PriceDisplay.vue'
 import { useConsultation } from '@/shared/influencer/composables/useConsultation'
 import api from '@/services/api'
@@ -298,6 +336,19 @@ const currentMonthYear = computed(() => {
   return new Date(currentYear.value, currentMonth.value - 1).toLocaleString('default', { month: 'long', year: 'numeric' })
 })
 
+// Formatted influencer timezone for display
+const formattedInfluencerTimezone = computed(() => {
+  if (!influencerTimezone.value) return ''
+  return formatTimezoneLabel(influencerTimezone.value)
+})
+
+// Calculate empty days at the start of the month (for proper calendar alignment)
+const emptyDaysAtStart = computed(() => {
+  const firstDay = new Date(currentYear.value, currentMonth.value - 1, 1)
+  const dayOfWeek = firstDay.getDay() // 0 = Sunday, 1 = Monday, etc.
+  return dayOfWeek
+})
+
 // Time slots from API
 const timeSlots = ref([])
 
@@ -337,6 +388,34 @@ const formatDateLocal = (year, month, day) => {
 const formatSelectedDate = (dateString) => {
   const date = new Date(dateString + 'T00:00:00') // Parse as local date
   return date.toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric' })
+}
+
+// Navigate to previous month
+const goToPreviousMonth = () => {
+  if (currentMonth.value === 1) {
+    currentMonth.value = 12
+    currentYear.value--
+  } else {
+    currentMonth.value--
+  }
+  // Reset selected date when changing months
+  selectedDate.value = null
+  selectedTime.value = null
+  fetchCalendarAvailability()
+}
+
+// Navigate to next month
+const goToNextMonth = () => {
+  if (currentMonth.value === 12) {
+    currentMonth.value = 1
+    currentYear.value++
+  } else {
+    currentMonth.value++
+  }
+  // Reset selected date when changing months
+  selectedDate.value = null
+  selectedTime.value = null
+  fetchCalendarAvailability()
 }
 
 // Fetch calendar availability

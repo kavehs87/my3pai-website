@@ -1,7 +1,13 @@
 <template>
   <div class="map-pois-header">
     <div class="header-left">
-      <h1 class="header-title">All locations by {{ userName }}</h1>
+      <div class="title-row">
+        <h1 class="header-title">All locations by {{ userName }}</h1>
+        <div v-if="map && map.isForSale && map.price" class="map-price-display">
+          <i class="fas fa-tag"></i>
+          <span class="price-value">{{ formattedPrice }}</span>
+        </div>
+      </div>
       <h2 class="header-subtitle">{{ poisCount }} Points of Interest</h2>
       <p class="header-description">
         Every location includes photos, realistic duration, cost hints and packing tips
@@ -65,6 +71,10 @@ export default {
       type: String,
       default: 'grid',
       validator: (value) => ['grid', 'map'].includes(value)
+    },
+    map: {
+      type: Object,
+      default: null
     }
   },
   data() {
@@ -72,6 +82,18 @@ export default {
       showSortDropdown: false,
       selectedSort: 'Most popular',
       sortOptions: ['Most popular', 'Newest', 'Oldest', 'A-Z', 'Z-A']
+    }
+  },
+  computed: {
+    formattedPrice() {
+      if (!this.map || !this.map.price) return ''
+      const price = typeof this.map.price === 'string' ? parseFloat(this.map.price) : this.map.price
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(price)
     }
   },
   methods: {
@@ -115,12 +137,43 @@ export default {
   flex: 1;
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
 .header-title {
   font-size: var(--font-size-3xl);
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 var(--spacing-sm) 0;
+  margin: 0;
   line-height: 1.2;
+}
+
+.map-price-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.map-price-display i {
+  color: var(--primary-color);
+  font-size: var(--font-size-xs);
+}
+
+.price-value {
+  color: var(--primary-color);
+  font-weight: 700;
 }
 
 .header-subtitle {

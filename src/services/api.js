@@ -11,6 +11,7 @@ class ApiService {
     this.apiOrigin = this.getApiOrigin(this.baseURL)
     this.csrfInitialized = false
     this.csrfPromise = null
+    this._isAuthenticated = null // Cache auth state (null = unknown)
   }
 
   getApiOrigin(url) {
@@ -61,9 +62,54 @@ class ApiService {
     await this.csrfPromise
   }
 
+  /**
+   * Check if user is authenticated (no caching for MVP)
+   * Lightweight check that doesn't trigger CSRF for guest users
+   * @returns {Promise<boolean>}
+   */
+  async isAuthenticated() {
+    try {
+      // Make a lightweight request without CSRF to check auth status
+      const url = `${this.baseURL}/me`
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      
+      // If 401/403, user is not authenticated
+      if (response.status === 401 || response.status === 403) {
+        return false
+      }
+      
+      // If 200, user is authenticated
+      return response.ok
+    } catch (error) {
+      // Any error means not authenticated
+      return false
+    }
+  }
+
+  /**
+   * Check if endpoint is a cart endpoint
+   * @param {string} endpoint
+   * @returns {boolean}
+   */
+  isCartEndpoint(endpoint) {
+    return endpoint.startsWith('/cart') || endpoint.includes('/cart')
+  }
+
   // Generic request method
   async request(endpoint, options = {}) {
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`
+    const isCartEndpoint = this.isCartEndpoint(endpoint)
+    
+    // For cart endpoints, we still need CSRF token (Laravel requires it for state-changing requests)
+    // Even though the routes are public, Laravel's CSRF middleware still runs
+    // We'll get the CSRF cookie but won't require authentication
     const requiresCsrf = options.requireCsrf !== false
 
     if (requiresCsrf) {
@@ -79,9 +125,20 @@ class ApiService {
       }
     }
 
-    const xsrfToken = this.getXsrfToken()
-    if (xsrfToken) {
-      config.headers[XSRF_HEADER_NAME] = xsrfToken
+    // For cart endpoints: always add session ID header
+    // Backend will prioritize Bearer token if user is authenticated, otherwise use session ID
+    if (isCartEndpoint) {
+      const { getGuestSessionId } = await import('@/utils/sessionManager.js')
+      const sessionId = getGuestSessionId()
+      config.headers['X-Session-ID'] = sessionId
+    }
+
+    // Add XSRF token if CSRF is required (including for cart endpoints)
+    if (requiresCsrf) {
+      const xsrfToken = this.getXsrfToken()
+      if (xsrfToken) {
+        config.headers[XSRF_HEADER_NAME] = xsrfToken
+      }
     }
 
     if (options.body !== undefined) {
@@ -127,7 +184,11 @@ class ApiService {
 
       return { success: true, data }
     } catch (error) {
-      console.error('API Request failed:', error)
+      // Don't log CSRF errors for cart endpoints (expected for guests)
+      // Only log unexpected errors
+      if (!(isCartEndpoint && error.status === 419)) {
+        console.error('API Request failed:', error)
+      }
       return { success: false, error: error.message, status: error.status || null }
     }
   }
@@ -943,6 +1004,19 @@ class ApiService {
   }
 
   /**
+   * Get public published maps for an influencer (no auth)
+   */
+  async getInfluencerMaps(username, params = {}) {
+    if (!username) {
+      return { success: false, error: 'Username is required.' }
+    }
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencers/${encodeURIComponent(username)}/maps${queryString}`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
    * Get single public masterclass
    */
   async getInfluencerMasterclass(username, slug) {
@@ -1384,6 +1458,78 @@ class ApiService {
       console.error('Failed to fetch image as blob:', error)
       throw error
     }
+  }
+
+  // ========================================
+  // Shopping Cart API Methods
+  // ========================================
+
+  /**
+   * Get current user's active cart (or create one if doesn't exist)
+   * Supports both authenticated users and guest carts (via session)
+   */
+  async getCart() {
+    return this.request('/cart', {
+      isGuest: true // Allow guest mode
+    })
+  }
+
+  /**
+   * Add item to cart
+   * @param {Object} itemData - { item_type, item_id, quantity, metadata }
+   */
+  async addCartItem(itemData) {
+    return this.request('/cart/items', {
+      method: 'POST',
+      body: itemData,
+      isGuest: true // Allow guest mode
+    })
+  }
+
+  /**
+   * Update cart item (quantity, metadata, etc.)
+   * @param {Number} itemId - Cart item ID
+   * @param {Object} data - Update data (quantity, metadata, etc.)
+   */
+  async updateCartItem(itemId, data) {
+    return this.request(`/cart/items/${itemId}`, {
+      method: 'PUT',
+      body: data,
+      isGuest: true // Allow guest mode
+    })
+  }
+
+  /**
+   * Remove item from cart
+   * @param {Number} itemId - Cart item ID
+   */
+  async removeCartItem(itemId) {
+    return this.request(`/cart/items/${itemId}`, {
+      method: 'DELETE',
+      isGuest: true // Allow guest mode
+    })
+  }
+
+  /**
+   * Clear entire cart
+   */
+  async clearCart() {
+    return this.request('/cart', {
+      method: 'DELETE',
+      isGuest: true // Allow guest mode
+    })
+  }
+
+  /**
+   * Merge guest cart with user cart (when user logs in)
+   * @param {String} sessionId - Guest session ID
+   */
+  async mergeCart(sessionId) {
+    return this.request('/cart/merge', {
+      method: 'POST',
+      body: { guest_session_id: sessionId },
+      isGuest: false // This endpoint requires auth
+    })
   }
 }
 

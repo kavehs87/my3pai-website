@@ -36,6 +36,62 @@
       <div class="flex items-center gap-4">
         <CurrencySelector :is-scrolled="isNavScrolled" />
 
+        <!-- User Profile / Login -->
+        <div v-if="isLoggedIn" class="relative profile-dropdown-container">
+          <button
+            @click="showProfileDropdown = !showProfileDropdown"
+            class="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <img
+              :src="userAvatar || 'https://i.pravatar.cc/40?img=41'"
+              :alt="userName || 'Profile'"
+              class="w-8 h-8 rounded-full border-2 border-white/20"
+            />
+          </button>
+          <!-- Profile Dropdown -->
+          <div
+            v-if="showProfileDropdown"
+            class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50"
+          >
+            <div class="px-4 py-2 border-b border-slate-100">
+              <div class="font-semibold text-primary text-sm">{{ userName }}</div>
+              <div class="text-xs text-text-muted">{{ userEmail }}</div>
+            </div>
+            <button
+              @click="handleLogout"
+              class="w-full text-left px-4 py-2 text-sm text-text-muted hover:bg-slate-50 transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+
+        <!-- Login/Signup Buttons -->
+        <div v-else class="flex items-center gap-2">
+          <button
+            @click="$emit('show-login')"
+            :class="[
+              'px-4 py-2 rounded-lg font-medium text-sm transition-colors',
+              isNavScrolled
+                ? 'bg-white/10 text-white hover:bg-white/20'
+                : 'bg-primary text-white hover:bg-primary/90'
+            ]"
+          >
+            Sign In
+          </button>
+          <button
+            @click="$emit('show-signup')"
+            :class="[
+              'px-4 py-2 rounded-lg font-medium text-sm transition-colors',
+              isNavScrolled
+                ? 'bg-secondary text-white hover:bg-secondary/90'
+                : 'bg-secondary text-white hover:bg-secondary/90'
+            ]"
+          >
+            Sign Up
+          </button>
+        </div>
+
         <button
           @click="$emit('cart-click')"
           class="relative p-2 rounded-full hover:bg-white/10 transition-colors group"
@@ -64,6 +120,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Menu, ShoppingCart } from 'lucide-vue-next'
 import CurrencySelector from './CurrencySelector.vue'
+import apiService from '@/services/api.js'
+import eventBus from '@/utils/eventBus.js'
 
 const props = defineProps({
   cartCount: {
@@ -76,7 +134,73 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['menu-click', 'navigate', 'cart-click'])
+const emit = defineEmits(['menu-click', 'navigate', 'cart-click', 'show-login', 'show-signup'])
+
+// Auth state
+const isLoggedIn = ref(false)
+const userAvatar = ref('')
+const userName = ref('')
+const userEmail = ref('')
+const showProfileDropdown = ref(false)
+
+// Check auth status
+const checkAuthStatus = async () => {
+  try {
+    const result = await apiService.getCurrentUser()
+    if (result.success) {
+      isLoggedIn.value = true
+      const user = result.data || {}
+      userAvatar.value = user.avatar || user.picture || user.photo_url || ''
+      userName.value = user.name || user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User'
+      userEmail.value = user.email || ''
+    } else {
+      isLoggedIn.value = false
+      userAvatar.value = ''
+      userName.value = ''
+      userEmail.value = ''
+    }
+  } catch (error) {
+    isLoggedIn.value = false
+    userAvatar.value = ''
+    userName.value = ''
+    userEmail.value = ''
+  }
+}
+
+const handleLogout = async () => {
+  showProfileDropdown.value = false
+  try {
+    await apiService.logout()
+    isLoggedIn.value = false
+    userAvatar.value = ''
+    userName.value = ''
+    userEmail.value = ''
+    // Clear guest session ID
+    const { clearGuestSessionId } = await import('@/utils/sessionManager.js')
+    clearGuestSessionId()
+  } catch (error) {
+    console.error('Logout failed:', error)
+  }
+}
+
+// Listen for auth success events
+const handleAuthSuccess = (userData) => {
+  isLoggedIn.value = true
+  if (userData && typeof userData === 'object') {
+    userAvatar.value = userData.avatar || userData.picture || userData.photo_url || ''
+    userName.value = userData.name || userData.display_name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'User'
+    userEmail.value = userData.email || ''
+  }
+  showProfileDropdown.value = false
+}
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event) => {
+  const dropdown = document.querySelector('.profile-dropdown-container')
+  if (showProfileDropdown.value && dropdown && !dropdown.contains(event.target)) {
+    showProfileDropdown.value = false
+  }
+}
 
 const scrolled = ref(false)
 const navItems = ['Profile', 'Courses', 'Maps', 'Blog', 'Assets']
@@ -105,10 +229,15 @@ const handleNavClick = (item) => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  checkAuthStatus()
+  eventBus.on('auth-success', handleAuthSuccess)
+  document.addEventListener('click', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)
+  eventBus.off('auth-success', handleAuthSuccess)
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 

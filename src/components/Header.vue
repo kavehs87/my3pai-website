@@ -286,6 +286,12 @@ export default {
       this.showProfileDropdown = false
       this.showSignup = false
       this.showLogin = true
+      
+      // Clear guest session ID on logout
+      import('@/utils/sessionManager.js').then(({ clearGuestSessionId }) => {
+        clearGuestSessionId()
+      })
+      
       this.$router.push('/')
     },
     toggleProfileDropdown() {
