@@ -49,6 +49,14 @@ export default {
         console.error('Error merging guest cart:', error)
       }
     },
+    handleFailure(message) {
+      this.isError = true
+      this.statusTitle = 'Unable to complete sign in'
+      this.statusDescription = message || 'Please return to the login page and try again.'
+      this.redirectTimer = setTimeout(() => {
+        this.$router.push('/?auth_error=1')
+      }, 2500)
+    }
   },
   async mounted() {
     const urlParams = new URLSearchParams(window.location.search)
@@ -85,16 +93,6 @@ export default {
     if (this.redirectTimer) {
       clearTimeout(this.redirectTimer)
       this.redirectTimer = null
-    }
-  },
-  methods: {
-    handleFailure(message) {
-      this.isError = true
-      this.statusTitle = 'Unable to complete sign in'
-      this.statusDescription = message || 'Please return to the login page and try again.'
-      this.redirectTimer = setTimeout(() => {
-        this.$router.push('/?auth_error=1')
-      }, 2500)
     }
   }
 }
