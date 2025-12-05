@@ -106,7 +106,7 @@ export default {
       return this.tabs.filter(t => ['blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'creator'].includes(t.id))
     },
     accountTabs() {
-      return this.tabs.filter(t => ['settings'].includes(t.id))
+      return this.tabs.filter(t => ['orders', 'invoices', 'settings'].includes(t.id))
     }
   },
   mounted() {

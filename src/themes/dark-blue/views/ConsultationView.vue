@@ -3,13 +3,33 @@
     <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
       <Check class="w-10 h-10" />
     </div>
-    <h2 class="text-3xl font-bold text-primary mb-2">Booking Confirmed!</h2>
-    <p class="text-text-muted text-center max-w-md mb-8">
+    <h2 class="text-3xl font-bold text-primary mb-2">Booking & Payment Confirmed!</h2>
+    <p class="text-text-muted text-center max-w-md mb-4">
       You're all set for your 1:1 consultation. A calendar invitation has been sent to your email.
     </p>
+    <div v-if="orderNumber" class="text-center mb-6">
+      <p class="text-sm text-text-muted mb-2">Order Number:</p>
+      <p class="text-lg font-bold text-primary">{{ orderNumber }}</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <button 
+        v-if="orderId" 
+        @click="viewOrder" 
+        class="bg-secondary text-white px-6 py-3 rounded-xl font-bold hover:bg-secondary/90 transition-colors"
+      >
+        View Order Details
+      </button>
+      <button 
+        v-if="invoiceId" 
+        @click="downloadInvoice" 
+        class="bg-white text-primary border-2 border-primary px-6 py-3 rounded-xl font-bold hover:bg-primary/5 transition-colors"
+      >
+        Download Invoice
+      </button>
     <button @click="$emit('back')" class="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors">
       Return to Profile
     </button>
+    </div>
   </div>
 
   <div
@@ -191,7 +211,8 @@
                 </div>
               </div>
 
-              <form v-if="selectedTime" @submit.prevent="handleBook" class="space-y-4 pt-6 border-t border-slate-100">
+              <!-- Booking Form Step -->
+              <form v-if="selectedTime && currentStep === 'booking'" @submit.prevent="handleBook" class="space-y-4 pt-6 border-t border-slate-100">
                 <div>
                   <label class="block text-sm font-medium text-primary mb-1">Your Name</label>
                   <input
@@ -225,9 +246,194 @@
                   :disabled="isSubmitting"
                   class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {{ isSubmitting ? 'Booking...' : 'Confirm Booking' }}
+                  {{ isSubmitting ? 'Processing...' : 'Continue to Payment' }}
                 </button>
               </form>
+
+              <!-- Payment Step -->
+              <div v-if="currentStep === 'payment'" class="space-y-6 pt-6 border-t border-slate-100">
+                <div>
+                  <h3 class="text-lg font-bold text-primary mb-4">Payment Information</h3>
+                  
+                  <!-- Billing Information -->
+                  <div class="space-y-4 mb-6">
+                    <div>
+                      <label class="block text-sm font-medium text-primary mb-1">Billing Name</label>
+                      <input
+                        v-model="billingInfo.name"
+                        type="text"
+                        required
+                        class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                        placeholder="John Doe"
+                      />
+            </div>
+                    <div>
+                      <label class="block text-sm font-medium text-primary mb-1">Address Line 1</label>
+                      <input
+                        v-model="billingInfo.address_line1"
+                        type="text"
+                        required
+                        class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                        placeholder="123 Main St"
+                      />
+          </div>
+                    <div>
+                      <label class="block text-sm font-medium text-primary mb-1">Address Line 2 (Optional)</label>
+                      <input
+                        v-model="billingInfo.address_line2"
+                        type="text"
+                        class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                        placeholder="Apt 4B"
+                      />
+        </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-medium text-primary mb-1">City</label>
+                        <input
+                          v-model="billingInfo.city"
+                          type="text"
+                          required
+                          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                          placeholder="New York"
+                        />
+      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-primary mb-1">State</label>
+                        <input
+                          v-model="billingInfo.state"
+                          type="text"
+                          required
+                          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                          placeholder="NY"
+                        />
+    </div>
+  </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-medium text-primary mb-1">Postal Code</label>
+                        <input
+                          v-model="billingInfo.postal_code"
+                          type="text"
+                          required
+                          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                          placeholder="10001"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-primary mb-1">Country</label>
+                        <select
+                          v-model="billingInfo.country"
+                          required
+                          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 bg-white"
+                        >
+                          <option value="">Select Country</option>
+                          <option value="US">United States</option>
+                          <option value="CA">Canada</option>
+                          <option value="GB">United Kingdom</option>
+                          <option value="AU">Australia</option>
+                          <option value="DE">Germany</option>
+                          <option value="FR">France</option>
+                          <option value="IT">Italy</option>
+                          <option value="ES">Spain</option>
+                          <option value="NL">Netherlands</option>
+                          <option value="BE">Belgium</option>
+                          <option value="CH">Switzerland</option>
+                          <option value="AT">Austria</option>
+                          <option value="SE">Sweden</option>
+                          <option value="NO">Norway</option>
+                          <option value="DK">Denmark</option>
+                          <option value="FI">Finland</option>
+                          <option value="IE">Ireland</option>
+                          <option value="PT">Portugal</option>
+                          <option value="GR">Greece</option>
+                          <option value="PL">Poland</option>
+                          <option value="CZ">Czech Republic</option>
+                          <option value="HU">Hungary</option>
+                          <option value="RO">Romania</option>
+                          <option value="TR">Turkey</option>
+                          <option value="JP">Japan</option>
+                          <option value="CN">China</option>
+                          <option value="KR">South Korea</option>
+                          <option value="IN">India</option>
+                          <option value="SG">Singapore</option>
+                          <option value="MY">Malaysia</option>
+                          <option value="TH">Thailand</option>
+                          <option value="ID">Indonesia</option>
+                          <option value="PH">Philippines</option>
+                          <option value="VN">Vietnam</option>
+                          <option value="NZ">New Zealand</option>
+                          <option value="ZA">South Africa</option>
+                          <option value="EG">Egypt</option>
+                          <option value="AE">United Arab Emirates</option>
+                          <option value="SA">Saudi Arabia</option>
+                          <option value="IL">Israel</option>
+                          <option value="BR">Brazil</option>
+                          <option value="MX">Mexico</option>
+                          <option value="AR">Argentina</option>
+                          <option value="CL">Chile</option>
+                          <option value="CO">Colombia</option>
+                          <option value="PE">Peru</option>
+                          <option value="RU">Russia</option>
+                          <option value="UA">Ukraine</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Stripe Card Element -->
+                  <div>
+                    <label class="block text-sm font-medium text-primary mb-3">Card Information</label>
+                    <div v-if="loadingPayment" class="text-center py-8 text-text-muted">
+                      <div class="w-8 h-8 border-4 border-slate-200 border-t-primary rounded-full animate-spin mx-auto mb-2"></div>
+                      <p class="text-sm">Loading payment form...</p>
+                    </div>
+                    <div v-else-if="paymentError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p class="text-sm text-red-600">{{ paymentError }}</p>
+                      <button 
+                        @click="initializePayment" 
+                        class="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                    <div v-else-if="!paymentIntent" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p class="text-sm text-blue-800">Please fill in all billing information above to continue.</p>
+                    </div>
+                    <!-- Always render the container when paymentIntent exists - use v-show to keep it in DOM -->
+                    <div v-show="paymentIntent">
+                      <!-- Always render the container element so it exists in DOM when we mount Stripe -->
+                      <div 
+                        ref="stripeCardElementRef" 
+                        id="stripe-card-element" 
+                        class="mb-4 min-h-[40px]"
+                      >
+                        <!-- Stripe Card Element will be inserted here -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Payment Summary -->
+                  <div class="bg-slate-50 rounded-xl p-4 mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-sm text-text-muted">Session Duration:</span>
+                      <span class="text-sm font-medium text-primary">{{ consultationDuration }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-sm text-text-muted">Total Amount:</span>
+                      <PriceDisplay :amount="consultationPrice" class="text-lg font-bold text-primary" />
+                    </div>
+                  </div>
+
+                  <!-- Complete Booking & Payment Button -->
+                  <button
+                    @click="handleCompletePayment"
+                    :disabled="isSubmitting || loadingPayment || !billingInfoValid || !paymentIntent"
+                    class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {{ isSubmitting ? 'Processing Payment...' : loadingPayment ? 'Initializing Payment...' : 'Complete Booking & Payment' }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -253,7 +459,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, inject } from 'vue'
+import { ref, computed, onMounted, watch, inject, nextTick, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowLeft, CalendarIcon, Clock, Check, ChevronLeft, ChevronRight, Info } from 'lucide-vue-next'
 import { formatTimezoneLabel } from '@/utils/timezones'
 import PriceDisplay from '../components/PriceDisplay.vue'
@@ -263,9 +470,12 @@ import { useConsultation } from '@/shared/influencer/composables/useConsultation
 import api from '@/services/api'
 import { convertTime, formatTime12Hour, isTimeSlotPast, convertDateTimeToUTC } from '@/utils/timezone'
 import eventBus from '@/utils/eventBus.js'
+import { loadStripe } from '@stripe/stripe-js'
+import toast from '@/utils/toast.js'
 
 const emit = defineEmits(['back', 'book'])
 
+const router = useRouter()
 const username = inject('influencerUsername', null)
 const currentUsername = computed(() => username?.value)
 
@@ -283,6 +493,21 @@ const showLogin = ref(false)
 const showSignup = ref(false)
 const isAuthenticated = ref(false)
 const pendingBooking = ref(null) // Store booking data when user needs to login first
+const currentUserEmail = ref(null) // Store authenticated user's email
+
+// Payment step state
+const currentStep = ref('booking') // 'booking' or 'payment'
+const orderId = ref(null)
+const orderNumber = ref(null)
+const invoiceId = ref(null)
+const paymentIntent = ref(null)
+const loadingPayment = ref(false)
+const paymentError = ref(null)
+
+// Stripe Elements
+const stripe = ref(null)
+const cardElement = ref(null)
+const stripeCardElementRef = ref(null)
 
 // Timezone handling - all conversions done on UI side
 const influencerTimezone = ref(null) // Will be set from API response
@@ -292,6 +517,25 @@ const formData = ref({
   name: '',
   email: '',
   topic: '',
+})
+
+const billingInfo = ref({
+  name: '',
+  address_line1: '',
+  address_line2: '',
+  city: '',
+  state: '',
+  postal_code: '',
+  country: 'US',
+})
+
+const billingInfoValid = computed(() => {
+  return billingInfo.value.name &&
+    billingInfo.value.address_line1 &&
+    billingInfo.value.city &&
+    billingInfo.value.state &&
+    billingInfo.value.postal_code &&
+    billingInfo.value.country
 })
 
 // Calendar data from API
@@ -583,37 +827,321 @@ const handleDateSelect = (day) => {
 const checkAuthStatus = async () => {
   try {
     isAuthenticated.value = await api.isAuthenticated()
+    
+    // If authenticated, get user email as fallback
+    if (isAuthenticated.value) {
+      try {
+        const userResult = await api.getCurrentUser()
+        if (userResult.success) {
+          const userData = userResult.data || {}
+          currentUserEmail.value = userData.email || null
+        }
+      } catch (error) {
+        console.warn('Failed to fetch user email:', error)
+      }
+    }
   } catch (error) {
     console.error('Auth check failed:', error)
     isAuthenticated.value = false
   }
 }
 
-// Store booking data and proceed with booking
-const proceedWithBooking = async () => {
-  if (!pendingBooking.value) return
+// Initialize Stripe payment
+const initializePayment = async () => {
+  if (!consultation.value?.id) return
+  
+  // Prevent multiple simultaneous initializations
+  if (loadingPayment.value || paymentIntent.value) {
+    return
+  }
 
-  const bookingData = pendingBooking.value
-  pendingBooking.value = null
-  isSubmitting.value = true
+  loadingPayment.value = true
+  paymentError.value = null
 
   try {
-    const result = await api.bookConsultation(consultation.value.id, bookingData)
+    let scheduledAtUTC
 
-    if (result.success) {
-      isBooked.value = true
-      emit('book')
-      // Refresh calendar to update availability
-      await fetchCalendarAvailability()
+    // Use stored scheduled_at from pendingBooking if available (after login)
+    if (pendingBooking.value?.scheduled_at) {
+      scheduledAtUTC = pendingBooking.value.scheduled_at
+    } else if (selectedDate.value && selectedTime.value && influencerTimezone.value) {
+      // Calculate from selected date/time
+    const selectedSlot = timeSlots.value.find((s) => s.time === selectedTime.value)
+    if (!selectedSlot) {
+      throw new Error('Selected time slot not found')
+    }
+
+    const customerTime24 = selectedSlot.rawTimeInCustomerTZ
+    if (!customerTime24) {
+      throw new Error('Time slot time not found')
+    }
+
+    // Convert from customer's timezone to UTC for booking
+      scheduledAtUTC = convertDateTimeToUTC(
+      selectedDate.value.date,
+        customerTime24,
+      customerTimezone.value
+    )
+
+    if (!scheduledAtUTC) {
+      throw new Error('Failed to convert booking time to UTC')
+      }
     } else {
-      throw new Error(result.error || 'Failed to book consultation')
+      throw new Error('Booking time information is missing')
+    }
+
+    // Get billing email from form data (user entered in booking form)
+    // Fallback to authenticated user's email if form email is not available
+    const billingEmail = formData.value.email || currentUserEmail.value
+    if (!billingEmail) {
+      throw new Error('Email is required. Please enter your email in the booking form.')
+    }
+    
+    // Call book-and-pay endpoint to create booking + order + payment intent
+    const result = await api.bookAndPayConsultation(consultation.value.id, {
+      scheduled_at: scheduledAtUTC,
+      notes: formData.value.topic || null,
+      billing_info: {
+        ...billingInfo.value,
+        email: billingEmail, // Include email in billing_info
+      },
+      billing_email: billingEmail, // Also include as separate field for backend compatibility
+    })
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to initialize payment')
+    }
+
+    // Extract data from response
+    const data = result.data?.data || result.data
+    orderId.value = data.order_id || data.order?.id
+    orderNumber.value = data.order_number || data.order?.order_number
+    invoiceId.value = data.invoice_id || data.invoice?.id
+    
+    // Set payment intent first to trigger DOM rendering
+    paymentIntent.value = data.payment_intent || data
+
+    if (!paymentIntent.value?.client_secret) {
+      throw new Error('Payment intent client secret is missing')
+    }
+
+    // Initialize Stripe.js first (before waiting for DOM)
+    const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+    if (!stripePublishableKey) {
+      throw new Error('Stripe publishable key is not configured')
+    }
+
+    const stripeInstance = await loadStripe(stripePublishableKey)
+    if (!stripeInstance) {
+      throw new Error('Failed to load Stripe.js')
+    }
+
+    stripe.value = stripeInstance
+
+    // Wait for Vue to update the DOM and render the container
+    // Use multiple nextTick calls and longer waits to ensure DOM is updated
+    await nextTick()
+    await nextTick() // Double nextTick for safety
+    await new Promise(resolve => setTimeout(resolve, 500)) // Longer wait
+
+    // Mount Stripe card element - try multiple times with retries
+    let cardElementContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
+    
+    // Retry logic if element not found immediately
+    const maxRetries = 5
+    for (let i = 0; i < maxRetries && !cardElementContainer; i++) {
+      await new Promise(resolve => setTimeout(resolve, 200 * (i + 1)))
+      cardElementContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
+    }
+    
+    if (!cardElementContainer) {
+      console.error('Stripe card element container not found after retries')
+      console.error('Template ref:', stripeCardElementRef.value)
+      console.error('Element by ID:', document.getElementById('stripe-card-element'))
+      console.error('Payment intent:', paymentIntent.value)
+      console.error('Current step:', currentStep.value)
+      throw new Error('Stripe card element container not found. Please refresh the page and try again.')
+    }
+
+    // Create and mount Stripe card element
+    // If element is found, mount it; otherwise the watcher will handle it
+    if (cardElementContainer) {
+      const elements = stripe.value.elements()
+      cardElement.value = elements.create('card', {
+        style: {
+          base: {
+            fontSize: '16px',
+            color: '#1e293b',
+            '::placeholder': {
+              color: '#94a3b8',
+            },
+          },
+          invalid: {
+            color: '#ef4444',
+          },
+        },
+      })
+      cardElement.value.mount('#stripe-card-element')
+    } else {
+      // Element not found, but paymentIntent is set, so the watcher will handle mounting
+      console.log('Element not found in initializePayment, watcher will handle mounting')
     }
   } catch (error) {
-    console.error('Booking error:', error)
-    alert(error.message || 'Failed to book consultation. Please try again.')
+    console.error('Error initializing payment:', error)
+    paymentError.value = error.message || 'Failed to initialize payment'
+    toast.error(error.message || 'Failed to initialize payment')
+  } finally {
+    loadingPayment.value = false
+  }
+}
+
+// Handle complete payment
+const handleCompletePayment = async () => {
+  if (!billingInfoValid.value) {
+    toast.error('Please fill in all required billing information')
+    return
+  }
+
+  if (!paymentIntent.value) {
+    toast.error('Payment form is not ready. Please wait a moment.')
+    return
+  }
+
+  // Complete the payment
+  await completeBookingAndPayment()
+}
+
+// Complete booking and payment
+const completeBookingAndPayment = async () => {
+  if (!paymentIntent.value || !stripe.value || !cardElement.value) {
+    toast.error('Payment form is not ready. Please wait a moment and try again.')
+    return
+  }
+
+  if (!billingInfoValid.value) {
+    toast.error('Please fill in all required billing information')
+    return
+  }
+
+  isSubmitting.value = true
+  paymentError.value = null
+
+  try {
+    const paymentIntentId = paymentIntent.value.payment_intent_id || paymentIntent.value.id
+    if (!paymentIntentId) {
+      throw new Error('Payment intent ID is missing')
+    }
+
+    // Confirm payment with Stripe.js
+    const { error, paymentIntent: confirmedIntent } = await stripe.value.confirmCardPayment(
+      paymentIntent.value.client_secret,
+      {
+        payment_method: {
+          card: cardElement.value,
+          billing_details: {
+            name: billingInfo.value.name,
+            email: formData.value.email,
+            address: {
+              line1: billingInfo.value.address_line1,
+              line2: billingInfo.value.address_line2 || undefined,
+              city: billingInfo.value.city,
+              state: billingInfo.value.state,
+              postal_code: billingInfo.value.postal_code,
+              country: billingInfo.value.country,
+            },
+          },
+        },
+      }
+    )
+
+    if (error) {
+      throw new Error(error.message || 'Payment failed')
+    }
+
+    if (!confirmedIntent || confirmedIntent.status !== 'succeeded') {
+      throw new Error(`Payment status is '${confirmedIntent?.status || 'unknown'}', expected 'succeeded'`)
+    }
+
+    // Confirm payment with backend
+    const confirmResult = await api.confirmPayment({
+      payment_intent_id: paymentIntentId,
+      order_id: orderId.value,
+    })
+
+    if (!confirmResult.success) {
+      throw new Error(confirmResult.error || 'Payment confirmation failed')
+    }
+
+    // Update invoice ID if provided in confirmation response
+    const confirmData = confirmResult.data?.data || confirmResult.data
+    if (confirmData?.invoice_id) {
+      invoiceId.value = confirmData.invoice_id
+    }
+
+    toast.success('Payment successful!')
+      isBooked.value = true
+      emit('book')
+    
+      // Refresh calendar to update availability
+      await fetchCalendarAvailability()
+  } catch (error) {
+    console.error('Error completing payment:', error)
+    paymentError.value = error.message || 'Failed to complete payment'
+    toast.error(error.message || 'Failed to complete payment')
   } finally {
     isSubmitting.value = false
   }
+}
+
+// View order details
+const viewOrder = () => {
+  if (orderId.value) {
+    router.push({
+      path: '/profile',
+      query: { tab: 'order-detail', orderId: orderId.value },
+    })
+  }
+}
+
+// Download invoice
+const downloadInvoice = async () => {
+  if (!invoiceId.value) return
+
+  try {
+    const result = await api.downloadInvoice(invoiceId.value)
+    if (result.success && result.data instanceof Blob) {
+      const url = window.URL.createObjectURL(result.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `invoice-${invoiceId.value}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      toast.success('Invoice downloaded')
+    } else {
+      throw new Error('Failed to download invoice')
+    }
+  } catch (error) {
+    console.error('Error downloading invoice:', error)
+    toast.error(error.message || 'Failed to download invoice')
+  }
+}
+
+// Store booking data and proceed with booking (for legacy flow if needed)
+const proceedWithBooking = async () => {
+  if (!pendingBooking.value) return
+
+  // Pre-fill billing info
+  if (!billingInfo.value.name) {
+    billingInfo.value.name = formData.value.name
+  }
+
+  // Move to payment step
+  currentStep.value = 'payment'
+  await initializePayment()
+  
+  pendingBooking.value = null
 }
 
 const handleBook = async () => {
@@ -626,13 +1154,13 @@ const handleBook = async () => {
     // Store booking data for after login
     const selectedSlot = timeSlots.value.find((s) => s.time === selectedTime.value)
     if (!selectedSlot) {
-      alert('Selected time slot not found')
+      toast.error('Selected time slot not found')
       return
     }
 
     const customerTime24 = selectedSlot.rawTimeInCustomerTZ
     if (!customerTime24) {
-      alert('Time slot time not found')
+      toast.error('Time slot time not found')
       return
     }
 
@@ -643,7 +1171,7 @@ const handleBook = async () => {
     )
 
     if (!scheduledAtUTC) {
-      alert('Failed to convert booking time to UTC')
+      toast.error('Failed to convert booking time to UTC')
       return
     }
 
@@ -656,54 +1184,20 @@ const handleBook = async () => {
     return
   }
 
-  // User is authenticated, proceed with booking
-  isSubmitting.value = true
-
-  try {
-    // Find the selected time slot - selectedTime is the displayed time in customer's timezone
-    const selectedSlot = timeSlots.value.find((s) => s.time === selectedTime.value)
-    if (!selectedSlot) {
-      throw new Error('Selected time slot not found')
-    }
-
-    // Get the time in customer's timezone (what they selected)
-    // rawTimeInCustomerTZ is already in 24-hour format (HH:MM)
-    const customerTime24 = selectedSlot.rawTimeInCustomerTZ
-    
-    if (!customerTime24) {
-      throw new Error('Time slot time not found')
-    }
-
-    // Convert from customer's timezone to UTC for booking
-    const scheduledAtUTC = convertDateTimeToUTC(
-      selectedDate.value.date,
-      customerTime24, // Already in HH:MM format
-      customerTimezone.value
-    )
-
-    if (!scheduledAtUTC) {
-      throw new Error('Failed to convert booking time to UTC')
-    }
-
-    const result = await api.bookConsultation(consultation.value.id, {
-      scheduled_at: scheduledAtUTC,
-      notes: formData.value.topic || null,
-    })
-
-    if (result.success) {
-      isBooked.value = true
-      emit('book')
-      // Refresh calendar to update availability
-      await fetchCalendarAvailability()
-    } else {
-      throw new Error(result.error || 'Failed to book consultation')
-    }
-  } catch (error) {
-    console.error('Booking error:', error)
-    alert(error.message || 'Failed to book consultation. Please try again.')
-  } finally {
-    isSubmitting.value = false
+  // User is authenticated, proceed to payment step
+  // Pre-fill billing info with form data
+  if (!billingInfo.value.name) {
+    billingInfo.value.name = formData.value.name
   }
+  if (!billingInfo.value.email) {
+    // Note: billing email is not in billingInfo, but we use formData.email
+  }
+  
+  // Move to payment step
+  currentStep.value = 'payment'
+  
+  // Initialize payment (Stripe Elements) - this will be called when user fills billing info
+  // We'll wait for user to fill billing info before calling the API
 }
 
 // Handle successful login
@@ -775,6 +1269,62 @@ onMounted(async () => {
       await proceedWithBooking()
     }
   })
+})
+
+// Watch for billing info to be complete and auto-initialize payment
+watch(billingInfoValid, async (isValid) => {
+  if (isValid && currentStep.value === 'payment' && !paymentIntent.value && !loadingPayment.value) {
+    // Auto-initialize payment when billing info is complete
+    // Use flush: 'post' to ensure DOM is updated
+    await nextTick()
+    await initializePayment()
+  }
+}, { flush: 'post' })
+
+// Watch paymentIntent to mount Stripe after it's set and DOM is updated
+watch(paymentIntent, async (newIntent) => {
+  if (newIntent && stripe.value && !cardElement.value && currentStep.value === 'payment') {
+    // Payment intent is set, now mount Stripe element
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    const cardElementContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
+    if (cardElementContainer && stripe.value) {
+      try {
+        const elements = stripe.value.elements()
+        cardElement.value = elements.create('card', {
+          style: {
+            base: {
+              fontSize: '16px',
+              color: '#1e293b',
+              '::placeholder': {
+                color: '#94a3b8',
+              },
+            },
+            invalid: {
+              color: '#ef4444',
+            },
+          },
+        })
+        cardElement.value.mount('#stripe-card-element')
+      } catch (error) {
+        console.error('Error mounting Stripe card element:', error)
+      }
+    }
+  }
+}, { flush: 'post' })
+
+onBeforeUnmount(() => {
+  // Cleanup Stripe Elements
+  if (cardElement.value) {
+    try {
+      cardElement.value.unmount()
+    } catch (error) {
+      console.warn('Error unmounting Stripe card element:', error)
+    }
+    cardElement.value = null
+  }
+  stripe.value = null
 })
 </script>
 

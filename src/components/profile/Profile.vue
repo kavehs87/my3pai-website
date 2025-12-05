@@ -151,6 +151,30 @@
               v-if="activeTab === 'social-links'"
             />
             
+            <ProfileOrders
+              v-if="activeTab === 'orders'"
+              @view-order="handleViewOrder"
+            />
+            
+            <ProfileOrderDetail
+              v-if="activeTab === 'order-detail'"
+              :order-id="selectedOrderId"
+              @back="handleBackToOrders"
+              @view-invoice="handleViewInvoice"
+            />
+            
+            <ProfileInvoices
+              v-if="activeTab === 'invoices'"
+              @view-invoice="handleViewInvoice"
+            />
+            
+            <ProfileInvoiceDetail
+              v-if="activeTab === 'invoice-detail'"
+              :invoice-id="selectedInvoiceId"
+              @back="handleBackToInvoices"
+              @view-order="handleViewOrder"
+            />
+            
             <ProfileSettings
               ref="profileSettings"
               v-if="activeTab === 'settings'"
@@ -324,9 +348,14 @@ import ProfileMediaAssetsSettings from './components/ProfileMediaAssetsSettings.
 import ProfileSocialSettings from './components/ProfileSocialSettings.vue'
 import ProfileSocialLinksSettings from './components/ProfileSocialLinksSettings.vue'
 import ProfileMaps from './components/profile-maps/ProfileMaps.vue'
+import ProfileOrders from './components/ProfileOrders.vue'
+import ProfileOrderDetail from './components/ProfileOrderDetail.vue'
+import ProfileInvoices from './components/ProfileInvoices.vue'
+import ProfileInvoiceDetail from './components/ProfileInvoiceDetail.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
 import eventBus from '../../utils/eventBus.js'
+import { ref } from 'vue'
 
 export default {
   name: 'Profile',
@@ -343,7 +372,11 @@ export default {
     ProfileMediaAssetsSettings,
     ProfileSocialSettings,
     ProfileSocialLinksSettings,
-    ProfileMaps
+    ProfileMaps,
+    ProfileOrders,
+    ProfileOrderDetail,
+    ProfileInvoices,
+    ProfileInvoiceDetail
   },
   data() {
     return {
@@ -357,6 +390,7 @@ export default {
       },
       isLoading: true,
       error: null,
+      selectedOrderId: null,
       tabs: [
         { id: 'overview', label: 'Overview', icon: 'fas fa-home', count: null },
         { id: 'maps', label: 'Maps', icon: 'fas fa-map-marked-alt', count: null },
@@ -368,6 +402,8 @@ export default {
         { id: 'social', label: 'Social Posts', icon: 'fas fa-share-alt', count: null },
         { id: 'social-links', label: 'Social Links', icon: 'fas fa-link', count: null },
         { id: 'creator', label: 'Creator Profile', icon: 'fas fa-id-card', count: null },
+        { id: 'orders', label: 'My Orders', icon: 'fas fa-shopping-bag', count: null },
+        { id: 'invoices', label: 'My Invoices', icon: 'fas fa-file-invoice-dollar', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
       tabDescriptions: {
@@ -381,6 +417,9 @@ export default {
         'social': 'Manage your social media posts',
         'social-links': 'Manage your social media profile links',
         'creator': 'Customize your public creator profile',
+        'orders': 'View and manage your purchase orders',
+        'invoices': 'View your paid and received invoices',
+        'invoice-detail': 'View invoice details',
         'settings': 'Manage your account preferences and security'
       },
       passwordModal: {
@@ -400,6 +439,17 @@ export default {
         isReauthing: false
       },
       googleScriptPromise: null
+    }
+  },
+  provide() {
+    // Currency context for PriceDisplay component
+    const currency = ref({ code: 'USD', symbol: '$', rate: 1 })
+    const setCurrency = (c) => {
+      currency.value = c
+    }
+    return {
+      currency,
+      setCurrency
     }
   },
   computed: {
@@ -425,8 +475,15 @@ export default {
     '$route.query.tab': {
       immediate: true,
       handler(tab) {
-        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'settings'].includes(tab)) {
+        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'orders', 'invoices', 'order-detail', 'invoice-detail', 'settings'].includes(tab)) {
           this.activeTab = tab
+          // If viewing order detail, get order ID from query
+          if (tab === 'order-detail' && this.$route.query.orderId) {
+            this.selectedOrderId = parseInt(this.$route.query.orderId)
+          }
+          if (tab === 'invoice-detail' && this.$route.query.invoiceId) {
+            this.selectedInvoiceId = parseInt(this.$route.query.invoiceId)
+          }
         } else if (!tab) {
           // Default to overview if no tab specified
           this.activeTab = 'overview'
@@ -437,8 +494,16 @@ export default {
   mounted() {
     // Check if there's a tab query parameter
     const tab = this.$route.query.tab
-    if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'settings'].includes(tab)) {
+    if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'orders', 'invoices', 'order-detail', 'invoice-detail', 'settings'].includes(tab)) {
       this.activeTab = tab
+      // If viewing order detail, get order ID from query
+      if (tab === 'order-detail' && this.$route.query.orderId) {
+        this.selectedOrderId = parseInt(this.$route.query.orderId)
+      }
+      // If viewing invoice detail, get invoice ID from query
+      if (tab === 'invoice-detail' && this.$route.query.invoiceId) {
+        this.selectedInvoiceId = parseInt(this.$route.query.invoiceId)
+      }
     }
     
     // Check screen size
@@ -553,10 +618,35 @@ export default {
       // Update URL without reloading
       this.$router.replace({ query: { ...this.$route.query, tab } })
       
+      // Reset selected order ID when leaving order detail
+      if (tab !== 'order-detail') {
+        this.selectedOrderId = null
+      }
+      
       // Close sidebar on mobile after selection
       if (this.isMobile) {
         this.sidebarCollapsed = true
       }
+    },
+    handleViewOrder(orderId) {
+      this.selectedOrderId = orderId
+      this.activeTab = 'order-detail'
+      this.$router.replace({ query: { ...this.$route.query, tab: 'order-detail', orderId } })
+    },
+    handleBackToOrders() {
+      this.selectedOrderId = null
+      this.activeTab = 'orders'
+      this.$router.replace({ query: { ...this.$route.query, tab: 'orders' } })
+    },
+    handleViewInvoice(invoiceId) {
+      this.selectedInvoiceId = invoiceId
+      this.activeTab = 'invoice-detail'
+      this.$router.replace({ query: { ...this.$route.query, tab: 'invoice-detail', invoiceId } })
+    },
+    handleBackToInvoices() {
+      this.selectedInvoiceId = null
+      this.activeTab = 'invoices'
+      this.$router.replace({ query: { ...this.$route.query, tab: 'invoices' } })
     },
     handleEditProfile() {
       this.activeTab = 'settings'
@@ -1393,6 +1483,35 @@ export default {
 @media (max-width: 480px) {
   .quick-stats {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Print styles - hide dashboard layout when printing invoice */
+@media print {
+  .dashboard-layout > :first-child,
+  .dashboard-body > :first-child,
+  .ProfileSidebar,
+  .mobile-menu-toggle,
+  .dashboard-header,
+  .dashboard-actions,
+  button {
+    display: none !important;
+  }
+
+  .dashboard-body {
+    display: block !important;
+  }
+
+  .dashboard-main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .dashboard-content {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
 </style>

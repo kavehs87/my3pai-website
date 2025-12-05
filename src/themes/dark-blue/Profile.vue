@@ -110,7 +110,12 @@
         @back="currentView = 'home'"
         @book="handleBookSuccess"
       />
-      <div v-else-if="currentView !== 'home'" class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
+      <CheckoutView
+        v-else-if="currentView === 'checkout'"
+        @back="isCartOpen = true"
+        @order-complete="handleOrderComplete"
+      />
+      <div v-else-if="currentView !== 'home' && currentView !== 'checkout'" class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
         <div class="text-center text-text-muted">
           <p>{{ currentView }} view - Coming soon</p>
           <button @click="currentView = 'home'" class="mt-4 text-secondary hover:underline">
@@ -156,6 +161,7 @@ import AssetsView from './views/AssetsView.vue'
 import PodcastsView from './views/PodcastsView.vue'
 import SocialsView from './views/SocialsView.vue'
 import ConsultationView from './views/ConsultationView.vue'
+import CheckoutView from './views/CheckoutView.vue'
 import LoginModal from '@/components/LoginModal.vue'
 import SignupModal from '@/components/SignupModal.vue'
 import { useInfluencer } from '@/shared/influencer/composables/useInfluencer'
@@ -313,6 +319,18 @@ const handleBookSuccess = () => {
   // Booking success is handled in ConsultationView
   // Could show toast or redirect here if needed
 }
+
+const handleOrderComplete = (orderData) => {
+  // Navigate to success page or order details
+  // For now, show success message and go back to home
+  toast.success(`Order #${orderData.orderId} completed successfully!`)
+  currentView.value = 'home'
+  // Refresh cart count
+  fetchCartCount()
+}
+
+// Orders and Invoices are now handled in the main dashboard (/profile)
+// Navigation links will route to /profile?tab=orders or /profile?tab=invoices
 
 const handleViewPost = (post) => {
   selectedPost.value = post

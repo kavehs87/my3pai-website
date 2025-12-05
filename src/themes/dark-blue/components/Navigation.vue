@@ -58,6 +58,18 @@
               <div class="text-xs text-text-muted">{{ userEmail }}</div>
             </div>
             <button
+              @click="handleNavigateToOrders"
+              class="w-full text-left px-4 py-2 text-sm text-text-muted hover:bg-slate-50 transition-colors"
+            >
+              My Orders
+            </button>
+            <button
+              @click="handleNavigateToInvoices"
+              class="w-full text-left px-4 py-2 text-sm text-text-muted hover:bg-slate-50 transition-colors"
+            >
+              My Invoices
+            </button>
+            <button
               @click="handleLogout"
               class="w-full text-left px-4 py-2 text-sm text-text-muted hover:bg-slate-50 transition-colors"
             >
@@ -165,6 +177,18 @@ const checkAuthStatus = async () => {
     userName.value = ''
     userEmail.value = ''
   }
+}
+
+const handleNavigateToOrders = () => {
+  showProfileDropdown.value = false
+  // Navigate to dashboard with orders tab
+  window.location.href = '/profile?tab=orders'
+}
+
+const handleNavigateToInvoices = () => {
+  showProfileDropdown.value = false
+  // Navigate to dashboard with invoices tab
+  window.location.href = '/profile?tab=invoices'
 }
 
 const handleLogout = async () => {

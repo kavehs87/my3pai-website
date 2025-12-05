@@ -178,9 +178,9 @@ export default {
             
             if (loginResult.success) {
               // Get user data after login
-              const profileResult = await apiService.getCurrentUser()
-              if (profileResult.success) {
-                user = profileResult.data
+            const profileResult = await apiService.getCurrentUser()
+            if (profileResult.success) {
+              user = profileResult.data
               }
             } else {
               this.errorMessage = 'Account created, but automatic login failed. Please sign in manually.'

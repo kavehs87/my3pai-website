@@ -22,7 +22,10 @@ const formattedPrice = computed(() => {
   // Convert amount to number (handles string prices from API)
   let numericAmount = props.amount
   if (typeof numericAmount === 'string') {
-    numericAmount = parseFloat(numericAmount)
+    // Handle European format (comma as decimal separator) by replacing comma with period
+    // e.g., "39,99" -> "39.99"
+    const normalized = numericAmount.replace(',', '.')
+    numericAmount = parseFloat(normalized)
     if (isNaN(numericAmount)) numericAmount = 0
   }
   if (typeof numericAmount !== 'number') {

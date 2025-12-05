@@ -180,7 +180,7 @@ export default {
         } else if (error.status === 401 || error.status === 422) {
           this.errorMessage = error.message || 'Invalid email or password. Please check your credentials and try again.'
         } else {
-          this.errorMessage = error.message || 'Login failed. Please check your credentials and try again.'
+        this.errorMessage = error.message || 'Login failed. Please check your credentials and try again.'
         }
       } finally {
         this.isLoading = false

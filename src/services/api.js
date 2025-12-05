@@ -135,9 +135,9 @@ class ApiService {
 
     // Add XSRF token if CSRF is required (including for cart endpoints)
     if (requiresCsrf) {
-      const xsrfToken = this.getXsrfToken()
-      if (xsrfToken) {
-        config.headers[XSRF_HEADER_NAME] = xsrfToken
+    const xsrfToken = this.getXsrfToken()
+    if (xsrfToken) {
+      config.headers[XSRF_HEADER_NAME] = xsrfToken
       }
     }
 
@@ -196,7 +196,7 @@ class ApiService {
       // Don't log CSRF errors for cart endpoints (expected for guests)
       // Only log unexpected errors
       if (!(isCartEndpoint && error.status === 419)) {
-        console.error('API Request failed:', error)
+      console.error('API Request failed:', error)
         // Log full error details for debugging
         if (error.data) {
           console.error('Error data:', error.data)
@@ -1192,6 +1192,18 @@ class ApiService {
   }
 
   /**
+   * Book and pay for a consultation (creates booking + order + payment intent)
+   * @param {Number} consultationId - Consultation ID
+   * @param {Object} bookingData - { scheduled_at, notes, billing_info }
+   */
+  async bookAndPayConsultation(consultationId, bookingData) {
+    return this.request(`/consultations/${consultationId}/book-and-pay`, {
+      method: 'POST',
+      body: bookingData
+    })
+  }
+
+  /**
    * Get my consultation bookings (as customer)
    */
   async getMyConsultationBookings(params = {}) {
@@ -1542,6 +1554,181 @@ class ApiService {
       method: 'POST',
       body: { guest_session_id: sessionId },
       isGuest: false // This endpoint requires auth
+    })
+  }
+
+  /**
+   * Create order from cart
+   * @param {Object} billingInfo - Billing information
+   */
+  async createOrderFromCart(billingInfo) {
+    return this.request('/orders', {
+      method: 'POST',
+      body: {
+        billing_name: billingInfo.name,
+        billing_email: billingInfo.email,
+        billing_address_line1: billingInfo.address_line1,
+        billing_address_line2: billingInfo.address_line2 || null,
+        billing_city: billingInfo.city,
+        billing_state: billingInfo.state,
+        billing_postal_code: billingInfo.postal_code,
+        billing_country: billingInfo.country,
+      }
+    })
+  }
+
+  /**
+   * Create payment intent for an order
+   * @param {Number} orderId - Order ID
+   */
+  async createPaymentIntent(orderId) {
+    return this.request('/payments/intent', {
+      method: 'POST',
+      body: { order_id: orderId }
+    })
+  }
+
+  /**
+   * Confirm payment after Stripe success
+   * @param {Object} paymentData - { payment_intent_id, order_id }
+   */
+  async confirmPayment(paymentData) {
+    return this.request('/payments/confirm', {
+      method: 'POST',
+      body: paymentData
+    })
+  }
+
+  // Orders API Methods
+  // ========================================
+
+  /**
+   * Get all orders (purchased and sold combined)
+   * @param {Object} params - { page, per_page, status, payment_status, from_date, to_date, search }
+   */
+  async getAllOrders(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/orders${queryString}`)
+  }
+
+  /**
+   * Get purchased orders (where user is customer)
+   * @param {Object} params - { page, per_page, status, payment_status, from_date, to_date, search }
+   */
+  async getPurchasedOrders(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/orders/purchased${queryString}`)
+  }
+
+  /**
+   * Get sold orders (where user is influencer/seller)
+   * @param {Object} params - { page, per_page, status, payment_status, from_date, to_date, search }
+   */
+  async getSoldOrders(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/orders/sold${queryString}`)
+  }
+
+  /**
+   * Get single order details
+   * @param {Number} orderId - Order ID
+   */
+  async getOrder(orderId) {
+    return this.request(`/orders/${orderId}`)
+  }
+
+  /**
+   * Cancel an order
+   * @param {Number} orderId - Order ID
+   * @param {String} reason - Optional cancellation reason
+   */
+  async cancelOrder(orderId, reason = null) {
+    return this.request(`/orders/${orderId}/cancel`, {
+      method: 'POST',
+      body: { reason: reason || '' }
+    })
+  }
+
+  /**
+   * Request a refund for an order
+   * @param {Number} orderId - Order ID
+   * @param {String} reason - Optional refund reason
+   * @param {String} reasonDescription - Optional detailed reason description
+   */
+  async requestRefund(orderId, reason = null, reasonDescription = null) {
+    return this.request(`/orders/${orderId}/refund`, {
+      method: 'POST',
+      body: {
+        ...(reason && { reason }),
+        ...(reasonDescription && { reason_description: reasonDescription })
+      }
+    })
+  }
+
+  // Invoices API Methods
+  // ========================================
+
+  /**
+   * Get all invoices (paid and received combined)
+   * @param {Object} params - { page, per_page, status, type, from_date, to_date, search }
+   */
+  async getAllInvoices(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/invoices${queryString}`)
+  }
+
+  /**
+   * Get paid invoices (where user is customer)
+   * @param {Object} params - { page, per_page, status, from_date, to_date, search }
+   */
+  async getPaidInvoices(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/invoices/paid${queryString}`)
+  }
+
+  /**
+   * Get received invoices (where user is influencer/seller)
+   * @param {Object} params - { page, per_page, status, from_date, to_date, search }
+   */
+  async getReceivedInvoices(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/invoices/received${queryString}`)
+  }
+
+  /**
+   * Get single invoice details
+   * @param {Number} invoiceId - Invoice ID
+   */
+  async getInvoice(invoiceId) {
+    return this.request(`/invoices/${invoiceId}`)
+  }
+
+  /**
+   * Get invoice summary statistics
+   * @param {Object} params - { from_date, to_date, period }
+   */
+  async getInvoiceSummary(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/invoices/summary${queryString}`)
+  }
+
+  /**
+   * Download invoice PDF
+   * @param {Number} invoiceId - Invoice ID
+   */
+  async downloadInvoice(invoiceId) {
+    return this.request(`/invoices/${invoiceId}/download`, {
+      method: 'GET'
+    })
+  }
+
+  /**
+   * Send invoice via email
+   * @param {Number} invoiceId - Invoice ID
+   */
+  async sendInvoice(invoiceId) {
+    return this.request(`/invoices/${invoiceId}/send`, {
+      method: 'POST'
     })
   }
 }

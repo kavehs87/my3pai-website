@@ -150,7 +150,7 @@ const fetchMaps = async (page = 1) => {
     console.error('Error fetching maps:', err)
     maps.value = []
   } finally {
-    loading.value = false
+  loading.value = false
   }
 }
 
