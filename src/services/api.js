@@ -1664,16 +1664,26 @@ class ApiService {
   /**
    * Request a refund for an order
    * @param {Number} orderId - Order ID
-   * @param {String} reason - Optional refund reason
+   * @param {String} reason - Refund reason (required)
    * @param {String} reasonDescription - Optional detailed reason description
+   * @param {Number|null} amount - Optional refund amount in cents (null = full refund, backend calculates)
    */
-  async requestRefund(orderId, reason = null, reasonDescription = null) {
+  async requestRefund(orderId, reason = null, reasonDescription = null, amount = null) {
+    const body = {
+      ...(reason && { reason }),
+      ...(reasonDescription && { reason_description: reasonDescription })
+      // Don't send amount if null - backend will calculate full refund automatically
+      // If amount is provided, include it for partial refunds
+    }
+    
+    // Only include amount if explicitly provided (for partial refunds)
+    if (amount !== null && amount !== undefined) {
+      body.amount = amount
+    }
+    
     return this.request(`/orders/${orderId}/refund`, {
       method: 'POST',
-      body: {
-        ...(reason && { reason }),
-        ...(reasonDescription && { reason_description: reasonDescription })
-      }
+      body
     })
   }
 

@@ -445,15 +445,36 @@ const order = ref(null)
 const loading = ref(false)
 const error = ref(null)
 const processing = ref(false)
+// Cancel order state
 const showCancelModal = ref(false)
 const cancelReason = ref('')
+
+// Consultation cancellation state
 const consultationCancelReason = ref('')
 const cancellationPolicy = ref(null)
 const consultationBookingId = ref(null)
+
+// Refund request state
 const showRefundModal = ref(false)
 const refundReason = ref('')
 const refundDescription = ref('')
 const refundErrors = ref({ reason: '' })
+
+/**
+ * Map internal refund reasons to Stripe-compatible reasons
+ * Stripe only accepts: duplicate, fraudulent, requested_by_customer
+ */
+const mapRefundReasonForStripe = (reason) => {
+  // Stripe-compatible reasons (pass through as-is)
+  const stripeReasons = ['duplicate', 'fraudulent', 'requested_by_customer']
+  if (stripeReasons.includes(reason)) {
+    return reason
+  }
+  
+  // Map all other reasons to 'requested_by_customer' (generic catch-all)
+  // This includes: product_not_as_described, product_defective, service_not_provided, other
+  return 'requested_by_customer'
+}
 
 // Methods
 const fetchOrder = async () => {
@@ -590,11 +611,34 @@ const confirmRequestRefund = async () => {
 
   processing.value = true
   try {
+    // For full refund, send null - backend will automatically calculate and refund the full order total
+    // If partial refunds are needed in the future, we can add a UI field for amount
+    const refundAmount = null // null = full refund (backend calculates automatically)
+    
+    // Map the user's selected reason to a Stripe-compatible reason
+    // We still send the original reason in reasonDescription for our internal records
+    const stripeCompatibleReason = mapRefundReasonForStripe(refundReason.value)
+    const fullDescription = refundDescription.value 
+      ? `${refundReason.value}: ${refundDescription.value}`
+      : refundReason.value
+    
+    console.log('Requesting refund:', {
+      orderId: order.value.id,
+      originalReason: refundReason.value,
+      stripeReason: stripeCompatibleReason,
+      reasonDescription: fullDescription,
+      amount: refundAmount
+    })
+    
     const result = await apiService.requestRefund(
       order.value.id,
-      refundReason.value,
-      refundDescription.value || null
+      stripeCompatibleReason, // Send Stripe-compatible reason
+      fullDescription || null, // Include original reason in description for our records
+      refundAmount
     )
+    
+    console.log('Refund response:', result)
+    
     if (result.success) {
       toast.success('Refund request submitted successfully')
       showRefundModal.value = false
@@ -603,11 +647,16 @@ const confirmRequestRefund = async () => {
       refundErrors.value = { reason: '' }
       await fetchOrder()
     } else {
-      throw new Error(result.error || 'Failed to request refund')
+      // Extract more detailed error message if available
+      const errorMsg = result.error || result.data?.error || result.data?.message || 'Failed to request refund'
+      console.error('Refund failed:', { result, errorMsg })
+      throw new Error(errorMsg)
     }
   } catch (err) {
     console.error('Error requesting refund:', err)
-    toast.error(err.message || 'Failed to request refund. Please try again.')
+    // Show more detailed error if available
+    const errorMessage = err.message || err.error || 'Failed to request refund. Please try again or contact support.'
+    toast.error(errorMessage)
   } finally {
     processing.value = false
   }
