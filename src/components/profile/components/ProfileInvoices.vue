@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <!-- Summary Cards -->
-    <div v-if="summary" class="grid md:grid-cols-2 gap-6">
+    <div class="grid md:grid-cols-2 gap-6">
       <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
         <div class="flex items-center justify-between mb-2">
           <span class="text-blue-100 text-sm font-medium">Total Paid</span>
@@ -369,6 +369,18 @@ const debouncedSearch = () => {
 // Computed
 const displayedInvoices = computed(() => {
   if (activeTab.value === 'all') {
+    // If allInvoices is empty, combine paid and received invoices
+    if (allInvoices.value.length === 0 && (paidInvoices.value.length > 0 || receivedInvoices.value.length > 0)) {
+      const combined = [
+        ...paidInvoices.value.map(i => ({ ...i, perspective: 'paid' })),
+        ...receivedInvoices.value.map(i => ({ ...i, perspective: 'received' }))
+      ]
+      // Remove duplicates based on invoice ID
+      const uniqueInvoices = combined.filter((invoice, index, self) =>
+        index === self.findIndex(i => i.id === invoice.id)
+      )
+      return uniqueInvoices
+    }
     return allInvoices.value
   } else if (activeTab.value === 'paid') {
     return paidInvoices.value.map(i => ({ ...i, perspective: 'paid' }))
@@ -396,6 +408,10 @@ const invoices = computed(() => {
 
 const hasMore = computed(() => {
   if (activeTab.value === 'all') {
+    // If we're using the fallback (combining paid and received), check both
+    if (allInvoices.value.length === 0 && (paidInvoices.value.length > 0 || receivedInvoices.value.length > 0)) {
+      return paidHasMore.value || receivedHasMore.value
+    }
     return allHasMore.value
   } else if (activeTab.value === 'paid') {
     return paidHasMore.value
@@ -409,11 +425,17 @@ const fetchSummary = async () => {
     const params = getPeriodParams()
     const result = await apiService.getInvoiceSummary(params)
     if (result.success) {
-      const backendResponse = result.data?.data || result.data
+      // Handle different response structures
+      const backendResponse = result.data?.data || result.data || result
+      console.log('[ProfileInvoices] Summary response:', backendResponse)
       summary.value = backendResponse
+    } else {
+      console.warn('[ProfileInvoices] Summary fetch failed:', result.error)
+      summary.value = null
     }
   } catch (error) {
     console.error('Error fetching invoice summary:', error)
+    summary.value = null
   }
 }
 
@@ -501,18 +523,74 @@ const fetchAllInvoices = async (reset = true) => {
       const invoiceList = backendResponse?.data || backendResponse || []
       const meta = backendResponse?.meta || result.data?.meta || result.meta || {}
 
-      if (Array.isArray(invoiceList)) {
+      if (Array.isArray(invoiceList) && invoiceList.length > 0) {
         allInvoices.value = reset ? invoiceList : [...allInvoices.value, ...invoiceList]
         allHasMore.value = meta.current_page < meta.last_page
       } else {
-        throw new Error('Invalid response format from API')
+        // If getAllInvoices returns empty, fetch both paid and received as fallback
+        console.log('[ProfileInvoices] getAllInvoices returned empty, fetching paid and received as fallback')
+        if (reset) {
+          // Reset both lists
+          paidInvoices.value = []
+          receivedInvoices.value = []
+          paidPage.value = 1
+          receivedPage.value = 1
+        }
+        // Fetch both in parallel
+        await Promise.all([
+          fetchPaidInvoices(reset).catch(err => {
+            console.warn('[ProfileInvoices] Failed to fetch paid invoices for all tab:', err)
+          }),
+          fetchReceivedInvoices(reset).catch(err => {
+            console.warn('[ProfileInvoices] Failed to fetch received invoices for all tab:', err)
+          })
+        ])
+        // The displayedInvoices computed will combine them
+        allHasMore.value = false // We'll handle pagination through the combined lists
       }
     } else {
-      throw new Error(result.error || 'Failed to fetch invoices')
+      // If API call failed, try fallback
+      console.log('[ProfileInvoices] getAllInvoices failed, fetching paid and received as fallback')
+      if (reset) {
+        paidInvoices.value = []
+        receivedInvoices.value = []
+        paidPage.value = 1
+        receivedPage.value = 1
+      }
+      await Promise.all([
+        fetchPaidInvoices(reset).catch(err => {
+          console.warn('[ProfileInvoices] Failed to fetch paid invoices for all tab:', err)
+        }),
+        fetchReceivedInvoices(reset).catch(err => {
+          console.warn('[ProfileInvoices] Failed to fetch received invoices for all tab:', err)
+        })
+      ])
+      allHasMore.value = false
     }
   } catch (error) {
     console.error('Error fetching all invoices:', error)
-    throw error
+    // Try fallback: fetch both paid and received
+    console.log('[ProfileInvoices] Error in getAllInvoices, trying fallback')
+    try {
+      if (reset) {
+        paidInvoices.value = []
+        receivedInvoices.value = []
+        paidPage.value = 1
+        receivedPage.value = 1
+      }
+      await Promise.all([
+        fetchPaidInvoices(reset).catch(err => {
+          console.warn('[ProfileInvoices] Failed to fetch paid invoices for all tab:', err)
+        }),
+        fetchReceivedInvoices(reset).catch(err => {
+          console.warn('[ProfileInvoices] Failed to fetch received invoices for all tab:', err)
+        })
+      ])
+      allHasMore.value = false
+    } catch (fallbackError) {
+      console.error('Fallback fetch also failed:', fallbackError)
+      throw error // Throw original error
+    }
   }
 }
 
@@ -590,8 +668,26 @@ const loadMore = async () => {
   loadingMore.value = true
   try {
     if (activeTab.value === 'all') {
-      allPage.value++
-      await fetchAllInvoices(false)
+      // If using fallback (combining paid and received), load more from both
+      if (allInvoices.value.length === 0 && (paidInvoices.value.length > 0 || receivedInvoices.value.length > 0)) {
+        // Load more from both lists
+        if (paidHasMore.value) {
+          paidPage.value++
+          await fetchPaidInvoices(false).catch(err => {
+            console.warn('[ProfileInvoices] Failed to load more paid invoices:', err)
+          })
+        }
+        if (receivedHasMore.value) {
+          receivedPage.value++
+          await fetchReceivedInvoices(false).catch(err => {
+            console.warn('[ProfileInvoices] Failed to load more received invoices:', err)
+          })
+        }
+      } else {
+        // Use normal getAllInvoices pagination
+        allPage.value++
+        await fetchAllInvoices(false)
+      }
     } else if (activeTab.value === 'paid') {
       paidPage.value++
       await fetchPaidInvoices(false)
@@ -630,15 +726,103 @@ const handleDownloadPDF = (invoice) => {
 }
 
 const getTotalPaid = () => {
-  if (!summary.value) return 0
-  const total = summary.value.total_paid_cents || summary.value.total_paid || 0
-  return typeof total === 'number' ? (total > 10000 ? total / 100 : total) : 0
+  // If summary exists, use it
+  if (summary.value) {
+    // Try multiple possible field names
+    const total = summary.value.total_paid_cents || 
+                  summary.value.total_paid || 
+                  summary.value.paid_total_cents ||
+                  summary.value.paid_total ||
+                  summary.value.paid_amount_cents ||
+                  summary.value.paid_amount ||
+                  null
+    
+    if (total !== null && total !== undefined) {
+      console.log('[ProfileInvoices] Total paid from summary:', {
+        summary: summary.value,
+        total,
+        type: typeof total
+      })
+      
+      if (typeof total === 'number') {
+        // If it's a very large number (> 10000), it's likely in cents
+        if (total > 10000) {
+          return total / 100
+        }
+        return total
+      }
+      
+      // Try to parse as string
+      if (typeof total === 'string') {
+        const parsed = parseFloat(total)
+        if (!isNaN(parsed)) {
+          return parsed > 10000 ? parsed / 100 : parsed
+        }
+      }
+    }
+  }
+  
+  // Fallback: calculate from paid invoices list
+  if (paidInvoices.value && paidInvoices.value.length > 0) {
+    const calculated = paidInvoices.value.reduce((sum, invoice) => {
+      return sum + getInvoiceAmount(invoice)
+    }, 0)
+    console.log('[ProfileInvoices] Total paid calculated from invoices:', calculated)
+    return calculated
+  }
+  
+  console.log('[ProfileInvoices] No summary or paid invoices data for total paid')
+  return 0
 }
 
 const getTotalReceived = () => {
-  if (!summary.value) return 0
-  const total = summary.value.total_received_cents || summary.value.total_received || 0
-  return typeof total === 'number' ? (total > 10000 ? total / 100 : total) : 0
+  // If summary exists, use it
+  if (summary.value) {
+    // Try multiple possible field names
+    const total = summary.value.total_received_cents || 
+                  summary.value.total_received || 
+                  summary.value.received_total_cents ||
+                  summary.value.received_total ||
+                  summary.value.received_amount_cents ||
+                  summary.value.received_amount ||
+                  null
+    
+    if (total !== null && total !== undefined) {
+      console.log('[ProfileInvoices] Total received from summary:', {
+        summary: summary.value,
+        total,
+        type: typeof total
+      })
+      
+      if (typeof total === 'number') {
+        // If it's a very large number (> 10000), it's likely in cents
+        if (total > 10000) {
+          return total / 100
+        }
+        return total
+      }
+      
+      // Try to parse as string
+      if (typeof total === 'string') {
+        const parsed = parseFloat(total)
+        if (!isNaN(parsed)) {
+          return parsed > 10000 ? parsed / 100 : parsed
+        }
+      }
+    }
+  }
+  
+  // Fallback: calculate from received invoices list
+  if (receivedInvoices.value && receivedInvoices.value.length > 0) {
+    const calculated = receivedInvoices.value.reduce((sum, invoice) => {
+      return sum + getInvoiceAmount(invoice)
+    }, 0)
+    console.log('[ProfileInvoices] Total received calculated from invoices:', calculated)
+    return calculated
+  }
+  
+  console.log('[ProfileInvoices] No summary or received invoices data for total received')
+  return 0
 }
 
 const getInvoiceAmount = (invoice) => {

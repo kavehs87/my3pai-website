@@ -1229,6 +1229,18 @@ class ApiService {
   }
 
   /**
+   * Get consultation booking cancellation policy and refund details
+   */
+  async getConsultationBookingCancellationPolicy(bookingId) {
+    if (!bookingId) {
+      return { success: false, error: 'Booking ID is required.' }
+    }
+    return this.request(`/consultations/bookings/${bookingId}/cancellation-policy`, {
+      requireCsrf: false
+    })
+  }
+
+  /**
    * Get consultation bookings (as influencer)
    */
   async getInfluencerConsultationBookings(params = {}) {

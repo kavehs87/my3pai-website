@@ -225,13 +225,67 @@
         </div>
       </div>
 
+      <!-- Consultation Booking Cancellation Section -->
+      <div
+        v-if="hasConsultationBooking() && canCancelConsultationBooking()"
+        class="bg-white rounded-2xl p-6 md:p-8 shadow-lg border border-slate-100"
+      >
+        <h2 class="text-2xl font-bold text-primary mb-6">Cancel Consultation Booking</h2>
+        
+        <!-- Cancellation Policy -->
+        <div v-if="cancellationPolicy" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <h3 class="font-semibold text-primary mb-3">Cancellation Policy</h3>
+          <div class="space-y-2 text-sm text-text-muted">
+            <p v-if="cancellationPolicy.refund_amount_cents !== undefined" class="text-base">
+              <strong class="text-primary">Refund Amount:</strong>
+              <PriceDisplay
+                :amount="cancellationPolicy.refund_amount_cents / 100"
+                class="font-bold text-green-600 ml-2"
+              />
+            </p>
+            <p v-if="cancellationPolicy.refund_percentage !== undefined">
+              <strong class="text-primary">Refund Percentage:</strong> {{ cancellationPolicy.refund_percentage }}%
+            </p>
+            <p v-if="cancellationPolicy.policy_description">
+              {{ cancellationPolicy.policy_description }}
+            </p>
+            <p v-if="cancellationPolicy.no_refund" class="text-red-600 font-semibold">
+              ⚠️ No refund available for this cancellation.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-primary mb-2">Cancellation Reason</label>
+            <select
+              v-model="consultationCancelReason"
+              class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
+            >
+              <option value="">Select a reason</option>
+              <option value="requested_by_customer">Requested by Customer</option>
+              <option value="requested_by_influencer">Requested by Influencer</option>
+              <option value="emergency">Emergency</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <button
+            @click="handleCancelConsultationBooking"
+            :disabled="processing || !consultationCancelReason"
+            class="w-full px-6 py-3 bg-white text-red-600 border-2 border-red-600 rounded-xl font-semibold hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel Booking
+          </button>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="bg-white rounded-2xl p-6 md:p-8 shadow-lg border border-slate-100">
         <h2 class="text-2xl font-bold text-primary mb-6">Actions</h2>
         <div class="flex flex-wrap gap-4">
           <button
-            v-if="canCancel()"
-            @click="handleCancel"
+            v-if="canCancel() && !hasConsultationBooking()"
+            @click="showCancelModal = true"
             :disabled="processing"
             class="px-6 py-3 bg-white text-primary border-2 border-primary rounded-xl font-semibold hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -239,7 +293,7 @@
           </button>
           <button
             v-if="canRequestRefund()"
-            @click="handleRequestRefund"
+            @click="showRefundModal = true"
             :disabled="processing"
             class="px-6 py-3 bg-white text-red-600 border-2 border-red-600 rounded-xl font-semibold hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -256,10 +310,123 @@
       </div>
     </div>
   </div>
+
+  <!-- Cancel Order Modal -->
+  <Teleport to="body">
+    <div
+      v-if="showCancelModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      @click.self="showCancelModal = false"
+    >
+      <div class="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full mx-4 shadow-2xl">
+        <h3 class="text-2xl font-bold text-primary mb-4">Cancel Order</h3>
+        <p class="text-text-muted mb-6">
+          Are you sure you want to cancel order <strong>{{ order?.order_number }}</strong>? This action cannot be undone.
+        </p>
+        
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-primary mb-2">
+            Cancellation Reason <span class="text-red-600">*</span>
+          </label>
+          <textarea
+            v-model="cancelReason"
+            rows="4"
+            class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            placeholder="Please provide a reason for cancelling this order..."
+          ></textarea>
+        </div>
+
+        <div class="flex gap-4">
+          <button
+            @click="showCancelModal = false"
+            :disabled="processing"
+            class="flex-1 px-6 py-3 bg-white text-primary border-2 border-primary rounded-xl font-semibold hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+          >
+            Keep Order
+          </button>
+          <button
+            @click="confirmCancelOrder"
+            :disabled="processing || !cancelReason.trim()"
+            class="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ processing ? 'Cancelling...' : 'Cancel Order' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Request Refund Modal -->
+  <Teleport to="body">
+    <div
+      v-if="showRefundModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      @click.self="showRefundModal = false"
+    >
+      <div class="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full mx-4 shadow-2xl">
+        <h3 class="text-2xl font-bold text-primary mb-4">Request Refund</h3>
+        <p class="text-text-muted mb-6">
+          Please provide a reason for requesting a refund for order <strong>{{ order?.order_number }}</strong>.
+        </p>
+        
+        <div class="mb-6 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-primary mb-2">
+              Refund Reason <span class="text-red-600">*</span>
+            </label>
+            <select
+              v-model="refundReason"
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
+              :class="{ 'border-red-300': refundErrors.reason }"
+            >
+              <option value="">Select a reason</option>
+              <option value="duplicate">Duplicate charge</option>
+              <option value="fraudulent">Fraudulent charge</option>
+              <option value="requested_by_customer">Requested by customer</option>
+              <option value="product_not_as_described">Product not as described</option>
+              <option value="product_defective">Product defective</option>
+              <option value="service_not_provided">Service not provided</option>
+              <option value="other">Other</option>
+            </select>
+            <p v-if="refundErrors.reason" class="mt-1 text-sm text-red-600">{{ refundErrors.reason }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-primary mb-2">
+              Additional Details <span class="text-text-muted text-xs">(Optional)</span>
+            </label>
+            <textarea
+              v-model="refundDescription"
+              rows="4"
+              class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              placeholder="Provide any additional information about the refund request..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex gap-4">
+          <button
+            @click="showRefundModal = false"
+            :disabled="processing"
+            class="flex-1 px-6 py-3 bg-white text-primary border-2 border-primary rounded-xl font-semibold hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            @click="confirmRequestRefund"
+            :disabled="processing || !refundReason"
+            class="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ processing ? 'Submitting...' : 'Request Refund' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import PriceDisplay from '../../../themes/dark-blue/components/PriceDisplay.vue'
 import apiService from '@/services/api.js'
 import toast from '@/utils/toast.js'
@@ -278,6 +445,15 @@ const order = ref(null)
 const loading = ref(false)
 const error = ref(null)
 const processing = ref(false)
+const showCancelModal = ref(false)
+const cancelReason = ref('')
+const consultationCancelReason = ref('')
+const cancellationPolicy = ref(null)
+const consultationBookingId = ref(null)
+const showRefundModal = ref(false)
+const refundReason = ref('')
+const refundDescription = ref('')
+const refundErrors = ref({ reason: '' })
 
 // Methods
 const fetchOrder = async () => {
@@ -301,27 +477,19 @@ const fetchOrder = async () => {
   }
 }
 
-const handleCancel = async () => {
-  if (!confirm(`Are you sure you want to cancel order ${order.value.order_number}?`)) {
+const confirmCancelOrder = async () => {
+  if (!cancelReason.value.trim()) {
+    toast.error('Please provide a cancellation reason.')
     return
   }
 
   processing.value = true
   try {
-    const reason = prompt('Please provide a reason for cancelling this order:')
-    if (reason === null) {
-      processing.value = false
-      return
-    }
-    if (!reason || reason.trim() === '') {
-      toast.error('A cancellation reason is required.')
-      processing.value = false
-      return
-    }
-
-    const result = await apiService.cancelOrder(order.value.id, reason.trim())
+    const result = await apiService.cancelOrder(order.value.id, cancelReason.value.trim())
     if (result.success) {
       toast.success('Order cancelled successfully')
+      showCancelModal.value = false
+      cancelReason.value = ''
       await fetchOrder()
     } else {
       throw new Error(result.error || 'Failed to cancel order')
@@ -334,15 +502,105 @@ const handleCancel = async () => {
   }
 }
 
-const handleRequestRefund = async () => {
-  const reason = prompt('Please provide a reason for the refund (optional):')
-  if (reason === null) return
+const hasConsultationBooking = () => {
+  if (!order.value || !order.value.items) return false
+  return order.value.items.some(item => item.item_type === 'consultation' && item.metadata?.booking_id)
+}
+
+const canCancelConsultationBooking = () => {
+  if (!hasConsultationBooking()) return false
+  // Can cancel if order is pending or completed but booking hasn't been completed/cancelled
+  return order.value.status !== 'cancelled' && order.value.payment_status !== 'refunded'
+}
+
+const getConsultationBookingId = () => {
+  if (!order.value || !order.value.items) return null
+  const consultationItem = order.value.items.find(item => item.item_type === 'consultation' && item.metadata?.booking_id)
+  return consultationItem?.metadata?.booking_id || null
+}
+
+const fetchCancellationPolicy = async (bookingId) => {
+  if (!bookingId) return
+  
+  try {
+    // Try to fetch cancellation policy from backend
+    const result = await apiService.getConsultationBookingCancellationPolicy(bookingId)
+    if (result.success) {
+      cancellationPolicy.value = result.data?.data || result.data
+    } else {
+      // Fallback: calculate basic policy from order data
+      cancellationPolicy.value = {
+        refund_amount_cents: order.value.total_amount_cents || 0,
+        refund_percentage: 100,
+        policy_description: 'Refund policy information is not available. Please contact support for details.',
+        no_refund: false
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch cancellation policy:', err)
+    // Set default policy based on order data
+    cancellationPolicy.value = {
+      refund_amount_cents: order.value.total_amount_cents || 0,
+      refund_percentage: 100,
+      policy_description: 'Refund policy information is being loaded...',
+      no_refund: false
+    }
+  }
+}
+
+const handleCancelConsultationBooking = async () => {
+  if (!consultationCancelReason.value) {
+    toast.error('Please select a cancellation reason.')
+    return
+  }
+
+  const bookingId = getConsultationBookingId()
+  if (!bookingId) {
+    toast.error('Consultation booking ID not found.')
+    return
+  }
 
   processing.value = true
   try {
-    const result = await apiService.requestRefund(order.value.id, reason || undefined)
+    const result = await apiService.cancelConsultationBooking(bookingId, consultationCancelReason.value)
+    if (result.success) {
+      toast.success('Consultation booking cancelled successfully')
+      consultationCancelReason.value = ''
+      cancellationPolicy.value = null
+      await fetchOrder()
+    } else {
+      throw new Error(result.error || 'Failed to cancel consultation booking')
+    }
+  } catch (err) {
+    console.error('Error cancelling consultation booking:', err)
+    toast.error(err.message || 'Failed to cancel consultation booking. Please try again.')
+  } finally {
+    processing.value = false
+  }
+}
+
+const confirmRequestRefund = async () => {
+  // Validate form
+  refundErrors.value = { reason: '' }
+  
+  if (!refundReason.value) {
+    refundErrors.value.reason = 'Please select a refund reason.'
+    return
+  }
+
+  processing.value = true
+  try {
+    const result = await apiService.requestRefund(
+      order.value.id,
+      refundReason.value,
+      refundDescription.value || null
+    )
     if (result.success) {
       toast.success('Refund request submitted successfully')
+      showRefundModal.value = false
+      refundReason.value = ''
+      refundDescription.value = ''
+      refundErrors.value = { reason: '' }
       await fetchOrder()
     } else {
       throw new Error(result.error || 'Failed to request refund')
@@ -575,6 +833,17 @@ const getPaymentAmount = (payment) => {
   }
   return 0
 }
+
+// Watch for order changes to fetch cancellation policy
+watch(order, (newOrder) => {
+  if (newOrder && hasConsultationBooking()) {
+    const bookingId = getConsultationBookingId()
+    if (bookingId) {
+      consultationBookingId.value = bookingId
+      fetchCancellationPolicy(bookingId)
+    }
+  }
+}, { deep: true })
 
 onMounted(() => {
   fetchOrder()
