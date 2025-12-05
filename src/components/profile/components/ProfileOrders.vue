@@ -400,7 +400,12 @@ const fetchOrders = async (reset = false) => {
     }
   } catch (error) {
     console.error('Error fetching orders:', error)
-    toast.error('Failed to load orders. Please try again.')
+    // Check if it's a 404 error (backend route issue)
+    if (error.message && (error.message.includes('No query results') || error.message.includes('404'))) {
+      toast.error('Order filtering is temporarily unavailable. Please use "All Orders" tab or contact support.')
+    } else {
+      toast.error('Failed to load orders. Please try again.')
+    }
   } finally {
     loading.value = false
   }
@@ -474,6 +479,10 @@ const fetchPurchasedOrders = async (reset = true) => {
     }
   } catch (error) {
     console.error('Error fetching purchased orders:', error)
+    // Check if it's a 404 error (backend route issue)
+    if (error.message && (error.message.includes('No query results') || error.message.includes('404'))) {
+      throw new Error('Purchased orders endpoint not found. Please check backend routes.')
+    }
     throw error
   }
 }
@@ -510,6 +519,10 @@ const fetchSoldOrders = async (reset = true) => {
     }
   } catch (error) {
     console.error('Error fetching sold orders:', error)
+    // Check if it's a 404 error (backend route issue)
+    if (error.message && (error.message.includes('No query results') || error.message.includes('404'))) {
+      throw new Error('Sold orders endpoint not found. Please check backend routes.')
+    }
     throw error
   }
 }

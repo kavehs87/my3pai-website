@@ -1431,8 +1431,8 @@ export default {
 
 .price-input {
   width: 100%;
-  padding: var(--spacing-sm);
-  padding-left: calc(var(--spacing-sm) + 20px);
+  padding: var(--spacing-sm) !important;
+  padding-left: 22px !important;
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-md);
   background: var(--bg-secondary);

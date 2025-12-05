@@ -6,7 +6,6 @@
         <span>{{ statusLabel }}</span>
       </div>
       <div v-if="map.isForSale && map.price" class="price-badge">
-        <i class="fas fa-dollar-sign"></i>
         <span>{{ formattedPrice }}</span>
       </div>
       

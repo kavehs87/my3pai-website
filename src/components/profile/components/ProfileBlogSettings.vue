@@ -204,7 +204,12 @@ export default {
         }
       } catch (err) {
         console.error('Failed to load blog posts:', err)
-        toast.error('Failed to load blog posts')
+        // Check if it's a morph map error (backend configuration issue)
+        if (err.message && err.message.includes('morph map')) {
+          toast.error('Blog posts feature is temporarily unavailable. Please contact support.')
+        } else {
+          toast.error('Failed to load blog posts. Please try again.')
+        }
       } finally {
         this.loading = false
       }
