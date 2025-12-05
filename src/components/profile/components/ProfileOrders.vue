@@ -17,63 +17,93 @@
       </button>
     </div>
 
-    <!-- Filters -->
-    <div class="flex flex-wrap gap-4 items-end">
-      <!-- Status Filter -->
-      <div class="flex-1 min-w-[150px]">
-        <label class="block text-sm font-medium text-primary mb-2">Status</label>
-        <select
-          v-model="filters.status"
-          @change="applyFilters"
-          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+    <!-- Filters and View Toggle -->
+    <div class="flex flex-wrap gap-4 items-end justify-between">
+      <div class="flex flex-wrap gap-4 items-end flex-1">
+        <!-- Status Filter -->
+        <div class="flex-1 min-w-[150px]">
+          <label class="block text-sm font-medium text-primary mb-2">Status</label>
+          <select
+            v-model="filters.status"
+            @change="applyFilters"
+            class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          >
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="refunded">Refunded</option>
+            <option value="partially_refunded">Partially Refunded</option>
+          </select>
+        </div>
+
+        <!-- Payment Status Filter -->
+        <div class="flex-1 min-w-[150px]">
+          <label class="block text-sm font-medium text-primary mb-2">Payment Status</label>
+          <select
+            v-model="filters.payment_status"
+            @change="applyFilters"
+            class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          >
+            <option value="">All Payment Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="paid">Paid</option>
+            <option value="failed">Failed</option>
+            <option value="refunded">Refunded</option>
+            <option value="partially_refunded">Partially Refunded</option>
+          </select>
+        </div>
+
+        <!-- Search -->
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-primary mb-2">Search Order Number</label>
+          <input
+            v-model="filters.search"
+            @input="debouncedSearch"
+            type="text"
+            placeholder="ORD-2025-..."
+            class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          />
+        </div>
+
+        <!-- Clear Filters -->
+        <button
+          @click="clearFilters"
+          class="px-4 py-2 text-text-muted hover:text-primary transition-colors"
         >
-          <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="processing">Processing</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="refunded">Refunded</option>
-          <option value="partially_refunded">Partially Refunded</option>
-        </select>
+          Clear
+        </button>
       </div>
 
-      <!-- Payment Status Filter -->
-      <div class="flex-1 min-w-[150px]">
-        <label class="block text-sm font-medium text-primary mb-2">Payment Status</label>
-        <select
-          v-model="filters.payment_status"
-          @change="applyFilters"
-          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+      <!-- View Toggle -->
+      <div class="flex gap-2 items-center">
+        <button
+          @click="viewMode = 'grid'"
+          :class="[
+            'p-2 rounded-lg transition-colors',
+            viewMode === 'grid'
+              ? 'bg-primary text-white'
+              : 'bg-white text-text-muted border border-slate-200 hover:bg-slate-50'
+          ]"
+          title="Grid View"
         >
-          <option value="">All Payment Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="processing">Processing</option>
-          <option value="paid">Paid</option>
-          <option value="failed">Failed</option>
-          <option value="refunded">Refunded</option>
-          <option value="partially_refunded">Partially Refunded</option>
-        </select>
+          <Grid3x3 class="w-5 h-5" />
+        </button>
+        <button
+          @click="viewMode = 'list'"
+          :class="[
+            'p-2 rounded-lg transition-colors',
+            viewMode === 'list'
+              ? 'bg-primary text-white'
+              : 'bg-white text-text-muted border border-slate-200 hover:bg-slate-50'
+          ]"
+          title="List View"
+        >
+          <List class="w-5 h-5" />
+        </button>
       </div>
-
-      <!-- Search -->
-      <div class="flex-1 min-w-[200px]">
-        <label class="block text-sm font-medium text-primary mb-2">Search Order Number</label>
-        <input
-          v-model="filters.search"
-          @input="debouncedSearch"
-          type="text"
-          placeholder="ORD-2025-..."
-          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
-        />
-      </div>
-
-      <!-- Clear Filters -->
-      <button
-        @click="clearFilters"
-        class="px-4 py-2 text-text-muted hover:text-primary transition-colors"
-      >
-        Clear
-      </button>
     </div>
 
     <!-- Loading State -->
@@ -82,8 +112,8 @@
       <p>Loading orders...</p>
     </div>
 
-    <!-- Orders Grid -->
-    <div v-else-if="orders.length > 0" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Orders Grid View -->
+    <div v-else-if="orders.length > 0 && viewMode === 'grid'" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="order in orders"
         :key="order.id"
@@ -156,6 +186,76 @@
       </div>
     </div>
 
+    <!-- Orders List View -->
+    <div v-else-if="orders.length > 0 && viewMode === 'list'" class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="divide-y divide-slate-200">
+        <div
+          v-for="order in orders"
+          :key="order.id"
+          class="p-6 hover:bg-slate-50 transition-colors cursor-pointer"
+          @click="viewOrder(order.id)"
+        >
+          <div class="flex items-center justify-between gap-4">
+            <!-- Left: Order Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-4 mb-2">
+                <h3 class="text-lg font-bold text-primary">{{ order.order_number }}</h3>
+                <span
+                  :class="[
+                    'px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap',
+                    getStatusBadgeClass(order.status)
+                  ]"
+                >
+                  {{ formatStatus(order.status) }}
+                </span>
+                <span
+                  :class="[
+                    'px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap',
+                    getPaymentStatusBadgeClass(order.payment_status)
+                  ]"
+                >
+                  {{ formatPaymentStatus(order.payment_status) }}
+                </span>
+                <span
+                  v-if="order.perspective"
+                  class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-100 text-slate-800"
+                >
+                  {{ order.perspective === 'purchased' ? 'Purchased' : 'Sold' }}
+                </span>
+              </div>
+              <div class="flex flex-wrap items-center gap-4 text-sm text-text-muted">
+                <span>Created: {{ formatDate(order.created_at) }}</span>
+                <span>Items: {{ getItemCount(order) }}</span>
+              </div>
+            </div>
+
+            <!-- Right: Total and Actions -->
+            <div class="flex items-center gap-4">
+              <PriceDisplay
+                :amount="getTotalAmount(order)"
+                class="font-bold text-xl text-secondary"
+              />
+              <div class="flex gap-2">
+                <button
+                  @click.stop="viewOrder(order.id)"
+                  class="px-4 py-2 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors whitespace-nowrap"
+                >
+                  View Details
+                </button>
+                <button
+                  v-if="canCancel(order)"
+                  @click.stop="handleCancelOrder(order)"
+                  class="px-4 py-2 bg-white text-primary border border-slate-200 rounded-xl font-semibold hover:bg-slate-50 transition-colors whitespace-nowrap"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div v-else class="text-center py-20 text-text-muted">
       <ShoppingBag class="w-16 h-16 mx-auto mb-4 opacity-20" />
@@ -179,7 +279,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, inject } from 'vue'
-import { ShoppingBag } from 'lucide-vue-next'
+import { ShoppingBag, Grid3x3, List } from 'lucide-vue-next'
 import PriceDisplay from '../../../themes/dark-blue/components/PriceDisplay.vue'
 import apiService from '@/services/api.js'
 import toast from '@/utils/toast.js'
@@ -194,6 +294,9 @@ const tabs = [
 ]
 
 const activeTab = ref('all')
+
+// View Mode
+const viewMode = ref('grid') // 'grid' or 'list'
 
 // State
 const loading = ref(false)

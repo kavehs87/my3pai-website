@@ -60,44 +60,74 @@
       </button>
     </div>
 
-    <!-- Filters -->
-    <div class="flex flex-wrap gap-4 items-end">
-      <!-- Status Filter -->
-      <div class="flex-1 min-w-[150px]">
-        <label class="block text-sm font-medium text-primary mb-2">Status</label>
-        <select
-          v-model="filters.status"
-          @change="applyFilters"
-          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+    <!-- Filters and View Toggle -->
+    <div class="flex flex-wrap gap-4 items-end justify-between">
+      <div class="flex flex-wrap gap-4 items-end flex-1">
+        <!-- Status Filter -->
+        <div class="flex-1 min-w-[150px]">
+          <label class="block text-sm font-medium text-primary mb-2">Status</label>
+          <select
+            v-model="filters.status"
+            @change="applyFilters"
+            class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          >
+            <option value="">All Statuses</option>
+            <option value="draft">Draft</option>
+            <option value="issued">Issued</option>
+            <option value="paid">Paid</option>
+            <option value="overdue">Overdue</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <!-- Search -->
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-primary mb-2">Search Invoice Number</label>
+          <input
+            v-model="filters.search"
+            @input="debouncedSearch"
+            type="text"
+            placeholder="INV-2025-..."
+            class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          />
+        </div>
+
+        <!-- Clear Filters -->
+        <button
+          @click="clearFilters"
+          class="px-4 py-2 text-text-muted hover:text-primary transition-colors"
         >
-          <option value="">All Statuses</option>
-          <option value="draft">Draft</option>
-          <option value="issued">Issued</option>
-          <option value="paid">Paid</option>
-          <option value="overdue">Overdue</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+          Clear
+        </button>
       </div>
 
-      <!-- Search -->
-      <div class="flex-1 min-w-[200px]">
-        <label class="block text-sm font-medium text-primary mb-2">Search Invoice Number</label>
-        <input
-          v-model="filters.search"
-          @input="debouncedSearch"
-          type="text"
-          placeholder="INV-2025-..."
-          class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
-        />
+      <!-- View Toggle -->
+      <div class="flex gap-2 items-center">
+        <button
+          @click="viewMode = 'grid'"
+          :class="[
+            'p-2 rounded-lg transition-colors',
+            viewMode === 'grid'
+              ? 'bg-primary text-white'
+              : 'bg-white text-text-muted border border-slate-200 hover:bg-slate-50'
+          ]"
+          title="Grid View"
+        >
+          <Grid3x3 class="w-5 h-5" />
+        </button>
+        <button
+          @click="viewMode = 'list'"
+          :class="[
+            'p-2 rounded-lg transition-colors',
+            viewMode === 'list'
+              ? 'bg-primary text-white'
+              : 'bg-white text-text-muted border border-slate-200 hover:bg-slate-50'
+          ]"
+          title="List View"
+        >
+          <List class="w-5 h-5" />
+        </button>
       </div>
-
-      <!-- Clear Filters -->
-      <button
-        @click="clearFilters"
-        class="px-4 py-2 text-text-muted hover:text-primary transition-colors"
-      >
-        Clear
-      </button>
     </div>
 
     <!-- Loading State -->
@@ -106,8 +136,8 @@
       <p>Loading invoices...</p>
     </div>
 
-    <!-- Invoices Grid -->
-    <div v-else-if="invoices.length > 0" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Invoices Grid View -->
+    <div v-else-if="invoices.length > 0 && viewMode === 'grid'" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="invoice in invoices"
         :key="invoice.id"
@@ -183,6 +213,76 @@
       </div>
     </div>
 
+    <!-- Invoices List View -->
+    <div v-else-if="invoices.length > 0 && viewMode === 'list'" class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="divide-y divide-slate-200">
+        <div
+          v-for="invoice in invoices"
+          :key="invoice.id"
+          class="p-6 hover:bg-slate-50 transition-colors cursor-pointer"
+          @click="viewInvoice(invoice.id)"
+        >
+          <div class="flex items-center justify-between gap-4">
+            <!-- Left: Invoice Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-4 mb-2">
+                <h3 class="text-lg font-bold text-primary">{{ invoice.invoice_number }}</h3>
+                <span
+                  :class="[
+                    'px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap',
+                    getStatusBadgeClass(invoice.status)
+                  ]"
+                >
+                  {{ formatStatus(invoice.status) }}
+                </span>
+                <span
+                  v-if="invoice.perspective"
+                  :class="[
+                    'px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap',
+                    invoice.perspective === 'paid' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                  ]"
+                >
+                  {{ invoice.perspective === 'paid' ? 'Paid Invoice' : 'Received Invoice' }}
+                </span>
+              </div>
+              <div class="flex flex-wrap items-center gap-4 text-sm text-text-muted">
+                <span>Issued: {{ formatDate(invoice.issued_at || invoice.created_at) }}</span>
+                <span v-if="invoice.due_at">Due: {{ formatDate(invoice.due_at) }}</span>
+                <span v-if="invoice.order">Order: {{ invoice.order.order_number }}</span>
+              </div>
+            </div>
+
+            <!-- Right: Amount and Actions -->
+            <div class="flex items-center gap-4">
+              <PriceDisplay
+                :amount="getInvoiceAmount(invoice)"
+                :class="[
+                  'font-bold text-xl',
+                  invoice.perspective === 'paid' ? 'text-blue-600' : 'text-green-600'
+                ]"
+              />
+              <div class="flex gap-2">
+                <button
+                  @click.stop="viewInvoice(invoice.id)"
+                  class="px-4 py-2 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors whitespace-nowrap"
+                >
+                  View Details
+                </button>
+                <button
+                  v-if="invoice.status === 'paid' || invoice.status === 'issued'"
+                  @click.stop="handleDownloadPDF(invoice)"
+                  class="px-4 py-2 bg-white text-primary border border-slate-200 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+                  title="Download PDF"
+                >
+                  <Download class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div v-else class="text-center py-20 text-text-muted">
       <FileText class="w-16 h-16 mx-auto mb-4 opacity-20" />
@@ -206,7 +306,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { FileText, Download, TrendingUp, TrendingDown } from 'lucide-vue-next'
+import { FileText, Download, TrendingUp, TrendingDown, Grid3x3, List } from 'lucide-vue-next'
 import PriceDisplay from '../../../themes/dark-blue/components/PriceDisplay.vue'
 import apiService from '@/services/api.js'
 import toast from '@/utils/toast.js'
@@ -231,6 +331,9 @@ const periods = [
 ]
 
 const selectedPeriod = ref('this_month')
+
+// View Mode
+const viewMode = ref('grid') // 'grid' or 'list'
 
 // State
 const loading = ref(false)
