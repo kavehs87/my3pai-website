@@ -1,4 +1,33 @@
-# my3pai.com - System Rules
+# my3pai.com - System Rules (Frontend)
+
+## 🧠 Task Planning Protocol (Context Anchoring)
+For any complex UI task (e.g., "Implement Checkout," "Redesign Profile"), do NOT try to hold everything in chat memory.
+1.  **Initialize:** Create a specific plan file: `docs/plans/ui-task-[feature-name].md`.
+    * *Note: stored in the shared `docs/` folder.*
+2.  **Structure:**
+    * **Goal:** One sentence summary.
+    * **Context:** Links to relevant files (e.g., `OrderSummary.vue`, `api/order.js`).
+    * **Checklist:** Detailed steps.
+3.  **Execution Loop:**
+    * Read the plan file -> Execute ONE step -> Mark as `[x]` -> Verify.
+4.  **Finalization:** When done, update the plan with a summary.
+
+## 📚 API Documentation Protocol (Redocly Split)
+**Context:** The API documentation is SPLIT into many small files in `docs/openapi/`.
+**Rule:** NEVER read or generate a single monolithic `openapi.yaml` file.
+
+### 🔍 How to READ API Specs (Token Efficient)
+1.  **Start at the Skeleton:** Read `docs/openapi/openapi.yaml` first. This file contains the "Map" of all paths.
+2.  **Find the Reference:** Locate the path (e.g., `/auth/login`) -> Find the `$ref` (e.g., `./paths/auth/login.yaml`).
+3.  **Load the Target:** Read ONLY that specific YAML file to understand the expected JSON response or required fields.
+    * *Benefit:* You get the exact API contract without guessing or asking the backend developer.
+
+### 🛠️ Tooling & Commands
+1.  **Generate Docs:** Always use `redocly build-docs openapi/openapi.yaml --output=api-docs.html`.
+    * *Note:* Run this inside the `docs/` directory (symlinked).
+    * *Never* use `preview-docs` (it is deprecated/broken in this environment).
+2.  **Live Editing (Watch Mode):** If asked to "start the docs server," run this `nodemon` command inside `docs/`:
+    * `npx nodemon --watch openapi -e yaml --exec "redocly build-docs openapi/openapi.yaml --output=api-docs.html"`
 
 ## 0. CRITICAL CONSTRAINTS (HIGHEST PRIORITY)
 
@@ -17,9 +46,11 @@
 
 ## 1. CROSS-PROJECT WORKFLOW
 
-**Context:** User has 3 Cursor windows (Laravel Backend, Admin, Main Frontend). `docs/` is a symlink shared across windows. **Ignore `docs/` in commits.**
+**Context:** User has 3 Cursor windows (Laravel Backend, Admin, Main Frontend). `docs/` is a symlink shared across windows.
 
-**Task:** When new API endpoints are needed, generate a prompt for the Backend Window using this **EXACT TEMPLATE**:
+**Task:**
+1.  **Check Docs First:** Before asking for an API endpoint, check `docs/openapi/` to see if it already exists.
+2.  **Requesting New APIs:** If an endpoint is missing from `docs/`, generate a prompt for the Backend Window using this **EXACT TEMPLATE**:
 
 ```text
 [LARAVEL BACKEND PROMPT]
@@ -32,56 +63,3 @@ I need to add/update the following API endpoint(s) for the my3pai.com frontend:
 - Response: { success: true, data: ... }
 - Auth: Sanctum
 - Validation: [Rules]
-```
-
-## 2. STACK & ARCHITECTURE
-
-- **Core:** Vue 3 (Options API for UI, Composition for Composables), Vite 5, Router 4.
-- **Style:** Tailwind + CSS Vars (`src/style.css`).
-- **Icons:** `lucide-vue-next`.
-- **Utils:** `vue-toastification`, Custom EventBus.
-- **Aliases:** `@/` = `src/`.
-
-## 3. CODING PATTERNS
-
-- **Components:** PascalCase. `<template>` → `<script>` → `<style scoped>`.
-- **Composables:** Place in `composables/`. Prefix `use...`. Return `readonly` state.
-- **Routing:** HTML5 History. **MUST** use `props: true` for params.
-- **Modals:** **MUST** use `<Teleport to="body">` (z-index fix).
-- **Forms:** Client+Server validation. Reset file inputs (`value = ''`).
-- **Lists:** Virtual scroll for large sets. Empty states required.
-
-## 4. REFERENCE SNIPPETS
-
-**A. Google Maps (Correct Init)**
-```javascript
-// OPTIONS API
-beforeCreate() { this.map = null }, // Non-reactive
-mounted() {
-  if (window.google?.maps) { this.createMap(); return }
-  // ...load script logic...
-}
-```
-
-**B. Event Bus (No Store)**
-```javascript
-import eventBus from '@/utils/eventBus.js'
-// MOUNTED: eventBus.on('name', this.handler)
-// BEFORE_UNMOUNT: eventBus.off('name', this.handler)
-```
-
-**C. API Service (Singleton)**
-```javascript
-// import apiService from '@/services/api.js'
-try {
-  const res = await apiService.getThing()
-  if (res.success) this.data = res.data
-  else this.$toast.error(res.error)
-} catch (e) { this.$toast.error('Network') }
-```
-
-**D. Accordion Logic**
-`v-for` section → `toggleSection(id)` → `<component :is="comp" v-if="open==id">`
-
-**E. Image Fallback**
-`:src="user.avatar || 'https://fallback...'"` (Handle `@error`)

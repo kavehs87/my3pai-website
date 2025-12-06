@@ -9,20 +9,55 @@
           <!-- Portrait Video -->
           <div class="w-full sm:w-[320px] shrink-0 flex-shrink-0">
             <div class="bg-white p-1 rounded-[2.5rem] shadow-xl shadow-primary/5 border border-slate-100">
-              <div class="relative aspect-[9/16] rounded-[2rem] overflow-hidden group cursor-pointer">
+              <div class="relative aspect-[9/16] rounded-[2rem] overflow-hidden group cursor-pointer" @click="toggleVideo">
+                <!-- Video Player -->
+                <video
+                  v-if="profile?.introVideoUrl"
+                  ref="videoPlayer"
+                  :src="profile.introVideoUrl"
+                  :poster="profile?.introVideoThumbnail || profile?.image || ''"
+                  :muted="isMuted"
+                  class="w-full h-full object-cover"
+                  loop
+                  playsinline
+                  @loadedmetadata="onVideoLoaded"
+                />
+                <!-- Thumbnail/Poster (fallback when no video) -->
                 <img
-                  :src="profile?.introVideoThumbnail || profile?.image || 'https://picsum.photos/seed/travel/340/600'"
-                  alt="Intro"
+                  v-else
+                  :src="profile?.image || 'https://picsum.photos/seed/travel/340/600'"
+                  alt="Profile"
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
-                <div class="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/30 transition-colors">
-                  <div class="w-16 h-16 bg-white/90 backdrop-blur rounded-full flex items-center justify-center pl-1 shadow-lg group-hover:scale-110 transition-transform">
-                    <Play class="w-6 h-6 text-primary fill-primary" />
+                <!-- Play/Pause Overlay -->
+                <div v-if="profile?.introVideoUrl" class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div class="w-16 h-16 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Play v-if="!isVideoPlaying" class="w-6 h-6 text-primary fill-primary ml-0.5" />
+                    <div v-else class="w-6 h-6 flex items-center justify-center gap-0.5">
+                      <div class="w-1.5 h-5 bg-primary rounded-sm"></div>
+                      <div class="w-1.5 h-5 bg-primary rounded-sm"></div>
+                    </div>
                   </div>
                 </div>
-                <div class="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg flex items-center gap-2">
+                <!-- Mute/Unmute Button -->
+                <button
+                  v-if="profile?.introVideoUrl && isVideoPlaying"
+                  @click.stop="toggleMute"
+                  class="absolute top-4 right-4 w-10 h-10 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-black/80 transition-colors group"
+                  :title="isMuted ? 'Unmute' : 'Mute'"
+                >
+                  <Volume2 v-if="!isMuted" class="w-5 h-5 text-white" />
+                  <VolumeX v-else class="w-5 h-5 text-white" />
+                </button>
+                <!-- Video Duration Badge (only show when video is available and paused) -->
+                <div v-if="profile?.introVideoUrl && !isVideoPlaying" class="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg flex items-center gap-2">
                   <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span class="text-white text-xs font-medium">Watch Intro</span>
+                  <span class="text-white text-xs font-medium">
+                    Watch Intro
+                    <span v-if="profile?.introVideoDuration" class="ml-1">
+                      ({{ formatDuration(profile.introVideoDuration) }})
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -90,7 +125,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   Play,
   Star,
@@ -105,6 +140,8 @@ import {
   Linkedin,
   Link2,
   Video,
+  Volume2,
+  VolumeX,
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -122,7 +159,70 @@ const props = defineProps({
   },
 })
 
-defineEmits(['book-click'])
+const emit = defineEmits(['book-click'])
+
+// Video player state
+const isVideoPlaying = ref(false)
+const isMuted = ref(true) // Start muted for autoplay compatibility
+const videoPlayer = ref(null)
+
+// Toggle video play/pause
+const toggleVideo = async () => {
+  if (!props.profile?.introVideoUrl || !videoPlayer.value) return
+  
+  try {
+    if (videoPlayer.value.paused) {
+      await videoPlayer.value.play()
+      isVideoPlaying.value = true
+    } else {
+      videoPlayer.value.pause()
+      isVideoPlaying.value = false
+    }
+  } catch (err) {
+    console.error('Error toggling video:', err)
+    // If autoplay is blocked, user needs to interact first
+    // Try to play with user gesture
+    if (err.name === 'NotAllowedError') {
+      try {
+        await videoPlayer.value.play()
+        isVideoPlaying.value = true
+      } catch (e) {
+        console.error('Video playback blocked:', e)
+      }
+    }
+  }
+}
+
+// Handle video loaded
+const onVideoLoaded = () => {
+  // Auto-play video when it loads (muted, so should work)
+  if (videoPlayer.value && props.profile?.introVideoUrl) {
+    videoPlayer.value.play()
+      .then(() => {
+        isVideoPlaying.value = true
+      })
+      .catch(err => {
+        // Autoplay might be blocked - that's ok, user can click to play
+        console.log('Video autoplay blocked, user can click to play:', err)
+        isVideoPlaying.value = false
+      })
+  }
+}
+
+// Toggle mute/unmute
+const toggleMute = () => {
+  if (!videoPlayer.value) return
+  isMuted.value = !isMuted.value
+  videoPlayer.value.muted = isMuted.value
+}
+
+// Format duration in seconds to MM:SS
+const formatDuration = (seconds) => {
+  if (!seconds) return ''
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
 
 const stats = computed(() => {
   const stats = props.profile?.stats || {}
