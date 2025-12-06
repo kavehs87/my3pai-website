@@ -78,6 +78,27 @@
         </div>
       </div>
 
+      <!-- Intro Picture Section -->
+      <div class="settings-section intro-picture-section">
+        <div class="section-header">
+          <h2><i class="fas fa-image"></i> Intro Picture</h2>
+        </div>
+        
+        <p class="section-description">
+          Upload a portrait picture (9:16 aspect ratio) to display as your intro thumbnail. This will be shown as a fallback if no video is uploaded or while the video loads.
+        </p>
+        
+        <ThumbnailUpload
+          label="Portrait Picture"
+          placeholder="Upload portrait picture (9:16)"
+          :model-value="introPicture.file || introVideo.thumbnail"
+          :aspect-ratio="9 / 16"
+          :output-width="720"
+          @update:model-value="handleIntroPictureChange"
+          @change="handleIntroPictureChange"
+        />
+      </div>
+
       <!-- Profile Theme Selector -->
       <ProfileThemeSelector
         :current-theme="profileTheme"
@@ -459,11 +480,13 @@
 import api from '@/services/api'
 import toast from '@/utils/toast'
 import ProfileThemeSelector from './ProfileThemeSelector.vue'
+import ThumbnailUpload from '../../map-builder/components/poi-form/components/ThumbnailUpload.vue'
 
 export default {
   name: 'ProfileCreatorSettings',
   components: {
-    ProfileThemeSelector
+    ProfileThemeSelector,
+    ThumbnailUpload
   },
   data() {
     return {
@@ -482,6 +505,10 @@ export default {
         deleting: false,
         progress: 0,
         pollInterval: null
+      },
+      introPicture: {
+        file: null,
+        uploading: false
       },
       isDragging: false,
       loading: {
@@ -656,6 +683,11 @@ export default {
           this.introVideo.thumbnail = videoData.thumbnail || null
           this.introVideo.status = videoData.status || null
           this.introVideo.duration = videoData.duration || null
+          
+          // Initialize intro picture with existing thumbnail
+          if (videoData.thumbnail) {
+            this.introPicture.file = videoData.thumbnail
+          }
         }
       } catch (err) {
         console.error('Failed to load intro video:', err)
@@ -781,6 +813,57 @@ export default {
         toast.error(err.message)
       } finally {
         this.introVideo.deleting = false
+      }
+    },
+    
+    // Intro Picture (Portrait Thumbnail)
+    async handleIntroPictureChange(file) {
+      if (!file) {
+        // If file is null, user removed the picture - we'll need an endpoint to delete it
+        // For now, just clear local state
+        this.introPicture.file = null
+        return
+      }
+      
+      if (!(file instanceof File)) {
+        // If it's a string URL, it's the existing thumbnail - store it
+        this.introPicture.file = file
+        return
+      }
+      
+      // Upload the cropped picture
+      this.introPicture.uploading = true
+      try {
+        // Upload as intro video thumbnail using a dedicated endpoint
+        // We'll use a multipart form with 'thumbnail' field
+        const formData = new FormData()
+        formData.append('thumbnail', file)
+        
+        const result = await api.request('/influencer/intro-video/thumbnail', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (result.success) {
+          const data = result.data?.data || result.data || {}
+          const thumbnailUrl = data.introVideoThumbnail || data.thumbnail
+          
+          // Update local state
+          this.introVideo.thumbnail = thumbnailUrl
+          this.introPicture.file = thumbnailUrl
+          
+          toast.success('Intro picture uploaded successfully!')
+          
+          // Reload profile to get updated thumbnail
+          await this.loadIntroVideo()
+        } else {
+          toast.error(result.error || 'Failed to upload intro picture')
+        }
+      } catch (err) {
+        console.error('Error uploading intro picture:', err)
+        toast.error('Failed to upload intro picture. Please try again.')
+      } finally {
+        this.introPicture.uploading = false
       }
     },
     
@@ -1488,6 +1571,13 @@ export default {
 
 /* Intro Video Section */
 .intro-video-section .section-description {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Intro Picture Section */
+.intro-picture-section .section-description {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
   margin-bottom: var(--spacing-lg);

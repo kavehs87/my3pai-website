@@ -25,7 +25,7 @@
                 <!-- Thumbnail/Poster (fallback when no video) -->
                 <img
                   v-else
-                  :src="profile?.image || 'https://picsum.photos/seed/travel/340/600'"
+                  :src="profile?.introVideoThumbnail || profile?.image || 'https://picsum.photos/seed/travel/340/600'"
                   alt="Profile"
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
