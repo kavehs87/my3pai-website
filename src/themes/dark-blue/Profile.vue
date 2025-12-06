@@ -60,6 +60,7 @@
         v-if="currentView === 'home'"
         :profile="finalProfile"
         :bio-paragraphs="finalBioParagraphs"
+        :visibility-settings="visibilitySettings"
         @add-to-cart="addToCart"
         @book-click="handleBookClick"
         @view-assets="currentView = 'assets'"
@@ -147,7 +148,7 @@
 </template>
 
 <script setup>
-import { ref, provide, computed, onMounted } from 'vue'
+import { ref, provide, computed, onMounted, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import Navigation from './components/Navigation.vue'
 import CartDrawer from './components/CartDrawer.vue'
@@ -217,6 +218,38 @@ const currentView = ref('home')
 const selectedPost = ref(null)
 const showLogin = ref(false)
 const showSignup = ref(false)
+const visibilitySettings = ref({
+  blog: true,
+  podcast: true,
+  masterclass: true,
+  maps: true,
+  consultation: true,
+  'media-assets': true,
+  social: true,
+  'social-links': true,
+  creator: true,
+})
+
+// Watch for profile changes to extract visibility settings
+watch(finalProfile, (newProfile) => {
+  if (newProfile?.creatorToolsVisibility) {
+    const settings = newProfile.creatorToolsVisibility
+    visibilitySettings.value = {
+      blog: settings.blog ?? true,
+      podcast: settings.podcast ?? true,
+      masterclass: settings.masterclass ?? true,
+      maps: settings.maps ?? true,
+      consultation: settings.consultation ?? true,
+      'media-assets': settings['media-assets'] ?? true,
+      social: settings.social ?? true,
+      'social-links': settings['social-links'] ?? true,
+      creator: settings.creator ?? true,
+    }
+    console.log('[Profile] Visibility settings updated:', visibilitySettings.value)
+  } else {
+    console.log('[Profile] No creatorToolsVisibility found in profile:', newProfile)
+  }
+}, { immediate: true })
 
 // Currency context
 const currency = ref({ code: 'USD', symbol: '$', rate: 1 })
@@ -409,6 +442,8 @@ const handleSignupSuccess = (userData) => {
 }
 
 // Load profile on mount if needed
+// Note: creatorToolsVisibility is now included in the profile response,
+// so the watcher will automatically extract it when the profile loads
 onMounted(async () => {
   if (!props.profile && props.username) {
     await fetchProfile(props.username)

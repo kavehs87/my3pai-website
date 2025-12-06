@@ -126,6 +126,8 @@ export function useInfluencer() {
       introVideoDuration: data.introVideoDuration || null,
       // Theme
       theme: data.theme || 'modern',
+      // Creator tools visibility settings
+      creatorToolsVisibility: data.creatorToolsVisibility || null,
     }
   }
 

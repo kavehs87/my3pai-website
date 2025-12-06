@@ -83,6 +83,13 @@ export default {
           enabled: true
         },
         {
+          id: 'maps',
+          label: 'Maps',
+          description: 'Display your curated travel maps and itineraries',
+          icon: 'fas fa-map-marked-alt',
+          enabled: true
+        },
+        {
           id: 'consultation',
           label: 'Consultations',
           description: 'Display consultation booking options',

@@ -76,6 +76,7 @@
           </div>
 
           <button
+            v-if="showConsultation"
             @click="$emit('book-click')"
             class="w-full bg-primary text-white py-4 rounded-2xl font-bold text-lg hover:bg-primary/90 transition-colors shadow-xl shadow-primary/20 flex items-center justify-center gap-2 group"
           >
@@ -114,6 +115,10 @@ const props = defineProps({
   bioParagraphs: {
     type: Array,
     default: () => [],
+  },
+  showConsultation: {
+    type: Boolean,
+    default: true,
   },
 })
 

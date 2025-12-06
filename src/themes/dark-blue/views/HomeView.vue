@@ -3,10 +3,19 @@
     <LicensingModal :is-open="showLicense" @close="showLicense = false" />
 
     <!-- Hero Section -->
-    <Hero :profile="profile" :bio-paragraphs="bioParagraphs" @book-click="$emit('book-click')" />
+    <Hero 
+      :profile="profile" 
+      :bio-paragraphs="bioParagraphs" 
+      :show-consultation="visibilitySettings?.consultation !== false"
+      @book-click="$emit('book-click')" 
+    />
 
     <!-- Masterclasses -->
-    <section id="courses" class="scroll-mt-28 py-20 container mx-auto px-4 sm:px-6 lg:px-8">
+    <section 
+      v-if="visibilitySettings?.masterclass !== false"
+      id="courses" 
+      class="scroll-mt-28 py-20 container mx-auto px-4 sm:px-6 lg:px-8"
+    >
       <SectionHeader
         title="Masterclasses"
         subtitle="Level up your creative skills with my comprehensive courses."
@@ -31,7 +40,11 @@
     </section>
 
     <!-- Destinations -->
-    <section id="maps" class="scroll-mt-28 py-20 bg-white">
+    <section 
+      v-if="visibilitySettings?.maps !== false"
+      id="maps" 
+      class="scroll-mt-28 py-20 bg-white"
+    >
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
           title="Curated Maps"
@@ -55,9 +68,13 @@
     </section>
 
     <!-- Podcast & Socials -->
-    <section id="podcast" class="scroll-mt-28 py-20 container mx-auto px-4 sm:px-6 lg:px-8">
+    <section 
+      v-if="visibilitySettings?.podcast !== false || visibilitySettings?.social !== false"
+      id="podcast" 
+      class="scroll-mt-28 py-20 container mx-auto px-4 sm:px-6 lg:px-8"
+    >
       <div class="grid lg:grid-cols-2 gap-16">
-        <div>
+        <div v-if="visibilitySettings?.podcast !== false">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center">
               <Mic class="w-5 h-5" />
@@ -81,7 +98,7 @@
           </div>
         </div>
 
-        <div>
+        <div v-if="visibilitySettings?.social !== false">
           <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
               <Youtube class="w-5 h-5" />
@@ -140,7 +157,11 @@
     </section>
 
     <!-- Blog -->
-    <section id="blog" class="scroll-mt-28 py-20 bg-slate-50">
+    <section 
+      v-if="visibilitySettings?.blog !== false"
+      id="blog" 
+      class="scroll-mt-28 py-20 bg-slate-50"
+    >
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader title="Travel Journal" subtitle="Stories, guides, and tips from the road." />
         <div class="grid md:grid-cols-2 gap-10 mb-12">
@@ -163,7 +184,11 @@
     </section>
 
     <!-- Assets -->
-    <section id="assets" class="scroll-mt-28 py-24 bg-primary text-white">
+    <section 
+      v-if="visibilitySettings?.['media-assets'] !== false"
+      id="assets" 
+      class="scroll-mt-28 py-24 bg-primary text-white"
+    >
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row justify-between items-end mb-12">
           <div class="max-w-xl">
@@ -224,6 +249,20 @@ const props = defineProps({
   bioParagraphs: {
     type: Array,
     default: () => [],
+  },
+  visibilitySettings: {
+    type: Object,
+    default: () => ({
+      blog: true,
+      podcast: true,
+      masterclass: true,
+      maps: true,
+      consultation: true,
+      'media-assets': true,
+      social: true,
+      'social-links': true,
+      creator: true,
+    }),
   },
 })
 

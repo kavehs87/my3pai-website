@@ -56,55 +56,6 @@
                 </button>
               </div>
             </div>
-            
-            <!-- User Quick Stats -->
-            <div v-if="activeTab === 'overview'" class="quick-stats">
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="fas fa-map-marked-alt"></i>
-                </div>
-                <div class="stat-info">
-                  <span class="stat-value">{{ profileData.stats.maps || 0 }}</span>
-                  <span class="stat-label">Maps</span>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="fas fa-map-pin"></i>
-                </div>
-                <div class="stat-info">
-                  <span class="stat-value">{{ profileData.stats.places || 0 }}</span>
-                  <span class="stat-label">Places</span>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="fas fa-eye"></i>
-                </div>
-                <div class="stat-info">
-                  <span class="stat-value">{{ profileData.stats.views || 0 }}</span>
-                  <span class="stat-label">Views</span>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="fas fa-users"></i>
-                </div>
-                <div class="stat-info">
-                  <span class="stat-value">{{ profileData.stats.followers || 0 }}</span>
-                  <span class="stat-label">Followers</span>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="fas fa-calendar-check"></i>
-                </div>
-                <div class="stat-info">
-                  <span class="stat-value">{{ profileData.stats.consultationsHosted || 0 }}</span>
-                  <span class="stat-label">Consultations</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Content Area -->
@@ -1183,59 +1134,6 @@ export default {
   color: white;
 }
 
-/* Quick Stats */
-.quick-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-xl);
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  transition: all 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--secondary-color) 0%, #3aa8ab 100%);
-  border-radius: var(--radius-md);
-  color: white;
-  font-size: var(--font-size-lg);
-}
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
 
 /* Content Area */
 .dashboard-content {
@@ -1442,10 +1340,6 @@ export default {
   .dashboard-content {
     padding: var(--spacing-lg);
   }
-
-  .quick-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 768px) {
@@ -1465,25 +1359,6 @@ export default {
     padding: var(--spacing-md);
   }
 
-  .quick-stats {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-sm);
-  }
-
-  .stat-card {
-    padding: var(--spacing-sm) var(--spacing-md);
-  }
-
-  .stat-icon {
-    width: 40px;
-    height: 40px;
-    font-size: var(--font-size-base);
-  }
-
-  .stat-value {
-    font-size: var(--font-size-lg);
-  }
-
   .mobile-menu-toggle {
     display: flex;
     align-items: center;
@@ -1495,11 +1370,6 @@ export default {
   }
 }
 
-@media (max-width: 480px) {
-  .quick-stats {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* Print styles - hide dashboard layout when printing invoice */
 @media print {
