@@ -312,10 +312,33 @@ const fetchSummary = async () => {
     }
     const result = await apiService.getInfluencerEarningsSummary(params)
     if (result.success) {
-      summary.value = result.data?.data || result.data || {}
+      const data = result.data?.data || result.data || {}
+      // Convert from cents to dollars if values are in cents
+      const convertToDollars = (value) => {
+        if (!value) return 0
+        // If value is a whole number >= 1000, assume it's in cents and convert
+        // This handles cases where backend returns cents instead of dollars
+        if (Number.isInteger(value) && value >= 1000) {
+          return value / 100
+        }
+        // If value has decimal places, assume it's already in dollars
+        return value
+      }
+      
+      summary.value = {
+        total_earnings: convertToDollars(data.total_earnings),
+        total_payouts: convertToDollars(data.total_payouts),
+        pending_payouts: convertToDollars(data.pending_payouts),
+        platform_fees_paid: convertToDollars(data.platform_fees_paid)
+      }
+      console.log('Earnings summary loaded:', summary.value)
+    } else {
+      console.error('Failed to fetch earnings summary:', result.error)
+      toast.error(result.error || 'Failed to load earnings summary')
     }
   } catch (err) {
     console.error('Error fetching earnings summary:', err)
+    toast.error('Failed to load earnings summary. Please try again.')
   }
 }
 
@@ -335,10 +358,24 @@ const fetchPayouts = async (page = 1) => {
       const data = result.data?.data || result.data || {}
       const payoutsData = data.data || data.payouts || []
       
+      // Convert amounts from cents to dollars
+      const convertedPayouts = payoutsData.map(payout => {
+        let amount = payout.amount || 0
+        // If amount is a whole number >= 1000, assume it's in cents and convert
+        // This handles cases where backend returns cents instead of dollars
+        if (Number.isInteger(amount) && amount >= 1000) {
+          amount = amount / 100
+        }
+        return {
+          ...payout,
+          amount
+        }
+      })
+      
       if (page === 1) {
-        payouts.value = payoutsData
+        payouts.value = convertedPayouts
       } else {
-        payouts.value.push(...payoutsData)
+        payouts.value.push(...convertedPayouts)
       }
 
       pagination.value = data.pagination || data.meta || {}
