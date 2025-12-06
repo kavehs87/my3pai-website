@@ -709,12 +709,29 @@ const handleFreeOrder = async () => {
   errorMessage.value = null
   
   try {
-    // For free orders, billing info is optional - use minimal data
-    const orderData = {
-      // Only include email if available, other fields optional
-      email: billingInfo.value.email || undefined,
-      name: billingInfo.value.name || undefined,
+    // Validate cart data exists
+    if (!cartData.value) {
+      throw new Error('Cart data is missing. Please refresh and try again.')
     }
+    
+    // Get cart_id from cart data (could be id or cart_id field)
+    const cartId = cartData.value.id || cartData.value.cart_id || cartData.value.data?.id || cartData.value.data?.cart_id
+    
+    if (!cartId) {
+      console.error('Cart data structure:', cartData.value)
+      throw new Error('Cart ID is missing. Please refresh your cart and try again.')
+    }
+    
+    // For free orders, billing info is optional - use minimal data
+    // Only include fields that are actually set (not empty strings)
+    const orderData = {
+      cart_id: cartId
+    }
+    
+    if (billingInfo.value.email) orderData.email = billingInfo.value.email
+    if (billingInfo.value.name) orderData.name = billingInfo.value.name
+    
+    console.log('Creating free order with data:', orderData)
     
     const result = await apiService.createOrderFromCart(orderData)
     
@@ -750,8 +767,28 @@ const initializeStripe = async () => {
   paymentError.value = null
   
   try {
-    // Create order first
-    const orderResult = await apiService.createOrderFromCart(billingInfo.value)
+    // Validate cart data exists
+    if (!cartData.value) {
+      throw new Error('Cart data is missing. Please refresh and try again.')
+    }
+    
+    // Get cart_id from cart data (could be id or cart_id field)
+    const cartId = cartData.value.id || cartData.value.cart_id || cartData.value.data?.id || cartData.value.data?.cart_id
+    
+    if (!cartId) {
+      console.error('Cart data structure:', cartData.value)
+      throw new Error('Cart ID is missing. Please refresh your cart and try again.')
+    }
+    
+    // Create order first - include cart_id and billing info
+    const orderData = {
+      cart_id: cartId,
+      ...billingInfo.value
+    }
+    
+    console.log('Creating paid order with data:', { cart_id: orderData.cart_id, has_billing: !!orderData.email })
+    
+    const orderResult = await apiService.createOrderFromCart(orderData)
     if (!orderResult.success) {
       throw new Error(orderResult.error || 'Failed to create order')
     }

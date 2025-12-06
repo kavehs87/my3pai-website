@@ -1571,21 +1571,28 @@ class ApiService {
 
   /**
    * Create order from cart
-   * @param {Object} billingInfo - Billing information
+   * @param {Object} orderData - Order data including cart_id and optional billing information
    */
-  async createOrderFromCart(billingInfo) {
+  async createOrderFromCart(orderData = {}) {
+    // Build body with only defined fields to avoid sending undefined values
+    const body = {}
+    
+    // Cart ID is required
+    if (orderData.cart_id !== undefined) body.cart_id = orderData.cart_id
+    
+    // Billing fields are optional (especially for free orders)
+    if (orderData.name !== undefined && orderData.name !== '') body.billing_name = orderData.name
+    if (orderData.email !== undefined && orderData.email !== '') body.billing_email = orderData.email
+    if (orderData.address_line1 !== undefined && orderData.address_line1 !== '') body.billing_address_line1 = orderData.address_line1
+    if (orderData.address_line2 !== undefined && orderData.address_line2 !== '') body.billing_address_line2 = orderData.address_line2
+    if (orderData.city !== undefined && orderData.city !== '') body.billing_city = orderData.city
+    if (orderData.state !== undefined && orderData.state !== '') body.billing_state = orderData.state
+    if (orderData.postal_code !== undefined && orderData.postal_code !== '') body.billing_postal_code = orderData.postal_code
+    if (orderData.country !== undefined && orderData.country !== '') body.billing_country = orderData.country
+    
     return this.request('/orders', {
       method: 'POST',
-      body: {
-        billing_name: billingInfo.name,
-        billing_email: billingInfo.email,
-        billing_address_line1: billingInfo.address_line1,
-        billing_address_line2: billingInfo.address_line2 || null,
-        billing_city: billingInfo.city,
-        billing_state: billingInfo.state,
-        billing_postal_code: billingInfo.postal_code,
-        billing_country: billingInfo.country,
-      }
+      body
     })
   }
 
