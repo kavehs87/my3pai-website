@@ -4,8 +4,8 @@
     <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4"></div>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-        <div class="lg:col-span-6 flex flex-col sm:flex-row gap-8 items-center sm:items-start min-w-0 overflow-hidden">
+      <div class="flex flex-col md:flex-row xl:grid xl:grid-cols-12 gap-6 md:gap-8 lg:gap-12 items-start">
+        <div class="xl:col-span-6 flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-6 lg:gap-8 items-center sm:items-start min-w-0 overflow-hidden md:flex-shrink-0 md:w-auto">
           <!-- Portrait Video -->
           <div class="w-full sm:w-[320px] shrink-0 flex-shrink-0">
             <div class="bg-white p-1 rounded-[2.5rem] shadow-xl shadow-primary/5 border border-slate-100">
@@ -63,12 +63,12 @@
             </div>
           </div>
 
-          <!-- Vertical Stats -->
-          <div class="flex flex-row sm:flex-col flex-wrap gap-4 sm:gap-8 w-full min-w-0 flex-1">
+          <!-- Vertical Stats - Only shown on screens 1200px and above -->
+          <div class="hidden xl:flex flex-col gap-8 w-full min-w-0 flex-1">
             <div
               v-for="(stat, i) in stats"
               :key="i"
-              class="bg-white p-4 rounded-2xl shadow-md border border-slate-50 flex items-center gap-8 sm:w-full hover:-translate-y-1 transition-transform flex-1 sm:flex-none min-w-0"
+              class="bg-white p-4 rounded-2xl shadow-md border border-slate-50 flex items-center gap-8 hover:-translate-y-1 transition-transform w-full min-w-0"
             >
               <div :class="['p-3 rounded-xl', stat.bg, stat.color, 'flex-shrink-0']">
                 <component :is="stat.icon" class="w-6 h-6" />
@@ -83,41 +83,60 @@
           </div>
         </div>
 
-        <div class="lg:col-span-6 flex flex-col justify-center h-full min-w-0">
-          <div class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100 w-fit mb-6">
-            <CheckCircle2 class="w-5 h-5 text-secondary" />
-            <span class="text-sm font-semibold text-primary">Verified Travel Expert</span>
+        <div class="md:flex-1 md:min-w-0 xl:col-span-6 flex flex-col justify-center h-full">
+          <div class="inline-flex items-center gap-2 bg-white px-3 md:px-4 py-1.5 md:py-2 rounded-full shadow-sm border border-slate-100 w-fit mb-4 md:mb-6">
+            <CheckCircle2 class="w-4 h-4 md:w-5 md:h-5 text-secondary" />
+            <span class="text-xs md:text-sm font-semibold text-primary">Verified Travel Expert</span>
           </div>
 
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-primary leading-tight mb-4">
+          <h1 class="text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-primary leading-tight mb-3 md:mb-4">
             {{ profile?.name || 'Creator' }}
           </h1>
-          <p v-if="profile?.tagline" class="text-xl text-secondary font-medium mb-6">{{ profile.tagline }}</p>
-          <p class="text-text-muted leading-relaxed mb-8 text-lg">
+          <p v-if="profile?.tagline" class="text-lg md:text-xl text-secondary font-medium mb-4 md:mb-6">{{ profile.tagline }}</p>
+          <p class="text-text-muted leading-relaxed mb-6 md:mb-8 text-base md:text-lg">
             {{ profile?.bio || bioText }}
           </p>
 
-          <div class="flex flex-wrap gap-4 mb-8">
+          <div class="flex flex-wrap gap-3 md:gap-4 mb-6 md:mb-8">
             <a
               v-for="(social, i) in socialLinks"
               :key="i"
               :href="social.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-sm border border-slate-100"
+              class="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-sm border border-slate-100"
             >
-              <component :is="social.icon" class="w-5 h-5" />
+              <component :is="social.icon" class="w-4 h-4 md:w-5 md:h-5" />
             </a>
           </div>
 
           <button
             v-if="showConsultation"
             @click="$emit('book-click')"
-            class="w-full bg-primary text-white py-4 rounded-2xl font-bold text-lg hover:bg-primary/90 transition-colors shadow-xl shadow-primary/20 flex items-center justify-center gap-2 group"
+            class="w-full bg-primary text-white py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-base md:text-lg hover:bg-primary/90 transition-colors shadow-xl shadow-primary/20 flex items-center justify-center gap-2 group"
           >
             Book a Consultation
             <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
+        </div>
+      </div>
+
+      <!-- Horizontal Stats Row - Only shown on screens below 1200px (xl breakpoint) -->
+      <div class="flex flex-row flex-wrap gap-3 md:gap-4 mt-6 xl:hidden">
+        <div
+          v-for="(stat, i) in stats"
+          :key="i"
+          class="bg-white p-3 md:p-3 rounded-xl shadow-md border border-slate-50 flex items-center gap-3 md:gap-4 hover:-translate-y-1 transition-transform flex-1 min-w-0"
+        >
+          <div :class="['p-2 md:p-2.5 rounded-lg', stat.bg, stat.color, 'flex-shrink-0']">
+            <component :is="stat.icon" class="w-4 h-4 md:w-4 md:h-4" />
+          </div>
+          <div class="text-left min-w-0">
+            <div class="text-lg md:text-xl font-bold text-primary leading-none">{{ stat.value }}</div>
+            <div class="text-xs text-text-muted uppercase tracking-wider font-semibold mt-1 truncate">
+              {{ stat.label }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
