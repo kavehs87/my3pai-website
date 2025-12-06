@@ -626,6 +626,7 @@ const formatPaymentStatus = (status) => {
     pending: 'Pending',
     processing: 'Processing',
     paid: 'Paid',
+    free: 'Free',
     failed: 'Failed',
     refunded: 'Refunded',
     partially_refunded: 'Partially Refunded'
@@ -650,6 +651,7 @@ const getPaymentStatusBadgeClass = (status) => {
     pending: 'bg-yellow-100 text-yellow-800',
     processing: 'bg-blue-100 text-blue-800',
     paid: 'bg-green-100 text-green-800',
+    free: 'bg-green-100 text-green-800',
     failed: 'bg-red-100 text-red-800',
     refunded: 'bg-red-100 text-red-800',
     partially_refunded: 'bg-orange-100 text-orange-800'

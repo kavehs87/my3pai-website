@@ -14,7 +14,7 @@
         <div class="flex items-center justify-between max-w-3xl mx-auto">
           <div
             v-for="(step, index) in steps"
-            :key="index"
+            :key="step.id"
             class="flex items-center flex-1"
           >
             <div class="flex flex-col items-center flex-1">
@@ -70,6 +70,12 @@
             </button>
           </div>
 
+          <!-- Free Order Message -->
+          <div v-if="isFreeOrder && cartItems.length > 0" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+            <Check class="w-5 h-5 text-green-600 flex-shrink-0" />
+            <p class="text-green-800 font-medium">🎉 This is a free order - no payment required!</p>
+          </div>
+
           <div v-else class="space-y-4 mb-6">
             <div
               v-for="item in cartItems"
@@ -87,7 +93,15 @@
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between mb-2">
                   <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-primary leading-tight mb-1">{{ getItemName(item) }}</h3>
+                    <div class="flex items-center gap-2 mb-1">
+                      <h3 class="font-bold text-primary leading-tight">{{ getItemName(item) }}</h3>
+                      <span
+                        v-if="getItemPriceInDollars(item) === 0"
+                        class="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full"
+                      >
+                        Free
+                      </span>
+                    </div>
                     <p class="text-xs text-text-light uppercase font-semibold">{{ getItemTypeLabel(item) }}</p>
                   </div>
                   <button
@@ -145,13 +159,13 @@
               @click="nextStep"
               class="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors"
             >
-              Continue to Billing
+              {{ isFreeOrder ? 'Continue to Confirm' : 'Continue to Billing' }}
             </button>
           </div>
         </div>
 
-        <!-- Step 2: Billing Information -->
-        <div v-if="currentStep === 1" class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100">
+        <!-- Step 2: Billing Information (Skip for free orders) -->
+        <div v-if="currentStep === 1 && !isFreeOrder" class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100">
           <h2 class="text-2xl font-bold text-primary mb-6">Billing Information</h2>
           
           <form @submit.prevent="nextStep" class="space-y-6">
@@ -266,8 +280,8 @@
           </form>
         </div>
 
-        <!-- Step 3: Payment Method -->
-        <div v-show="currentStep === 2" class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100">
+        <!-- Step 3: Payment Method (Skip for free orders) -->
+        <div v-show="currentStep === 2 && !isFreeOrder" class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100">
           <h2 class="text-2xl font-bold text-primary mb-6">Payment Method</h2>
           
           <div v-if="loadingPayment" class="text-center py-12">
@@ -317,9 +331,20 @@
           </div>
         </div>
 
-        <!-- Step 4: Review & Confirm -->
-        <div v-if="currentStep === 3" class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100">
+        <!-- Step 4: Review & Confirm (Step 2 for free orders) -->
+        <div v-if="(currentStep === 3 && !isFreeOrder) || (currentStep === 1 && isFreeOrder)" class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100">
           <h2 class="text-2xl font-bold text-primary mb-6">Review & Confirm</h2>
+          
+          <!-- Free Order Badge -->
+          <div v-if="isFreeOrder" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+            <div class="flex items-center gap-3">
+              <Check class="w-6 h-6 text-green-600" />
+              <div>
+                <h3 class="font-bold text-green-800 mb-1">Free Order</h3>
+                <p class="text-sm text-green-700">No payment required for this order</p>
+              </div>
+            </div>
+          </div>
           
           <!-- Order Summary -->
           <div class="mb-8">
@@ -350,8 +375,8 @@
             </div>
           </div>
 
-          <!-- Billing Information -->
-          <div class="mb-8">
+          <!-- Billing Information (Only for paid orders) -->
+          <div v-if="!isFreeOrder" class="mb-8">
             <h3 class="font-bold text-primary mb-4">Billing Information</h3>
             <div class="text-sm text-text-muted space-y-1">
               <p>{{ billingInfo.name }}</p>
@@ -360,6 +385,22 @@
               <p v-if="billingInfo.address_line2">{{ billingInfo.address_line2 }}</p>
               <p>{{ billingInfo.city }}, {{ billingInfo.state }} {{ billingInfo.postal_code }}</p>
               <p>{{ billingInfo.country }}</p>
+            </div>
+          </div>
+          
+          <!-- Payment Method (Only for paid orders) -->
+          <div v-if="!isFreeOrder && paymentIntent" class="mb-8">
+            <h3 class="font-bold text-primary mb-4">Payment Method</h3>
+            <div class="text-sm text-text-muted">
+              <p>Card ending in •••• (entered in payment step)</p>
+            </div>
+          </div>
+          
+          <!-- Free Order Payment Info -->
+          <div v-if="isFreeOrder" class="mb-8">
+            <h3 class="font-bold text-primary mb-4">Payment Information</h3>
+            <div class="text-sm text-text-muted">
+              <p class="text-green-600 font-semibold">Free - No payment required</p>
             </div>
           </div>
 
@@ -392,11 +433,11 @@
               Back
             </button>
             <button
-              @click="completePurchase"
+              @click="isFreeOrder ? handleFreeOrder() : completePurchase()"
               :disabled="!agreeToTerms || processingOrder"
               class="flex-1 bg-secondary text-white py-3 rounded-xl font-semibold hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ processingOrder ? 'Processing...' : 'Complete Purchase' }}
+              {{ processingOrder ? 'Processing...' : (isFreeOrder ? 'Complete Free Order' : 'Complete Purchase') }}
             </button>
           </div>
         </div>
@@ -415,12 +456,12 @@ import toast from '@/utils/toast.js'
 
 const emit = defineEmits(['back', 'order-complete'])
 
-// Steps
-const steps = [
-  { label: 'Cart Review' },
-  { label: 'Billing' },
-  { label: 'Payment' },
-  { label: 'Review' }
+// Steps - will be filtered based on free order
+const allSteps = [
+  { label: 'Cart Review', id: 'cart' },
+  { label: 'Billing', id: 'billing' },
+  { label: 'Payment', id: 'payment' },
+  { label: 'Review', id: 'review' }
 ]
 
 const currentStep = ref(0)
@@ -477,6 +518,27 @@ const tax = computed(() => {
 
 const total = computed(() => {
   return subtotal.value + tax.value
+})
+
+// Free order detection
+const cartTotal = computed(() => {
+  return total.value
+})
+
+const isFreeOrder = computed(() => {
+  return cartTotal.value === 0
+})
+
+// Filtered steps based on free order
+const steps = computed(() => {
+  if (isFreeOrder.value) {
+    // For free orders: only show Cart Review and Review
+    return [
+      { label: 'Cart Review', id: 'cart' },
+      { label: 'Confirm Order', id: 'review' }
+    ]
+  }
+  return allSteps
 })
 
 // Methods
@@ -606,18 +668,26 @@ const handleRemoveItem = async (itemId) => {
 }
 
 const nextStep = async () => {
-  if (currentStep.value < steps.length - 1) {
-    currentStep.value++
-    
-    // Wait for Vue to render the new step before initializing Stripe
-    await nextTick()
-    
-    // Initialize Stripe when moving to payment step (step 2)
-    // Only initialize if not already initialized and not currently loading
-    if (currentStep.value === 2 && !paymentIntent.value && !loadingPayment.value) {
-      // Small delay to ensure the DOM element is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 100))
-      initializeStripe()
+  if (isFreeOrder.value) {
+    // For free orders: Step 0 (Cart) → Step 1 (Review)
+    if (currentStep.value === 0) {
+      currentStep.value = 1 // Skip directly to Review
+    }
+  } else {
+    // For paid orders: normal flow
+    if (currentStep.value < allSteps.length - 1) {
+      currentStep.value++
+      
+      // Wait for Vue to render the new step before initializing Stripe
+      await nextTick()
+      
+      // Initialize Stripe when moving to payment step (step 2)
+      // Only initialize if not already initialized and not currently loading
+      if (currentStep.value === 2 && !paymentIntent.value && !loadingPayment.value) {
+        // Small delay to ensure the DOM element is fully rendered
+        await new Promise(resolve => setTimeout(resolve, 100))
+        initializeStripe()
+      }
     }
   }
 }
@@ -625,6 +695,53 @@ const nextStep = async () => {
 const prevStep = () => {
   if (currentStep.value > 0) {
     currentStep.value--
+  }
+}
+
+// Free order handler
+const handleFreeOrder = async () => {
+  if (!agreeToTerms.value) {
+    errorMessage.value = 'Please agree to the terms and conditions'
+    return
+  }
+  
+  processingOrder.value = true
+  errorMessage.value = null
+  
+  try {
+    // For free orders, billing info is optional - use minimal data
+    const orderData = {
+      // Only include email if available, other fields optional
+      email: billingInfo.value.email || undefined,
+      name: billingInfo.value.name || undefined,
+    }
+    
+    const result = await apiService.createOrderFromCart(orderData)
+    
+    if (result.success) {
+      // Emit order complete event
+      const orderData = result.data?.data || result.data
+      const orderIdValue = orderData.id || orderData.order_id
+      
+      // Use is_free flag from backend response if available, otherwise default to true for free orders
+      const isFree = orderData.is_free !== undefined ? orderData.is_free : true
+      
+      toast.success('Your free order has been confirmed!')
+      
+      emit('order-complete', {
+        orderId: orderIdValue,
+        order: orderData,
+        isFree: isFree
+      })
+    } else {
+      throw new Error(result.error || 'Failed to create order')
+    }
+  } catch (error) {
+    console.error('Error creating free order:', error)
+    errorMessage.value = error.message || 'Failed to complete free order. Please try again.'
+    toast.error(error.message || 'Failed to complete free order')
+  } finally {
+    processingOrder.value = false
   }
 }
 
@@ -868,7 +985,8 @@ const completePurchase = async () => {
 
 // Watch for step changes to initialize Stripe when moving to payment step
 watch(currentStep, (newStep) => {
-  if (newStep === 2 && !paymentIntent.value && !loadingPayment.value) {
+  // Only initialize Stripe for paid orders
+  if (!isFreeOrder.value && newStep === 2 && !paymentIntent.value && !loadingPayment.value) {
     // Step 2 is the payment step - initialize Stripe if not already done
     initializeStripe()
   }

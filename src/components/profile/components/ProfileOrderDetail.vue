@@ -180,7 +180,11 @@
           <div class="flex justify-between items-start">
             <div class="space-y-1">
               <p class="text-sm text-text-muted">
-                <strong class="text-primary">Payment Method:</strong> {{ payment.payment_method || 'Credit Card' }}
+                <strong class="text-primary">Payment Method:</strong> 
+                <span v-if="payment.payment_method === 'free'" class="text-green-600 font-semibold">
+                  Free - No payment required
+                </span>
+                <span v-else>{{ payment.payment_method || 'Credit Card' }}</span>
               </p>
               <p class="text-sm text-text-muted">
                 <strong class="text-primary">Status:</strong>
@@ -193,7 +197,7 @@
                   {{ formatPaymentStatus(payment.status) }}
                 </span>
               </p>
-              <p v-if="payment.stripe_payment_intent_id" class="text-sm text-text-muted">
+              <p v-if="payment.stripe_payment_intent_id && payment.payment_method !== 'free'" class="text-sm text-text-muted">
                 <strong class="text-primary">Transaction ID:</strong> {{ payment.stripe_payment_intent_id }}
               </p>
               <p v-if="payment.processed_at" class="text-sm text-text-muted">
@@ -767,6 +771,7 @@ const formatPaymentStatus = (status) => {
     pending: 'Pending',
     processing: 'Processing',
     paid: 'Paid',
+    free: 'Free',
     failed: 'Failed',
     refunded: 'Refunded',
     partially_refunded: 'Partially Refunded'
@@ -791,6 +796,7 @@ const getPaymentStatusBadgeClass = (status) => {
     pending: 'bg-yellow-100 text-yellow-800',
     processing: 'bg-blue-100 text-blue-800',
     paid: 'bg-green-100 text-green-800',
+    free: 'bg-green-100 text-green-800',
     failed: 'bg-red-100 text-red-800',
     refunded: 'bg-red-100 text-red-800',
     partially_refunded: 'bg-orange-100 text-orange-800'

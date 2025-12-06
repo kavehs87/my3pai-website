@@ -265,6 +265,14 @@ const addToCart = async (item) => {
       itemData.metadata = item.metadata
     }
 
+    // Log the request for debugging
+    console.log('Adding to cart:', {
+      itemData,
+      itemPrice: item.price,
+      itemIsForSale: item.isForSale,
+      itemType: item.type
+    })
+
     const response = await apiService.addCartItem(itemData)
     
     if (response.success) {
@@ -275,11 +283,36 @@ const addToCart = async (item) => {
         cartCount.value = response.data.items.length
       }
     } else {
-      toast.error(response.error || 'Failed to add item to cart')
+      // Provide more specific error messages
+      const errorMsg = response.error || response.data?.error || response.data?.message || 'Failed to add item to cart'
+      
+      // Check for specific backend validation errors
+      if (errorMsg.includes('not available for purchase') || errorMsg.includes('not for sale')) {
+        // Special message for free maps
+        if (item.price === 0 || item.price === '0') {
+          toast.error('Free maps must be marked as "for sale" in the creator settings. Please contact the creator.')
+        } else {
+          toast.error('This item is not available for purchase. The creator may need to enable it for sale.')
+        }
+      } else {
+        toast.error(errorMsg)
+      }
     }
   } catch (error) {
     console.error('Error adding to cart:', error)
-    toast.error('Failed to add item to cart. Please try again.')
+    const errorMessage = error.message || error.error || 'Failed to add item to cart. Please try again.'
+    
+    // Check for specific backend validation errors
+    if (errorMessage.includes('not available for purchase') || errorMessage.includes('not for sale')) {
+      // Special message for free maps
+      if (item.price === 0 || item.price === '0') {
+        toast.error('Free maps must be marked as "for sale" in the creator settings. Please contact the creator.')
+      } else {
+        toast.error('This item is not available for purchase. The creator may need to enable it for sale.')
+      }
+    } else {
+      toast.error(errorMessage)
+    }
   }
 }
 
@@ -321,9 +354,18 @@ const handleBookSuccess = () => {
 }
 
 const handleOrderComplete = (orderData) => {
+  // Check if this is a free order
+  const isFreeOrder = orderData.isFree || false
+  
+  // Show appropriate success message
+  if (isFreeOrder) {
+    toast.success(`Your free order #${orderData.orderId} has been confirmed!`)
+  } else {
+    toast.success(`Order #${orderData.orderId} completed successfully!`)
+  }
+  
   // Navigate to success page or order details
   // For now, show success message and go back to home
-  toast.success(`Order #${orderData.orderId} completed successfully!`)
   currentView.value = 'home'
   // Refresh cart count
   fetchCartCount()

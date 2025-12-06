@@ -343,7 +343,8 @@ const fetchMaps = async () => {
             poiCount: map.poiCount || 0,
             price: map.price || 0, // Maps may not have price, default to 0
             slug: map.slug,
-            title: map.title
+            title: map.title,
+            isForSale: map.isForSale ?? map.is_for_sale ?? false // Include sale status
           }
         })
     } else {

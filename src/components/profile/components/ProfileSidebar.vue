@@ -56,6 +56,19 @@
       </div>
 
       <div class="nav-section">
+        <span class="nav-section-title">Billing & Finance</span>
+        <button
+          v-for="tab in billingTabs"
+          :key="tab.id"
+          :class="['nav-item', { active: activeTab === tab.id }]"
+          @click="$emit('tab-change', tab.id)"
+        >
+          <i :class="tab.icon"></i>
+          <span class="nav-label">{{ tab.label }}</span>
+        </button>
+      </div>
+
+      <div class="nav-section">
         <span class="nav-section-title">Account</span>
         <button
           v-for="tab in accountTabs"
@@ -105,8 +118,11 @@ export default {
     creatorTabs() {
       return this.tabs.filter(t => ['blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'creator'].includes(t.id))
     },
+    billingTabs() {
+      return this.tabs.filter(t => ['orders', 'invoices', 'earnings'].includes(t.id))
+    },
     accountTabs() {
-      return this.tabs.filter(t => ['orders', 'invoices', 'settings'].includes(t.id))
+      return this.tabs.filter(t => ['settings'].includes(t.id))
     }
   },
   mounted() {

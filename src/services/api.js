@@ -1753,6 +1753,32 @@ class ApiService {
       method: 'POST'
     })
   }
+
+  /**
+   * Get influencer payouts
+   * @param {Object} params - { page, per_page, status, from_date, to_date }
+   */
+  async getInfluencerPayouts(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencer/payouts${queryString}`)
+  }
+
+  /**
+   * Get influencer earnings summary statistics
+   * @param {Object} params - { from_date, to_date, period }
+   */
+  async getInfluencerEarningsSummary(params = {}) {
+    const queryString = this.buildQueryString(params)
+    return this.request(`/influencer/earnings/summary${queryString}`)
+  }
+
+  /**
+   * Get single payout details
+   * @param {Number} payoutId - Payout ID
+   */
+  async getPayout(payoutId) {
+    return this.request(`/influencer/payouts/${payoutId}`)
+  }
 }
 
 // Create singleton instance

@@ -175,6 +175,12 @@
               @view-order="handleViewOrder"
             />
             
+            <EarningsView
+              v-if="activeTab === 'earnings'"
+              :currency="profileData.user?.currency || 'USD'"
+              @view-payout="handleViewPayout"
+            />
+            
             <ProfileSettings
               ref="profileSettings"
               v-if="activeTab === 'settings'"
@@ -352,6 +358,7 @@ import ProfileOrders from './components/ProfileOrders.vue'
 import ProfileOrderDetail from './components/ProfileOrderDetail.vue'
 import ProfileInvoices from './components/ProfileInvoices.vue'
 import ProfileInvoiceDetail from './components/ProfileInvoiceDetail.vue'
+import EarningsView from '../../themes/dark-blue/views/EarningsView.vue'
 import apiService from '../../services/api.js'
 import toast from '../../utils/toast.js'
 import eventBus from '../../utils/eventBus.js'
@@ -376,7 +383,8 @@ export default {
     ProfileOrders,
     ProfileOrderDetail,
     ProfileInvoices,
-    ProfileInvoiceDetail
+    ProfileInvoiceDetail,
+    EarningsView
   },
   data() {
     return {
@@ -404,6 +412,7 @@ export default {
         { id: 'creator', label: 'Creator Profile', icon: 'fas fa-id-card', count: null },
         { id: 'orders', label: 'My Orders', icon: 'fas fa-shopping-bag', count: null },
         { id: 'invoices', label: 'My Invoices', icon: 'fas fa-file-invoice-dollar', count: null },
+        { id: 'earnings', label: 'Earnings', icon: 'fas fa-dollar-sign', count: null },
         { id: 'settings', label: 'Settings', icon: 'fas fa-cog', count: null }
       ],
       tabDescriptions: {
@@ -419,6 +428,7 @@ export default {
         'creator': 'Customize your public creator profile',
         'orders': 'View and manage your purchase orders',
         'invoices': 'View your paid and received invoices',
+        'earnings': 'View your earnings and payout history',
         'invoice-detail': 'View invoice details',
         'settings': 'Manage your account preferences and security'
       },
@@ -475,7 +485,7 @@ export default {
     '$route.query.tab': {
       immediate: true,
       handler(tab) {
-        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'orders', 'invoices', 'order-detail', 'invoice-detail', 'settings'].includes(tab)) {
+        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'orders', 'invoices', 'earnings', 'order-detail', 'invoice-detail', 'settings'].includes(tab)) {
           this.activeTab = tab
           // If viewing order detail, get order ID from query
           if (tab === 'order-detail' && this.$route.query.orderId) {
@@ -647,6 +657,11 @@ export default {
       this.selectedInvoiceId = null
       this.activeTab = 'invoices'
       this.$router.replace({ query: { ...this.$route.query, tab: 'invoices' } })
+    },
+    handleViewPayout(payoutId) {
+      // TODO: Implement payout detail view if needed
+      console.log('View payout:', payoutId)
+      toast.info('Payout detail view coming soon')
     },
     handleEditProfile() {
       this.activeTab = 'settings'

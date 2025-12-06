@@ -58,7 +58,15 @@
           </div>
           <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
             <div>
-              <h3 class="font-bold text-primary leading-tight line-clamp-2">{{ getItemName(item) }}</h3>
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="font-bold text-primary leading-tight line-clamp-2">{{ getItemName(item) }}</h3>
+                <span
+                  v-if="getItemPriceInDollars(item) === 0"
+                  class="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full flex-shrink-0"
+                >
+                  Free
+                </span>
+              </div>
               <div class="flex items-center gap-2 mt-1">
                 <span class="text-xs text-text-light uppercase font-semibold">{{ getItemTypeLabel(item) }}</span>
                 <span
@@ -122,7 +130,10 @@
           <span class="text-text-muted font-medium">Subtotal</span>
           <PriceDisplay :amount="subtotal" class="text-2xl font-bold text-primary" />
         </div>
-        <p class="text-xs text-text-light text-center">Taxes and shipping calculated at checkout</p>
+        <p v-if="subtotal > 0" class="text-xs text-text-light text-center">Taxes and shipping calculated at checkout</p>
+        <div v-if="subtotal === 0" class="p-3 bg-green-50 border border-green-200 rounded-xl mb-2">
+          <p class="text-xs text-green-800 font-medium text-center">🎉 This cart contains only free items - checkout will be quick!</p>
+        </div>
         <button
           @click="$emit('checkout')"
           class="w-full bg-primary text-white py-4 rounded-2xl font-bold text-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2 group"
