@@ -4,6 +4,9 @@
     <Navigation
       :cart-count="cartCount"
       :current-view="currentView"
+      :logo="finalProfile?.logo"
+      :first-name="finalProfile?.firstName"
+      :last-name="finalProfile?.lastName"
       @menu-click="mobileMenuOpen = true"
       @navigate="handleNavigate"
       @cart-click="isCartOpen = true"

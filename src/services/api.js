@@ -963,6 +963,27 @@ class ApiService {
     })
   }
 
+  /**
+   * Upload influencer logo
+   */
+  async uploadInfluencerLogo(file) {
+    const formData = new FormData()
+    formData.append('logo', file)
+    return this.request('/influencer/logo', {
+      method: 'POST',
+      body: formData
+    })
+  }
+
+  /**
+   * Delete influencer logo
+   */
+  async deleteInfluencerLogo() {
+    return this.request('/influencer/logo', {
+      method: 'DELETE'
+    })
+  }
+
   // ========================================
   // Stripe Connect API Methods
   // ========================================

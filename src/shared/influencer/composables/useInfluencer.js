@@ -87,6 +87,7 @@ export function useInfluencer() {
       bio: data.bio || '',
       image: data.avatar || null,
       coverImage: data.coverImage || null,
+      logo: data.logo || null,
       verified: data.verified || false,
       stats: {
         rating: data.stats?.rating || null,

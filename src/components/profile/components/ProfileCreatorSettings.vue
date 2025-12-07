@@ -99,6 +99,63 @@
         />
       </div>
 
+      <!-- Logo Section -->
+      <div class="settings-section logo-section">
+        <div class="section-header">
+          <h2><i class="fas fa-image"></i> Logo</h2>
+        </div>
+        
+        <p class="section-description">
+          Upload your logo to display in the navigation/header section of your public profile page. Recommended square aspect ratio (1:1) for best display.
+        </p>
+        
+        <div v-if="logo.loading" class="loading-state">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+        
+        <div v-else-if="logo.url" class="logo-preview">
+          <div class="logo-container">
+            <img :src="logo.url" alt="Logo" class="preview-logo" />
+          </div>
+          <div class="logo-actions">
+            <button class="action-btn replace" @click="triggerLogoUpload">
+              <i class="fas fa-sync-alt"></i> Replace
+            </button>
+            <button class="action-btn delete" @click="deleteLogo" :disabled="logo.deleting">
+              <i :class="logo.deleting ? 'fas fa-spinner fa-spin' : 'fas fa-trash'"></i>
+              {{ logo.deleting ? 'Deleting...' : 'Remove' }}
+            </button>
+          </div>
+        </div>
+        
+        <div v-else class="upload-area" @click="triggerLogoUpload" @dragover.prevent="onLogoDragOver" @dragleave="onLogoDragLeave" @drop.prevent="onLogoDrop" :class="{ 'drag-over': isLogoDragging }">
+          <div class="upload-content">
+            <div class="upload-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h3>Upload Logo</h3>
+            <p>Drag and drop or click to upload</p>
+            <span class="upload-hint">JPEG, PNG, WebP or SVG • Max 2MB • Recommended 1:1 aspect ratio</span>
+          </div>
+        </div>
+        
+        <!-- Hidden file input -->
+        <input
+          ref="logoInputRef"
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml"
+          class="file-input-hidden"
+          @change="handleLogoSelect"
+        />
+        
+        <div v-if="logo.uploading" class="upload-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: logo.progress + '%' }"></div>
+          </div>
+          <span class="progress-text">Uploading... {{ logo.progress }}%</span>
+        </div>
+      </div>
+
       <!-- Profile Theme Selector -->
       <ProfileThemeSelector
         :current-theme="profileTheme"
@@ -510,7 +567,15 @@ export default {
         file: null,
         uploading: false
       },
+      logo: {
+        url: null,
+        loading: false,
+        uploading: false,
+        deleting: false,
+        progress: 0
+      },
       isDragging: false,
+      isLogoDragging: false,
       loading: {
         socials: false,
         languages: false,
@@ -613,6 +678,7 @@ export default {
     async loadAllData() {
       await Promise.all([
         this.loadIntroVideo(),
+        this.loadLogo(),
         this.loadSocials(),
         this.loadLanguages(),
         this.loadSkills(),
@@ -864,6 +930,133 @@ export default {
         toast.error('Failed to upload intro picture. Please try again.')
       } finally {
         this.introPicture.uploading = false
+      }
+    },
+    
+    // Logo Upload
+    async loadLogo() {
+      this.logo.loading = true
+      try {
+        // Try to get logo from profile data
+        const profileResult = await api.getProfile()
+        if (profileResult.success) {
+          const user = profileResult.data?.data?.user || profileResult.data?.user || profileResult.data?.data || {}
+          this.logo.url = user.logo || null
+        }
+        
+        // Also try influencer profile endpoint if we have username
+        if (!this.logo.url && this.profileUsername) {
+          try {
+            const influencerResult = await api.getInfluencerProfile(this.profileUsername)
+            if (influencerResult.success) {
+              const influencer = influencerResult.data?.data || influencerResult.data || {}
+              this.logo.url = influencer.logo || null
+            }
+          } catch (e) {
+            // Silently continue
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load logo:', err)
+      } finally {
+        this.logo.loading = false
+      }
+    },
+    
+    triggerLogoUpload() {
+      this.$refs.logoInputRef?.click()
+    },
+    
+    async handleLogoSelect(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file')
+        return
+      }
+      
+      // Validate file size (2MB max)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Logo file size must be less than 2MB')
+        return
+      }
+      
+      await this.uploadLogo(file)
+      // Reset input so the same file can be selected again
+      event.target.value = ''
+    },
+    
+    async uploadLogo(file) {
+      this.logo.uploading = true
+      this.logo.progress = 0
+      
+      try {
+        // Simulate progress for better UX
+        const progressInterval = setInterval(() => {
+          if (this.logo.progress < 90) {
+            this.logo.progress += 10
+          }
+        }, 200)
+        
+        const result = await api.uploadInfluencerLogo(file)
+        
+        clearInterval(progressInterval)
+        this.logo.progress = 100
+        
+        if (result.success) {
+          const data = result.data?.data || result.data || {}
+          this.logo.url = data.logo || null
+          toast.success('Logo uploaded successfully!')
+          
+          // Reload logo to get updated URL
+          await this.loadLogo()
+        } else {
+          toast.error(result.error || 'Failed to upload logo')
+        }
+      } catch (err) {
+        console.error('Error uploading logo:', err)
+        toast.error('Failed to upload logo. Please try again.')
+      } finally {
+        this.logo.uploading = false
+        this.logo.progress = 0
+      }
+    },
+    
+    async deleteLogo() {
+      if (!confirm('Remove your logo?')) return
+      
+      this.logo.deleting = true
+      try {
+        const result = await api.deleteInfluencerLogo()
+        if (result.success) {
+          this.logo.url = null
+          toast.success('Logo removed')
+        } else {
+          toast.error(result.error || 'Failed to remove logo')
+        }
+      } catch (err) {
+        toast.error(err.message || 'Failed to remove logo')
+      } finally {
+        this.logo.deleting = false
+      }
+    },
+    
+    onLogoDragOver(e) {
+      e.preventDefault()
+      this.isLogoDragging = true
+    },
+    
+    onLogoDragLeave() {
+      this.isLogoDragging = false
+    },
+    
+    onLogoDrop(e) {
+      this.isLogoDragging = false
+      const file = e.dataTransfer?.files?.[0]
+      if (file && file.type.startsWith('image/')) {
+        this.uploadLogo(file)
       }
     },
     
@@ -1581,6 +1774,44 @@ export default {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
   margin-bottom: var(--spacing-lg);
+}
+
+/* Logo Section */
+.logo-section .section-description {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.logo-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.logo-container {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--border-light);
+  padding: var(--spacing-md);
+  max-width: 200px;
+  width: 100%;
+}
+
+.preview-logo {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  max-height: 200px;
+}
+
+.logo-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
 }
 
 .video-preview {

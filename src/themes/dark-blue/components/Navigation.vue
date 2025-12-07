@@ -10,12 +10,25 @@
         class="flex items-center gap-2 cursor-pointer"
         @click="$emit('navigate', 'home')"
       >
-        <div class="w-10 h-10 bg-gradient-to-br from-secondary to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-secondary/20">
-          M
+        <div v-if="logo" class="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-lg">
+          <img :src="logo" alt="Logo" class="w-full h-full object-contain" />
         </div>
-        <span :class="['font-bold text-xl tracking-tight', isNavScrolled ? 'text-white' : 'text-primary']">
-          my<span class="text-secondary">3pai</span>
-        </span>
+        <div v-else-if="influencerName" class="flex items-center gap-2">
+          <div class="w-10 h-10 bg-gradient-to-br from-secondary to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-secondary/20">
+            {{ nameInitials }}
+          </div>
+          <span :class="['font-bold text-xl tracking-tight', isNavScrolled ? 'text-white' : 'text-primary']">
+            {{ influencerName }}
+          </span>
+        </div>
+        <div v-else class="flex items-center gap-2">
+          <div class="w-10 h-10 bg-gradient-to-br from-secondary to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-secondary/20">
+            M
+          </div>
+          <span :class="['font-bold text-xl tracking-tight', isNavScrolled ? 'text-white' : 'text-primary']">
+            my<span class="text-secondary">3pai</span>
+          </span>
+        </div>
       </div>
 
       <div class="hidden md:flex items-center gap-8">
@@ -144,6 +157,18 @@ const props = defineProps({
     type: String,
     default: 'home',
   },
+  logo: {
+    type: String,
+    default: null,
+  },
+  firstName: {
+    type: String,
+    default: null,
+  },
+  lastName: {
+    type: String,
+    default: null,
+  },
 })
 
 const emit = defineEmits(['menu-click', 'navigate', 'cart-click', 'show-login', 'show-signup'])
@@ -231,6 +256,24 @@ const navItems = ['Profile', 'Courses', 'Maps', 'Blog', 'Assets']
 
 const isHome = computed(() => props.currentView === 'home')
 const isNavScrolled = computed(() => scrolled.value || !isHome.value)
+
+const influencerName = computed(() => {
+  if (props.firstName || props.lastName) {
+    return `${props.firstName || ''} ${props.lastName || ''}`.trim()
+  }
+  return null
+})
+
+const nameInitials = computed(() => {
+  if (!influencerName.value) return 'M'
+  const parts = influencerName.value.split(' ').filter(Boolean)
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+  } else if (parts.length === 1) {
+    return parts[0][0].toUpperCase()
+  }
+  return 'M'
+})
 
 const handleScroll = () => {
   scrolled.value = window.scrollY > 50
