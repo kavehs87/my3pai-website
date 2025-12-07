@@ -587,16 +587,81 @@ export default {
 
 @media (max-width: 768px) {
   .tool-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-md);
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
+  }
+
+  .tool-order-controls {
+    flex-shrink: 0;
+  }
+
+  .order-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .tool-info {
+    flex: 1;
+    min-width: 0;
+    gap: var(--spacing-xs);
+  }
+
+  .tool-icon {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-sm);
+    flex-shrink: 0;
+  }
+
+  .tool-details {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .tool-details h3 {
+    font-size: var(--font-size-sm);
+    line-height: 1.2;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tool-details p {
+    display: none;
   }
 
   .tool-toggle {
-    width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    flex-shrink: 0;
+    gap: var(--spacing-xs);
+  }
+
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+  }
+
+  .toggle-slider {
+    border-radius: 24px;
+  }
+
+  .toggle-slider:before {
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+  }
+
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+  }
+
+  .toggle-status {
+    font-size: 10px;
+    display: none;
   }
 }
 </style>
