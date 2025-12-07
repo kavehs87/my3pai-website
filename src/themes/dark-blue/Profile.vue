@@ -231,6 +231,7 @@ const visibilitySettings = ref({
   social: true,
   'social-links': true,
   creator: true,
+  order: ['masterclass', 'maps', 'blog', 'podcast', 'media-assets', 'consultation', 'social', 'social-links', 'creator'],
 })
 
 // Watch for profile changes to extract visibility settings
@@ -247,6 +248,7 @@ watch(finalProfile, (newProfile) => {
       social: settings.social ?? true,
       'social-links': settings['social-links'] ?? true,
       creator: settings.creator ?? true,
+      order: settings.order || ['masterclass', 'maps', 'blog', 'podcast', 'media-assets', 'consultation', 'social', 'social-links', 'creator'],
     }
     console.log('[Profile] Visibility settings updated:', visibilitySettings.value)
   } else {

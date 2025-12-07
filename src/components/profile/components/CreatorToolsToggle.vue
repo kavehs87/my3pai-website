@@ -5,17 +5,44 @@
       <p class="section-description">Enable or disable features on your public profile page.</p>
     </div>
 
+    <div class="theme-notice">
+      <i class="fas fa-info-circle"></i>
+      <p>
+        <strong>Note:</strong> Visibility and ordering settings apply universally across all themes. However, some themes may have unique layouts or design requirements that could affect how sections are displayed or ordered on your public profile page. Please preview your public profile to see how your theme interprets these settings.
+      </p>
+    </div>
+
     <div v-if="loading" class="loading-state">
       <i class="fas fa-spinner fa-spin"></i> Loading settings...
     </div>
 
     <div v-else class="tools-list">
       <div
-        v-for="tool in tools"
+        v-for="(tool, index) in tools"
         :key="tool.id"
         class="tool-item"
         :class="{ disabled: !tool.enabled }"
       >
+        <div class="tool-order-controls">
+          <button
+            type="button"
+            class="order-btn"
+            :disabled="index === 0 || saving || reordering"
+            @click="moveUp(index)"
+            title="Move up"
+          >
+            <i class="fas fa-chevron-up"></i>
+          </button>
+          <button
+            type="button"
+            class="order-btn"
+            :disabled="index === tools.length - 1 || saving || reordering"
+            @click="moveDown(index)"
+            title="Move down"
+          >
+            <i class="fas fa-chevron-down"></i>
+          </button>
+        </div>
         <div class="tool-info">
           <div class="tool-icon" :class="tool.id === 'media-assets' ? 'tool-icon-media-assets' : tool.id === 'social-links' ? 'tool-icon-social-links' : tool.id">
             <i :class="tool.icon"></i>
@@ -31,7 +58,7 @@
               type="checkbox"
               :checked="tool.enabled"
               @change="toggleTool(tool.id, $event.target.checked)"
-              :disabled="saving"
+              :disabled="saving || reordering"
             />
             <span class="toggle-slider"></span>
           </label>
@@ -59,8 +86,10 @@ export default {
     return {
       loading: false,
       saving: false,
+      reordering: false,
       error: null,
-      tools: [
+      defaultOrder: ['masterclass', 'maps', 'blog', 'podcast', 'media-assets', 'consultation', 'social', 'social-links', 'creator'],
+      defaultTools: [
         {
           id: 'blog',
           label: 'Blog',
@@ -124,10 +153,13 @@ export default {
           icon: 'fas fa-id-card',
           enabled: true
         }
-      ]
+      ],
+      tools: []
     }
   },
   mounted() {
+    // Initialize tools with default order
+    this.tools = [...this.defaultTools]
     this.loadSettings()
   },
   methods: {
@@ -138,20 +170,47 @@ export default {
         const result = await apiService.getCreatorToolsVisibility()
         if (result.success) {
           const settings = result.data?.data || result.data || {}
-          // Update each tool's enabled state from API response
-          // API uses 'media-assets' with hyphen (as per OpenAPI spec)
-          this.tools = this.tools.map(tool => ({
-            ...tool,
-            enabled: settings[tool.id] ?? true // Default to true if not set
-          }))
+          // Get order from settings or use default
+          const order = settings.order || this.defaultOrder
+          
+          // Create a map of tool data by ID
+          const toolsMap = {}
+          this.defaultTools.forEach(tool => {
+            toolsMap[tool.id] = {
+              ...tool,
+              enabled: settings[tool.id] ?? true // Default to true if not set
+            }
+          })
+          
+          // Reorder tools based on saved order or default order
+          const orderedTools = []
+          order.forEach(toolId => {
+            if (toolsMap[toolId]) {
+              orderedTools.push(toolsMap[toolId])
+            }
+          })
+          
+          // Add any tools not in the order array (for backward compatibility)
+          this.defaultTools.forEach(tool => {
+            if (!order.includes(tool.id)) {
+              orderedTools.push({
+                ...tool,
+                enabled: settings[tool.id] ?? true
+              })
+            }
+          })
+          
+          this.tools = orderedTools
         } else {
           // If endpoint doesn't exist yet, use defaults (all enabled)
           console.log('Creator tools visibility endpoint not available, using defaults')
+          this.tools = [...this.defaultTools]
         }
       } catch (err) {
         console.error('Failed to load creator tools visibility:', err)
         // Don't show error to user if endpoint doesn't exist yet
         // Just use defaults (all enabled)
+        this.tools = [...this.defaultTools]
       } finally {
         this.loading = false
       }
@@ -197,6 +256,62 @@ export default {
       } finally {
         this.saving = false
       }
+    },
+    moveUp(index) {
+      if (index === 0 || this.reordering) return
+      
+      // Swap with previous item
+      const newTools = [...this.tools]
+      const temp = newTools[index]
+      newTools[index] = newTools[index - 1]
+      newTools[index - 1] = temp
+      
+      this.tools = newTools
+      this.saveOrder()
+    },
+    moveDown(index) {
+      if (index === this.tools.length - 1 || this.reordering) return
+      
+      // Swap with next item
+      const newTools = [...this.tools]
+      const temp = newTools[index]
+      newTools[index] = newTools[index + 1]
+      newTools[index + 1] = temp
+      
+      this.tools = newTools
+      this.saveOrder()
+    },
+    async saveOrder() {
+      this.reordering = true
+      this.error = null
+      
+      try {
+        // Get current order as array of tool IDs
+        const order = this.tools.map(tool => tool.id)
+        
+        const result = await apiService.updateCreatorToolsVisibility({
+          order: order
+        })
+        
+        if (result.success) {
+          // Emit event so other components can update
+          eventBus.emit('creator-tools-order-changed', {
+            order: order
+          })
+        } else {
+          this.error = result.error || 'Failed to save order'
+          toast.error(this.error)
+          // Reload settings to revert order
+          await this.loadSettings()
+        }
+      } catch (err) {
+        this.error = err.message || 'Failed to save order'
+        toast.error(this.error)
+        // Reload settings to revert order
+        await this.loadSettings()
+      } finally {
+        this.reordering = false
+      }
     }
   }
 }
@@ -238,6 +353,37 @@ export default {
   text-align: left;
 }
 
+.theme-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.theme-notice i {
+  color: var(--primary-color, #3b82f6);
+  font-size: var(--font-size-base);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.theme-notice p {
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.theme-notice p strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 .loading-state {
   text-align: center;
   padding: var(--spacing-3xl);
@@ -254,6 +400,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--spacing-md);
   padding: var(--spacing-lg);
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
@@ -268,6 +415,43 @@ export default {
 
 .tool-item.disabled {
   opacity: 0.6;
+}
+
+.tool-order-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.order-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  padding: 0;
+}
+
+.order-btn:hover:not(:disabled) {
+  background: var(--secondary-color);
+  color: white;
+  border-color: var(--secondary-color);
+}
+
+.order-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.order-btn i {
+  font-size: var(--font-size-sm);
 }
 
 .tool-info {
