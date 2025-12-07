@@ -177,8 +177,8 @@ export default {
           const toolsMap = {}
           this.defaultTools.forEach(tool => {
             toolsMap[tool.id] = {
-              ...tool,
-              enabled: settings[tool.id] ?? true // Default to true if not set
+            ...tool,
+            enabled: settings[tool.id] ?? true // Default to true if not set
             }
           })
           

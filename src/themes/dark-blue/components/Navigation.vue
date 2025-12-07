@@ -22,12 +22,12 @@
           </span>
         </div>
         <div v-else class="flex items-center gap-2">
-          <div class="w-10 h-10 bg-gradient-to-br from-secondary to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-secondary/20">
-            M
-          </div>
-          <span :class="['font-bold text-xl tracking-tight', isNavScrolled ? 'text-white' : 'text-primary']">
-            my<span class="text-secondary">3pai</span>
-          </span>
+        <div class="w-10 h-10 bg-gradient-to-br from-secondary to-teal-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-secondary/20">
+          M
+        </div>
+        <span :class="['font-bold text-xl tracking-tight', isNavScrolled ? 'text-white' : 'text-primary']">
+          my<span class="text-secondary">3pai</span>
+        </span>
         </div>
       </div>
 
