@@ -68,7 +68,8 @@
                 <span v-if="asset.downloadCount !== undefined">
                   <i class="fas fa-download"></i> {{ asset.downloadCount }}
                 </span>
-                <span v-if="asset.fileFormat" class="format">{{ asset.fileFormat.toUpperCase() }}</span>
+                <span v-if="asset.fileName" class="format">{{ asset.fileName }}</span>
+                <span v-else-if="asset.fileFormat" class="format">{{ asset.fileFormat.toUpperCase() }}</span>
               </div>
             </div>
             <div class="asset-actions">
@@ -136,14 +137,13 @@
             </div>
             <div v-if="modal.editId" class="form-group">
               <label>Preview Image</label>
-              <div class="file-upload-area">
-                <input type="file" accept="image/*" class="file-input" @change="handleImageUpload" />
-                <div class="file-upload-content">
-                  <i class="fas fa-cloud-upload-alt"></i>
-                  <span>Click or drag to upload preview image</span>
-                </div>
-              </div>
-              <img v-if="modal.form.image" :src="modal.form.image" alt="Preview" class="image-preview" />
+              <ThumbnailUpload
+                :model-value="modal.form.image"
+                placeholder="Upload preview image"
+                :aspect-ratio="16 / 9"
+                :output-width="1200"
+                @change="handleImageCropped"
+              />
             </div>
             <div v-if="modal.editId" class="form-group">
               <label>Asset File</label>
@@ -156,7 +156,7 @@
               </div>
               <div v-if="modal.form.fileUrl" class="file-info">
                 <i class="fas fa-file"></i>
-                <span>File uploaded: {{ modal.form.fileFormat }} ({{ formatFileSize(modal.form.fileSize) }})</span>
+                <span>File uploaded: {{ modal.form.fileName || modal.form.fileFormat || 'Unknown' }} ({{ formatFileSize(modal.form.fileSize) }})</span>
               </div>
             </div>
             <p v-if="!modal.editId" class="helper-text">
@@ -181,11 +181,13 @@ import api from '@/services/api'
 import toast from '@/utils/toast'
 import DisabledFeatureBanner from './DisabledFeatureBanner.vue'
 import eventBus from '@/utils/eventBus'
+import ThumbnailUpload from '@/components/map-builder/components/poi-form/components/ThumbnailUpload.vue'
 
 export default {
   name: 'ProfileMediaAssetsSettings',
   components: {
-    DisabledFeatureBanner
+    DisabledFeatureBanner,
+    ThumbnailUpload
   },
   data() {
     return {
@@ -207,6 +209,7 @@ export default {
           fileUrl: null,
           fileSize: null,
           fileFormat: null,
+          fileName: null,
         }
       }
     }
@@ -296,8 +299,9 @@ export default {
             fileUrl: asset.fileUrl || null,
             fileSize: asset.fileSize || null,
             fileFormat: asset.fileFormat || null,
+            fileName: asset.fileName || null,
           }
-        : { title: '', description: '', type: 'Video', price: 0, currency: 'USD', isActive: true, image: null, fileUrl: null, fileSize: null, fileFormat: null }
+        : { title: '', description: '', type: 'Video', price: 0, currency: 'USD', isActive: true, image: null, fileUrl: null, fileSize: null, fileFormat: null, fileName: null }
       this.modal.visible = true
     },
     closeModal() {
@@ -344,15 +348,18 @@ export default {
         toast.error(err.message)
       }
     },
-    async handleImageUpload(event) {
-      const file = event.target.files?.[0]
-      if (!file || !this.modal.editId) return
+    async handleImageCropped(file) {
+      // Only proceed if we have a valid File object and the modal is open for editing
+      if (!file || !(file instanceof File) || !this.modal.editId || !this.modal.visible) {
+        return
+      }
       try {
         toast.info('Uploading preview image...')
         const result = await api.uploadMediaAssetImage(this.modal.editId, file)
         if (result.success) {
           this.modal.form.image = result.data?.data?.image || result.data?.image
           toast.success('Preview image uploaded')
+          // Reload assets but keep modal open
           await this.loadMediaAssets()
         } else {
           toast.error(result.error)
@@ -372,6 +379,7 @@ export default {
           this.modal.form.fileUrl = data.fileUrl
           this.modal.form.fileSize = data.fileSize
           this.modal.form.fileFormat = data.fileFormat
+          this.modal.form.fileName = data.fileName
           toast.success('Asset file uploaded')
           await this.loadMediaAssets()
         } else {

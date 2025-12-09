@@ -23,12 +23,12 @@
     </div>
     
     <div v-else class="image-preview">
-      <img :src="imagePreview" alt="Thumbnail preview" />
+      <img :src="imagePreview" alt="Thumbnail preview" crossorigin="anonymous" />
       <div class="image-actions">
-        <button class="action-button edit-button" @click.stop="openCropper" aria-label="Edit image">
+        <button type="button" class="action-button edit-button" @click.stop="openCropper" aria-label="Edit image">
           <i class="fas fa-crop-alt"></i>
         </button>
-        <button class="action-button remove-button" @click.stop="removeImage" aria-label="Remove image">
+        <button type="button" class="action-button remove-button" @click.stop="removeImage" aria-label="Remove image">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -264,53 +264,12 @@ export default {
         this.loadImageFromUrl(this.modelValue)
       }
     },
-    /**
-     * Check if we're running in development mode (Vite dev server).
-     * In development, we can use the Vite proxy for storage requests.
-     */
-    isDevelopment() {
-      return import.meta.env.DEV
-    },
-    /**
-     * Convert an absolute backend URL to a relative URL that goes through Vite proxy.
-     * Only applies in development mode where the Vite proxy is available.
-     */
-    getProxiedUrl(url) {
-      if (!url || typeof url !== 'string') return url
-      
-      // Only use proxy in development mode
-      if (!this.isDevelopment()) {
-        return url
-      }
-      
-      // Development backend patterns to proxy
-      const devBackendPatterns = [
-        /^https?:\/\/localhost:\d+/,           // localhost with any port
-        /^https?:\/\/127\.0\.0\.1:\d+/,        // 127.0.0.1 with any port  
-      ]
-      
-      for (const pattern of devBackendPatterns) {
-        if (pattern.test(url)) {
-          // Extract the path starting from /storage or similar
-          const match = url.match(/\/(storage\/.*)$/)
-          if (match) {
-            return '/' + match[1]
-          }
-        }
-      }
-      
-      return url
-    },
     async loadImageFromUrl(url) {
       // Try multiple strategies to load the image
       const strategies = [
-        // Strategy 1: Use storage proxy endpoint (if available, best for CORS)
-        () => this.fetchImageAsBlobViaProxy(url),
-        // Strategy 2: Use API service with credentials (works if backend allows it)
-        () => this.fetchImageAsBlobViaApi(url),
-        // Strategy 3: Use proxied URL (works in development)
-        () => this.fetchImageAsBlob(this.getProxiedUrl(url)),
-        // Strategy 4: Try direct fetch with CORS (works if backend has CORS configured)
+        // Strategy 1: Load via img element and convert to blob (works with CORS configured)
+        () => this.fetchImageAsBlobViaImg(url),
+        // Strategy 2: Try direct fetch with CORS (works if backend has CORS configured)
         () => this.fetchImageAsBlob(url),
       ]
       
@@ -332,64 +291,62 @@ export default {
       
       // All strategies failed
       console.error('All image loading strategies failed for:', url)
-      this.showCropperError('Could not load the image for editing. You can upload a new image instead.')
-    },
-    getStoragePathFromUrl(url) {
-      // Extract storage path from full URL
-      // e.g., https://api.my3pai.com/storage/maps/thumb_xxx.jpg -> /storage/maps/thumb_xxx.jpg
-      try {
-        const urlObj = new URL(url)
-        const path = urlObj.pathname
-        if (path.startsWith('/storage/')) {
-          return path
-        }
-      } catch (e) {
-        // If URL parsing fails, check if it's already a path
-        if (url.startsWith('/storage/')) {
-          return url
-        }
-      }
-      return null
-    },
-    async fetchImageAsBlobViaProxy(url) {
-      // Try to use the storage proxy endpoint if the URL is a storage path
-      const storagePath = this.getStoragePathFromUrl(url)
-      if (!storagePath) {
-        throw new Error('Not a storage URL')
-      }
-
-      // Build proxy URL through API endpoint
-      const proxyUrl = `${apiService.baseURL}/storage/proxy?url=${encodeURIComponent(storagePath)}`
       
-      // Use API service to fetch image via proxy (with proper credentials)
-      const blob = await apiService.fetchImageAsBlob(proxyUrl)
+      // Check if it's a Google Cloud Storage URL (likely CORS issue)
+      const isGcsUrl = url && url.includes('storage.googleapis.com')
+      const errorMessage = isGcsUrl
+        ? 'Unable to load the existing image for cropping due to CORS restrictions. Please upload a new image file to crop it.'
+        : 'Could not load the image for editing. Please upload a new image instead.'
       
+      this.showCropperError(errorMessage)
+    },
+    async fetchImageAsBlobViaImg(url) {
+      // Load image via img element and convert to blob using canvas
+      // This works for public images even with CORS restrictions
       return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          resolve({
-            dataUrl: e.target.result,
-            file: new File([blob], 'thumbnail.jpg', { type: blob.type || 'image/jpeg' })
-          })
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        
+        img.onload = () => {
+          try {
+            // Create canvas and draw image
+            const canvas = document.createElement('canvas')
+            canvas.width = img.naturalWidth
+            canvas.height = img.naturalHeight
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(img, 0, 0)
+            
+            // Convert to blob
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const reader = new FileReader()
+                reader.onload = (e) => {
+                  resolve({
+                    dataUrl: e.target.result,
+                    file: new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' })
+                  })
+                }
+                reader.onerror = () => reject(new Error('Failed to read blob'))
+                reader.readAsDataURL(blob)
+              } else {
+                reject(new Error('Failed to create blob from canvas'))
+              }
+            }, 'image/jpeg', 0.95)
+          } catch (error) {
+            reject(error)
+          }
         }
-        reader.onerror = () => reject(new Error('Failed to read blob'))
-        reader.readAsDataURL(blob)
-      })
-    },
-    async fetchImageAsBlobViaApi(url) {
-      // Use API service to fetch image with proper credentials
-      const blob = await apiService.fetchImageAsBlob(url)
-      
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          resolve({
-            dataUrl: e.target.result,
-            file: new File([blob], 'thumbnail.jpg', { type: blob.type || 'image/jpeg' })
-          })
+        
+        img.onerror = () => {
+          reject(new Error('Failed to load image'))
         }
-        reader.onerror = () => reject(new Error('Failed to read blob'))
-        reader.readAsDataURL(blob)
+        
+        // Set timeout to avoid hanging
+        setTimeout(() => {
+          reject(new Error('Image load timeout'))
+        }, 10000)
+        
+        img.src = url
       })
     },
     async fetchImageAsBlob(url) {
@@ -413,7 +370,19 @@ export default {
     },
     showCropperError(message) {
       // Show user-friendly error - could integrate with toast system
-      alert(message)
+      // For Google Cloud Storage images with CORS issues, provide helpful guidance
+      if (message.includes('Could not load the image')) {
+        const userMessage = 'Unable to load the existing image for cropping due to CORS restrictions. Please upload a new image file to crop it.'
+        alert(userMessage)
+        // Optionally trigger file input to make it easier for user
+        this.$nextTick(() => {
+          if (this.$refs.fileInput) {
+            this.$refs.fileInput.click()
+          }
+        })
+      } else {
+        alert(message)
+      }
     },
     removeImage() {
       this.imagePreview = null
