@@ -147,6 +147,15 @@
       @signup-success="handleSignupSuccess"
       @switch-to-login="showSignup = false; showLogin = true"
     />
+
+    <!-- Order Details Modal -->
+    <OrderDetailsModal
+      :isOpen="showOrderDetails"
+      :orderId="completedOrderId"
+      :orderData="completedOrderData"
+      @close="handleCloseOrderDetails"
+      @view-invoice="handleViewInvoice"
+    />
   </div>
 </template>
 
@@ -168,6 +177,7 @@ import ConsultationView from './views/ConsultationView.vue'
 import CheckoutView from './views/CheckoutView.vue'
 import LoginModal from '@/components/LoginModal.vue'
 import SignupModal from '@/components/SignupModal.vue'
+import OrderDetailsModal from './components/OrderDetailsModal.vue'
 import { useInfluencer } from '@/shared/influencer/composables/useInfluencer'
 import apiService from '@/services/api.js'
 import toast from '@/utils/toast.js'
@@ -221,6 +231,9 @@ const currentView = ref('home')
 const selectedPost = ref(null)
 const showLogin = ref(false)
 const showSignup = ref(false)
+const showOrderDetails = ref(false)
+const completedOrderId = ref(null)
+const completedOrderData = ref(null)
 const visibilitySettings = ref({
   blog: true,
   podcast: true,
@@ -392,21 +405,41 @@ const handleBookSuccess = () => {
 }
 
 const handleOrderComplete = (orderData) => {
-  // Check if this is a free order
-  const isFreeOrder = orderData.isFree || false
+  // Extract order ID and order object
+  // The orderData can have structure: { orderId, order, isFree } or { orderId, ...orderData }
+  const orderId = orderData.orderId || orderData.id || orderData.order_id
+  const order = orderData.order || orderData
   
-  // Show appropriate success message
-  if (isFreeOrder) {
-    toast.success(`Your free order #${orderData.orderId} has been confirmed!`)
-  } else {
-    toast.success(`Order #${orderData.orderId} completed successfully!`)
-  }
+  // Handle nested data structure from API response
+  const finalOrderData = order?.data || order
   
-  // Navigate to success page or order details
-  // For now, show success message and go back to home
+  // Store order information for the modal
+  completedOrderId.value = orderId
+  completedOrderData.value = finalOrderData
+  
+  // Show order details modal
+  showOrderDetails.value = true
+  
+  // Navigate back to home
   currentView.value = 'home'
+  
   // Refresh cart count
   fetchCartCount()
+}
+
+const handleCloseOrderDetails = () => {
+  showOrderDetails.value = false
+  completedOrderId.value = null
+  completedOrderData.value = null
+}
+
+const handleViewInvoice = (invoiceId) => {
+  // Close the order details modal
+  handleCloseOrderDetails()
+  // Navigate to invoice view (could be implemented later)
+  toast.info('Invoice view coming soon')
+  // For now, you could navigate to a profile page with invoice tab
+  // window.location.href = `/profile?tab=invoices&invoice=${invoiceId}`
 }
 
 // Orders and Invoices are now handled in the main dashboard (/profile)
