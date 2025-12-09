@@ -1434,6 +1434,91 @@ class ApiService {
   }
 
   /**
+   * Upload asset file with progress tracking
+   * @param {number} id - Media asset ID
+   * @param {File} file - File to upload
+   * @param {Function} onProgress - Progress callback (progress: number) => void
+   * @returns {Promise<{success: boolean, data: any}>}
+   */
+  async uploadMediaAssetFileWithProgress(id, file, onProgress) {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Ensure CSRF token is available
+        await this.ensureCsrf()
+        
+        const url = `${this.baseURL}/influencer/media-assets/${id}/file`
+        const xhr = new XMLHttpRequest()
+        
+        // Set up progress tracking
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable && onProgress) {
+            const progress = Math.round((e.loaded / e.total) * 100)
+            onProgress(progress)
+          }
+        })
+        
+        // Handle completion
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText)
+              resolve({ success: true, data: response })
+            } catch (error) {
+              resolve({ success: true, data: xhr.responseText })
+            }
+          } else {
+            try {
+              const errorData = JSON.parse(xhr.responseText)
+              const errorMessage = errorData.error || errorData.message || `HTTP ${xhr.status}: ${xhr.statusText}`
+              reject(new Error(errorMessage))
+            } catch (error) {
+              reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`))
+            }
+          }
+        })
+        
+        // Handle errors
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error during upload'))
+        })
+        
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Upload cancelled'))
+        })
+        
+        // Set up request
+        xhr.open('POST', url)
+        
+        // Enable credentials to send cookies (needed for CSRF token)
+        xhr.withCredentials = true
+        
+        // Set headers (exclude Content-Type for FormData - browser will set it with boundary)
+        const headers = this.getHeaders()
+        Object.keys(headers).forEach(key => {
+          // Don't set Content-Type for FormData - browser will set it automatically with boundary
+          if (key.toLowerCase() !== 'content-type') {
+            xhr.setRequestHeader(key, headers[key])
+          }
+        })
+        
+        // Add XSRF token
+        const xsrfToken = this.getXsrfToken()
+        if (xsrfToken) {
+          xhr.setRequestHeader(XSRF_HEADER_NAME, xsrfToken)
+        }
+        
+        // Send request
+        xhr.send(formData)
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+  /**
    * Upload asset preview image
    */
   async uploadMediaAssetImage(id, file) {

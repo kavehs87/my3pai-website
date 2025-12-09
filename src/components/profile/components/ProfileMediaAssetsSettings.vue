@@ -147,14 +147,31 @@
             </div>
             <div v-if="modal.editId" class="form-group">
               <label>Asset File</label>
-              <div class="file-upload-area">
-                <input type="file" class="file-input" @change="handleFileUpload" />
+              <div class="file-upload-area" :class="{ 'uploading': modal.uploadingFile }">
+                <input 
+                  type="file" 
+                  class="file-input" 
+                  @change="handleFileUpload" 
+                  :disabled="modal.uploadingFile"
+                />
                 <div class="file-upload-content">
-                  <i class="fas fa-cloud-upload-alt"></i>
-                  <span>Click or drag to upload asset file (zip, mp4, etc.)</span>
+                  <i class="fas" :class="modal.uploadingFile ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
+                  <span v-if="!modal.uploadingFile">Click or drag to upload asset file (zip, mp4, etc.)</span>
+                  <span v-else-if="modal.uploadProgress < 100">Uploading... {{ modal.uploadProgress }}%</span>
+                  <span v-else>Processing and uploading to storage bucket...</span>
                 </div>
               </div>
-              <div v-if="modal.form.fileUrl" class="file-info">
+              <!-- Upload Progress Bar -->
+              <div v-if="modal.uploadingFile" class="upload-progress-container">
+                <div class="upload-progress-bar">
+                  <div 
+                    class="upload-progress-fill" 
+                    :style="{ width: modal.uploadProgress + '%' }"
+                  ></div>
+                </div>
+                <div class="upload-progress-text">{{ modal.uploadProgress }}%</div>
+              </div>
+              <div v-if="modal.form.fileUrl && !modal.uploadingFile" class="file-info">
                 <i class="fas fa-file"></i>
                 <span>File uploaded: {{ modal.form.fileName || modal.form.fileFormat || 'Unknown' }} ({{ formatFileSize(modal.form.fileSize) }})</span>
               </div>
@@ -198,6 +215,8 @@ export default {
         visible: false,
         editId: null,
         saving: false,
+        uploadingFile: false,
+        uploadProgress: 0,
         form: {
           title: '',
           description: '',
@@ -371,22 +390,45 @@ export default {
     async handleFileUpload(event) {
       const file = event.target.files?.[0]
       if (!file || !this.modal.editId) return
+      
+      // Reset progress
+      this.modal.uploadingFile = true
+      this.modal.uploadProgress = 0
+      
       try {
-        toast.info('Uploading asset file...')
-        const result = await api.uploadMediaAssetFile(this.modal.editId, file)
+        const result = await api.uploadMediaAssetFileWithProgress(
+          this.modal.editId, 
+          file,
+          (progress) => {
+            this.modal.uploadProgress = progress
+          }
+        )
+        
         if (result.success) {
           const data = result.data?.data || result.data
           this.modal.form.fileUrl = data.fileUrl
           this.modal.form.fileSize = data.fileSize
           this.modal.form.fileFormat = data.fileFormat
           this.modal.form.fileName = data.fileName
-          toast.success('Asset file uploaded')
+          // Keep progress at 100% briefly to show completion
+          this.modal.uploadProgress = 100
+          toast.success('Asset file uploaded successfully')
           await this.loadMediaAssets()
         } else {
-          toast.error(result.error)
+          toast.error(result.error || 'Failed to upload file')
         }
       } catch (err) {
-        toast.error(err.message)
+        toast.error(err.message || 'Upload failed')
+      } finally {
+        // Small delay to show completion before hiding progress
+        setTimeout(() => {
+          this.modal.uploadingFile = false
+          this.modal.uploadProgress = 0
+        }, 800)
+        // Reset file input
+        if (event.target) {
+          event.target.value = ''
+        }
       }
     }
   }
@@ -799,9 +841,16 @@ export default {
   transition: all var(--transition-normal);
 }
 
-.file-upload-area:hover {
+.file-upload-area:hover:not(.uploading) {
   border-color: var(--secondary-color);
   background: var(--secondary-light);
+}
+
+.file-upload-area.uploading {
+  border-color: var(--secondary-color);
+  background: var(--bg-secondary);
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .file-input {
@@ -844,6 +893,64 @@ export default {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   margin-top: var(--spacing-sm);
+}
+
+.upload-progress-container {
+  margin-top: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.upload-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--secondary-color), var(--secondary-hover));
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.upload-progress-text {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--secondary-color);
+  min-width: 45px;
+  text-align: right;
 }
 
 .helper-text {
@@ -905,4 +1012,5 @@ export default {
   opacity: 0;
 }
 </style>
+
 
