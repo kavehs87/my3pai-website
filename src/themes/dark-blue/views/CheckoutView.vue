@@ -286,18 +286,33 @@
           
           <div v-if="loadingPayment" class="text-center py-12">
             <div class="w-8 h-8 border-4 border-secondary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-text-muted">Setting up payment...</p>
+            <p class="text-text-muted">Setting up secure payment...</p>
           </div>
 
           <div v-else>
-            <!-- Stripe Elements will be mounted here -->
-            <!-- Using v-show instead of v-if to keep element mounted when hidden -->
-            <div ref="stripeCardElementRef" id="stripe-card-element" class="mb-6" v-show="!loadingPayment">
-              <!-- Stripe Card Element will be inserted here -->
-            </div>
-
+            <!-- Payment Info Notice -->
             <div v-if="paymentError" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
               <p class="text-sm text-red-600">{{ paymentError }}</p>
+              <button 
+                @click="initializePayment" 
+                class="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+              >
+                Try again
+              </button>
+            </div>
+
+            <div v-else class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <div class="flex items-start gap-3">
+                <Lock class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p class="text-sm text-blue-800 font-medium mb-1">
+                    Secure Payment Processing
+                  </p>
+                  <p class="text-xs text-blue-700">
+                    You will be redirected to Stripe's secure checkout page to complete your payment. Your card information is never stored on our servers.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <!-- Security Badges -->
@@ -322,10 +337,10 @@
               </button>
               <button
                 @click="handlePayment"
-                :disabled="processingPayment"
+                :disabled="processingPayment || loadingPayment"
                 class="flex-1 bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {{ processingPayment ? 'Processing...' : 'Continue to Review' }}
+                {{ processingPayment ? 'Redirecting...' : 'Continue to Review' }}
               </button>
             </div>
           </div>
@@ -433,11 +448,11 @@
               Back
             </button>
             <button
-              @click="isFreeOrder ? handleFreeOrder() : completePurchase()"
-              :disabled="!agreeToTerms || processingOrder"
+              @click="completePurchase"
+              :disabled="!agreeToTerms || processingOrder || processingPayment"
               class="flex-1 bg-secondary text-white py-3 rounded-xl font-semibold hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ processingOrder ? 'Processing...' : (isFreeOrder ? 'Complete Free Order' : 'Complete Purchase') }}
+              {{ processingOrder || processingPayment ? 'Processing...' : (isFreeOrder ? 'Complete Free Order' : 'Complete Purchase') }}
             </button>
           </div>
         </div>
@@ -447,9 +462,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ArrowLeft, Check, ShoppingCart, Lock, Shield, Trash2, Plus, Minus } from 'lucide-vue-next'
-import { loadStripe } from '@stripe/stripe-js'
 import PriceDisplay from '../components/PriceDisplay.vue'
 import apiService from '@/services/api.js'
 import toast from '@/utils/toast.js'
@@ -486,10 +500,6 @@ const billingInfo = ref({
 })
 
 // Payment
-const stripe = ref(null)
-const cardElement = ref(null)
-const stripeCardElementRef = ref(null) // Template ref for the container
-const paymentIntent = ref(null)
 const loadingPayment = ref(false)
 const processingPayment = ref(false)
 const paymentError = ref(null)
@@ -762,7 +772,7 @@ const handleFreeOrder = async () => {
   }
 }
 
-const initializeStripe = async () => {
+const initializePayment = async () => {
   loadingPayment.value = true
   paymentError.value = null
   
@@ -793,18 +803,7 @@ const initializeStripe = async () => {
       throw new Error(orderResult.error || 'Failed to create order')
     }
     
-    // Debug: Log order response to see structure
-    console.log('Order creation response:', orderResult)
-    console.log('Order data object:', orderResult.data)
-    console.log('Order data.data:', orderResult.data?.data)
-    console.log('Order data.data keys:', orderResult.data?.data ? Object.keys(orderResult.data.data) : 'no data')
-    console.log('Order data.data.id:', orderResult.data?.data?.id)
-    console.log('Order data.data.order_id:', orderResult.data?.data?.order_id)
-    
     // Extract order ID from response
-    // The API service wraps the backend response, so we need to access data.data
-    // Backend returns: { success: true, data: { id: 123, ... }, message: "..." }
-    // API service returns: { success: true, data: { success: true, data: { id: 123, ... }, message: "..." } }
     const extractedOrderId = orderResult.data?.data?.id || orderResult.data?.data?.order_id || orderResult.data?.id || orderResult.data?.order_id
     
     if (!extractedOrderId) {
@@ -819,98 +818,40 @@ const initializeStripe = async () => {
       throw new Error(`Invalid order ID: ${orderId.value}`)
     }
     
-    // Double-check orderId is set before API call
-    if (!orderId.value) {
-      throw new Error('Order ID is required but was not set')
-    }
+    console.log('Creating payment checkout for order ID:', orderId.value)
     
-    console.log('Creating payment intent for order ID:', orderId.value)
-    
-    // Create payment intent
+    // Create payment intent/checkout session (should return redirect_url)
     const intentResult = await apiService.createPaymentIntent(orderId.value)
     if (!intentResult.success) {
-      throw new Error(intentResult.error || 'Failed to create payment intent')
+      throw new Error(intentResult.error || 'Failed to create payment checkout')
     }
     
-    // Store payment intent data (unwrap if needed, same as order response)
-    // Backend returns: { success: true, data: { client_secret: "...", payment_intent_id: "..." } }
-    // API service returns: { success: true, data: { success: true, data: { ... } } }
-    paymentIntent.value = intentResult.data?.data || intentResult.data
+    // Extract redirect_url from response
+    const responseData = intentResult.data?.data || intentResult.data
+    const redirectUrl = responseData.redirect_url || responseData.checkout_url || responseData.url
     
-    console.log('Payment intent stored:', paymentIntent.value)
-    console.log('Payment intent ID:', paymentIntent.value?.payment_intent_id)
-    console.log('Client secret:', paymentIntent.value?.client_secret)
-    
-    // Initialize Stripe.js with publishable key (sandbox/test mode)
-    const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-    if (!stripePublishableKey) {
-      throw new Error('Stripe publishable key is not configured. Please set VITE_STRIPE_PUBLISHABLE_KEY in your .env file.')
+    if (!redirectUrl) {
+      throw new Error('Payment checkout URL is missing. Please contact support.')
     }
     
-    const stripeInstance = await loadStripe(stripePublishableKey)
-    if (!stripeInstance) {
-      throw new Error('Failed to load Stripe.js')
-    }
+    // Store current path for cancel redirect
+    sessionStorage.setItem('checkout_redirect_path', window.location.pathname)
     
-    stripe.value = stripeInstance
-    
-    // Set loadingPayment to false so the element is rendered (it's in v-else block)
-    loadingPayment.value = false
-    await nextTick() // Wait for Vue to update the DOM after setting loadingPayment to false
-    
-    // Additional delay to ensure the element is fully rendered and accessible
-    await new Promise(resolve => setTimeout(resolve, 150))
-    
-    // Try template ref first, then fallback to getElementById
-    const cardElementContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
-    if (!cardElementContainer) {
-      // If still not found, wait a bit more and try again
-      await new Promise(resolve => setTimeout(resolve, 300))
-      const retryContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
-      if (!retryContainer) {
-        console.error('Stripe card element container not found.')
-        console.error('Current step:', currentStep.value)
-        console.error('Loading payment:', loadingPayment.value)
-        console.error('Template ref:', stripeCardElementRef.value)
-        console.error('Element by ID:', document.getElementById('stripe-card-element'))
-        throw new Error('Stripe card element container not found. Please try refreshing the page.')
-      }
-    }
-    
-    const elements = stripe.value.elements()
-    cardElement.value = elements.create('card', {
-      style: {
-        base: {
-          fontSize: '16px',
-          color: '#1e293b',
-          '::placeholder': {
-            color: '#94a3b8',
-          },
-        },
-        invalid: {
-          color: '#ef4444',
-        },
-      },
-    })
-    
-    // Mount the card element to the DOM
-    cardElement.value.mount('#stripe-card-element')
-    
-    toast.success('Payment form ready')
+    // Redirect to Stripe Hosted Checkout
+    // Keep loading state visible until redirect happens to prevent double clicks
+    window.location.href = redirectUrl
   } catch (error) {
     console.error('Error initializing payment:', error)
-    console.error('Order ID value:', orderId.value)
     paymentError.value = error.message || 'Failed to initialize payment'
     toast.error(error.message || 'Failed to initialize payment')
-  } finally {
     loadingPayment.value = false
   }
+  // Note: loadingPayment stays true during redirect to prevent double clicks
 }
 
 const handlePayment = async () => {
-  // TODO: Handle Stripe payment confirmation
-  // For now, just move to next step
-  nextStep()
+  // Initialize payment and redirect to Stripe Hosted Checkout
+  await initializePayment()
 }
 
 const completePurchase = async () => {
@@ -919,113 +860,34 @@ const completePurchase = async () => {
     return
   }
   
-  processingOrder.value = true
-  errorMessage.value = null
-  
-  try {
-    // Validate payment intent data
-    if (!paymentIntent.value) {
-      throw new Error('Payment intent not initialized. Please go back to payment step.')
-    }
+  // For paid orders, redirect to Stripe Hosted Checkout
+  if (!isFreeOrder.value) {
+    processingPayment.value = true
+    errorMessage.value = null
     
-    const paymentIntentId = paymentIntent.value.payment_intent_id || paymentIntent.value.id
-    if (!paymentIntentId) {
-      console.error('Payment intent data:', paymentIntent.value)
-      throw new Error('Payment intent ID is missing. Please go back to payment step and try again.')
-    }
-    
-    // Validate Stripe.js is initialized
-    if (!stripe.value || !cardElement.value) {
-      throw new Error(
-        'Payment form is not ready. Please go back to the payment step and try again.'
-      )
-    }
-    
-    // Verify the card element is still mounted
     try {
-      // Try to access the element to verify it's still mounted
-      const elementContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
-      if (!elementContainer) {
-        throw new Error('Card element container not found')
-      }
-    } catch (err) {
-      throw new Error('Payment form element is not available. Please go back to the payment step and try again.')
+      await initializePayment()
+    } catch (error) {
+      console.error('Error initializing payment:', error)
+      errorMessage.value = error.message || 'Failed to initialize payment. Please try again.'
+      toast.error(error.message || 'Failed to initialize payment')
+      processingPayment.value = false
     }
-    
-    if (!paymentIntent.value?.client_secret) {
-      throw new Error('Payment intent client secret is missing. Please go back to the payment step.')
-    }
-    
-    // Confirm payment with Stripe.js first
-    // This will process the payment with the card details entered by the user
-    console.log('Confirming payment with Stripe.js...')
-    console.log('Card element:', cardElement.value)
-    console.log('Stripe instance:', stripe.value)
-    
-    const { error, paymentIntent: confirmedIntent } = await stripe.value.confirmCardPayment(
-      paymentIntent.value.client_secret,
-      {
-        payment_method: {
-          card: cardElement.value,
-          billing_details: {
-            name: billingInfo.value.name,
-            email: billingInfo.value.email,
-            address: {
-              line1: billingInfo.value.address_line1,
-              line2: billingInfo.value.address_line2 || undefined,
-              city: billingInfo.value.city,
-              state: billingInfo.value.state,
-              postal_code: billingInfo.value.postal_code,
-              country: billingInfo.value.country,
-            },
-          },
-        },
-      }
-    )
-    
-    if (error) {
-      // Handle Stripe errors (card declined, insufficient funds, etc.)
-      throw new Error(error.message || 'Payment failed. Please check your card details and try again.')
-    }
-    
-    if (!confirmedIntent || confirmedIntent.status !== 'succeeded') {
-      throw new Error(`Payment status is '${confirmedIntent?.status || 'unknown'}', expected 'succeeded'. Please try again.`)
-    }
-    
-    console.log('Stripe payment confirmed successfully:', confirmedIntent.id)
-    
-    console.log('Stripe payment confirmed, confirming with backend:', { payment_intent_id: paymentIntentId, order_id: orderId.value })
-    
-    // Confirm payment with backend (only after Stripe confirms)
-    const confirmResult = await apiService.confirmPayment({
-      payment_intent_id: paymentIntentId,
-      order_id: orderId.value
-    })
-    
-    if (!confirmResult.success) {
-      throw new Error(confirmResult.error || 'Payment confirmation failed')
-    }
-    
-    toast.success('Payment successful!')
-    emit('order-complete', {
-      orderId: orderId.value,
-      order: confirmResult.data
-    })
-  } catch (error) {
-    console.error('Error completing purchase:', error)
-    errorMessage.value = error.message || 'Failed to complete purchase. Please try again.'
-    toast.error(error.message || 'Failed to complete purchase')
-  } finally {
-    processingOrder.value = false
+    // Note: processingPayment stays true during redirect to prevent double clicks
+    return
   }
+  
+  // For free orders, use the existing handleFreeOrder function
+  // (it already handles the emit internally)
+  await handleFreeOrder()
 }
 
-// Watch for step changes to initialize Stripe when moving to payment step
+// Watch for step changes - payment step is now just informational
+// Payment will be initialized when user clicks "Complete Purchase"
 watch(currentStep, (newStep) => {
-  // Only initialize Stripe for paid orders
-  if (!isFreeOrder.value && newStep === 2 && !paymentIntent.value && !loadingPayment.value) {
-    // Step 2 is the payment step - initialize Stripe if not already done
-    initializeStripe()
+  // Reset payment error when moving to payment step
+  if (newStep === 2 && !isFreeOrder.value) {
+    paymentError.value = null
   }
 })
 
@@ -1033,17 +895,5 @@ onMounted(async () => {
   await fetchCart()
 })
 
-onBeforeUnmount(() => {
-  // Cleanup Stripe Elements if mounted
-  if (cardElement.value) {
-    try {
-      cardElement.value.unmount()
-    } catch (error) {
-      console.warn('Error unmounting Stripe card element:', error)
-    }
-    cardElement.value = null
-  }
-  stripe.value = null
-})
 </script>
 

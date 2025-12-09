@@ -12,6 +12,8 @@ import PublishedMap from './components/published-map/PublishedMap.vue'
 import InfluencerProfile from './shared/influencer/InfluencerProfile.vue'
 import MediaAssetsLibraryRoute from './shared/influencer/routes/MediaAssetsLibraryRoute.vue'
 import MasterclassesLibraryRoute from './shared/influencer/routes/MasterclassesLibraryRoute.vue'
+import CheckoutSuccess from './views/checkout/CheckoutSuccess.vue'
+import CheckoutCancel from './views/checkout/CheckoutCancel.vue'
 import './style.css'
 
 const routes = [
@@ -48,6 +50,16 @@ const routes = [
     component: PublishedMap,
     name: 'published-map',
     props: true
+  },
+  {
+    path: '/checkout/success',
+    component: CheckoutSuccess,
+    name: 'checkout-success'
+  },
+  {
+    path: '/checkout/cancel',
+    component: CheckoutCancel,
+    name: 'checkout-cancel'
   },
 ]
 

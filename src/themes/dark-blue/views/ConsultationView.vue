@@ -380,36 +380,27 @@
                     </div>
                   </div>
 
-                  <!-- Stripe Card Element -->
-                  <div>
-                    <label class="block text-sm font-medium text-primary mb-3">Card Information</label>
-                    <div v-if="loadingPayment" class="text-center py-8 text-text-muted">
-                      <div class="w-8 h-8 border-4 border-slate-200 border-t-primary rounded-full animate-spin mx-auto mb-2"></div>
-                      <p class="text-sm">Loading payment form...</p>
+                  <!-- Payment Info Notice -->
+                  <div v-if="loadingPayment" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-center gap-3">
+                      <div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <p class="text-sm text-blue-800 font-medium">Redirecting to secure payment...</p>
                     </div>
-                    <div v-else-if="paymentError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p class="text-sm text-red-600">{{ paymentError }}</p>
-                      <button 
-                        @click="initializePayment" 
-                        class="mt-2 text-sm text-red-600 hover:text-red-700 underline"
-                      >
-                        Try again
-                      </button>
-                    </div>
-                    <div v-else-if="!paymentIntent" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p class="text-sm text-blue-800">Please fill in all billing information above to continue.</p>
-                    </div>
-                    <!-- Always render the container when paymentIntent exists - use v-show to keep it in DOM -->
-                    <div v-show="paymentIntent">
-                      <!-- Always render the container element so it exists in DOM when we mount Stripe -->
-                      <div 
-                        ref="stripeCardElementRef" 
-                        id="stripe-card-element" 
-                        class="mb-4 min-h-[40px]"
-                      >
-                        <!-- Stripe Card Element will be inserted here -->
-                      </div>
-                    </div>
+                  </div>
+                  <div v-else-if="paymentError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-sm text-red-600">{{ paymentError }}</p>
+                    <button 
+                      @click="initializePayment" 
+                      class="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                  <div v-else class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                      <i class="fas fa-lock mr-2"></i>
+                      You will be redirected to Stripe's secure checkout page to complete your payment.
+                    </p>
                   </div>
 
                   <!-- Payment Summary -->
@@ -427,10 +418,10 @@
                   <!-- Complete Booking & Payment Button -->
                   <button
                     @click="handleCompletePayment"
-                    :disabled="isSubmitting || loadingPayment || !billingInfoValid || !paymentIntent"
+                    :disabled="isSubmitting || loadingPayment || !billingInfoValid"
                     class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    {{ isSubmitting ? 'Processing Payment...' : loadingPayment ? 'Initializing Payment...' : 'Complete Booking & Payment' }}
+                    {{ loadingPayment ? 'Redirecting to Payment...' : 'Continue to Payment' }}
                   </button>
                 </div>
               </div>
@@ -470,7 +461,6 @@ import { useConsultation } from '@/shared/influencer/composables/useConsultation
 import api from '@/services/api'
 import { convertTime, formatTime12Hour, isTimeSlotPast, convertDateTimeToUTC } from '@/utils/timezone'
 import eventBus from '@/utils/eventBus.js'
-import { loadStripe } from '@stripe/stripe-js'
 import toast from '@/utils/toast.js'
 
 const emit = defineEmits(['back', 'book'])
@@ -500,14 +490,8 @@ const currentStep = ref('booking') // 'booking' or 'payment'
 const orderId = ref(null)
 const orderNumber = ref(null)
 const invoiceId = ref(null)
-const paymentIntent = ref(null)
 const loadingPayment = ref(false)
 const paymentError = ref(null)
-
-// Stripe Elements
-const stripe = ref(null)
-const cardElement = ref(null)
-const stripeCardElementRef = ref(null)
 
 // Timezone handling - all conversions done on UI side
 const influencerTimezone = ref(null) // Will be set from API response
@@ -846,12 +830,18 @@ const checkAuthStatus = async () => {
   }
 }
 
-// Initialize Stripe payment
+// Initialize payment and redirect to Stripe Hosted Checkout
 const initializePayment = async () => {
   if (!consultation.value?.id) return
   
   // Prevent multiple simultaneous initializations
-  if (loadingPayment.value || paymentIntent.value) {
+  if (loadingPayment.value) {
+    return
+  }
+
+  // Validate billing info before proceeding
+  if (!billingInfoValid.value) {
+    toast.error('Please fill in all required billing information')
     return
   }
 
@@ -866,25 +856,25 @@ const initializePayment = async () => {
       scheduledAtUTC = pendingBooking.value.scheduled_at
     } else if (selectedDate.value && selectedTime.value && influencerTimezone.value) {
       // Calculate from selected date/time
-    const selectedSlot = timeSlots.value.find((s) => s.time === selectedTime.value)
-    if (!selectedSlot) {
-      throw new Error('Selected time slot not found')
-    }
+      const selectedSlot = timeSlots.value.find((s) => s.time === selectedTime.value)
+      if (!selectedSlot) {
+        throw new Error('Selected time slot not found')
+      }
 
-    const customerTime24 = selectedSlot.rawTimeInCustomerTZ
-    if (!customerTime24) {
-      throw new Error('Time slot time not found')
-    }
+      const customerTime24 = selectedSlot.rawTimeInCustomerTZ
+      if (!customerTime24) {
+        throw new Error('Time slot time not found')
+      }
 
-    // Convert from customer's timezone to UTC for booking
+      // Convert from customer's timezone to UTC for booking
       scheduledAtUTC = convertDateTimeToUTC(
-      selectedDate.value.date,
+        selectedDate.value.date,
         customerTime24,
-      customerTimezone.value
-    )
+        customerTimezone.value
+      )
 
-    if (!scheduledAtUTC) {
-      throw new Error('Failed to convert booking time to UTC')
+      if (!scheduledAtUTC) {
+        throw new Error('Failed to convert booking time to UTC')
       }
     } else {
       throw new Error('Booking time information is missing')
@@ -897,7 +887,10 @@ const initializePayment = async () => {
       throw new Error('Email is required. Please enter your email in the booking form.')
     }
     
-    // Call book-and-pay endpoint to create booking + order + payment intent
+    // Store current path for cancel redirect
+    sessionStorage.setItem('checkout_redirect_path', router.currentRoute.value.fullPath)
+    
+    // Call book-and-pay endpoint to create booking + order + get redirect URL
     const result = await api.bookAndPayConsultation(consultation.value.id, {
       scheduled_at: scheduledAtUTC,
       notes: formData.value.topic || null,
@@ -914,183 +907,30 @@ const initializePayment = async () => {
 
     // Extract data from response
     const data = result.data?.data || result.data
-    orderId.value = data.order_id || data.order?.id
-    orderNumber.value = data.order_number || data.order?.order_number
-    invoiceId.value = data.invoice_id || data.invoice?.id
     
-    // Set payment intent first to trigger DOM rendering
-    paymentIntent.value = data.payment_intent || data
-
-    if (!paymentIntent.value?.client_secret) {
-      throw new Error('Payment intent client secret is missing')
-    }
-
-    // Initialize Stripe.js first (before waiting for DOM)
-    const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-    if (!stripePublishableKey) {
-      throw new Error('Stripe publishable key is not configured')
-    }
-
-    const stripeInstance = await loadStripe(stripePublishableKey)
-    if (!stripeInstance) {
-      throw new Error('Failed to load Stripe.js')
-    }
-
-    stripe.value = stripeInstance
-
-    // Wait for Vue to update the DOM and render the container
-    // Use multiple nextTick calls and longer waits to ensure DOM is updated
-    await nextTick()
-    await nextTick() // Double nextTick for safety
-    await new Promise(resolve => setTimeout(resolve, 500)) // Longer wait
-
-    // Mount Stripe card element - try multiple times with retries
-    let cardElementContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
+    // Check for redirect_url (new Stripe Hosted Checkout flow)
+    const redirectUrl = data.redirect_url || data.checkout_url
     
-    // Retry logic if element not found immediately
-    const maxRetries = 5
-    for (let i = 0; i < maxRetries && !cardElementContainer; i++) {
-      await new Promise(resolve => setTimeout(resolve, 200 * (i + 1)))
-      cardElementContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
-    }
-    
-    if (!cardElementContainer) {
-      console.error('Stripe card element container not found after retries')
-      console.error('Template ref:', stripeCardElementRef.value)
-      console.error('Element by ID:', document.getElementById('stripe-card-element'))
-      console.error('Payment intent:', paymentIntent.value)
-      console.error('Current step:', currentStep.value)
-      throw new Error('Stripe card element container not found. Please refresh the page and try again.')
+    if (!redirectUrl) {
+      throw new Error('Payment redirect URL is missing. Please contact support.')
     }
 
-    // Create and mount Stripe card element
-    // If element is found, mount it; otherwise the watcher will handle it
-    if (cardElementContainer) {
-      const elements = stripe.value.elements()
-      cardElement.value = elements.create('card', {
-        style: {
-          base: {
-            fontSize: '16px',
-            color: '#1e293b',
-            '::placeholder': {
-              color: '#94a3b8',
-            },
-          },
-          invalid: {
-            color: '#ef4444',
-          },
-        },
-      })
-      cardElement.value.mount('#stripe-card-element')
-    } else {
-      // Element not found, but paymentIntent is set, so the watcher will handle mounting
-      console.log('Element not found in initializePayment, watcher will handle mounting')
-    }
+    // Redirect to Stripe Hosted Checkout
+    // Keep loading state visible until redirect happens to prevent double clicks
+    window.location.href = redirectUrl
   } catch (error) {
     console.error('Error initializing payment:', error)
     paymentError.value = error.message || 'Failed to initialize payment'
     toast.error(error.message || 'Failed to initialize payment')
-  } finally {
     loadingPayment.value = false
   }
+  // Note: loadingPayment stays true during redirect to prevent double clicks
 }
 
-// Handle complete payment
+// Handle complete payment - redirects to Stripe Hosted Checkout
 const handleCompletePayment = async () => {
-  if (!billingInfoValid.value) {
-    toast.error('Please fill in all required billing information')
-    return
-  }
-
-  if (!paymentIntent.value) {
-    toast.error('Payment form is not ready. Please wait a moment.')
-    return
-  }
-
-  // Complete the payment
-  await completeBookingAndPayment()
-}
-
-// Complete booking and payment
-const completeBookingAndPayment = async () => {
-  if (!paymentIntent.value || !stripe.value || !cardElement.value) {
-    toast.error('Payment form is not ready. Please wait a moment and try again.')
-    return
-  }
-
-  if (!billingInfoValid.value) {
-    toast.error('Please fill in all required billing information')
-    return
-  }
-
-  isSubmitting.value = true
-  paymentError.value = null
-
-  try {
-    const paymentIntentId = paymentIntent.value.payment_intent_id || paymentIntent.value.id
-    if (!paymentIntentId) {
-      throw new Error('Payment intent ID is missing')
-    }
-
-    // Confirm payment with Stripe.js
-    const { error, paymentIntent: confirmedIntent } = await stripe.value.confirmCardPayment(
-      paymentIntent.value.client_secret,
-      {
-        payment_method: {
-          card: cardElement.value,
-          billing_details: {
-            name: billingInfo.value.name,
-            email: formData.value.email,
-            address: {
-              line1: billingInfo.value.address_line1,
-              line2: billingInfo.value.address_line2 || undefined,
-              city: billingInfo.value.city,
-              state: billingInfo.value.state,
-              postal_code: billingInfo.value.postal_code,
-              country: billingInfo.value.country,
-            },
-          },
-        },
-      }
-    )
-
-    if (error) {
-      throw new Error(error.message || 'Payment failed')
-    }
-
-    if (!confirmedIntent || confirmedIntent.status !== 'succeeded') {
-      throw new Error(`Payment status is '${confirmedIntent?.status || 'unknown'}', expected 'succeeded'`)
-    }
-
-    // Confirm payment with backend
-    const confirmResult = await api.confirmPayment({
-      payment_intent_id: paymentIntentId,
-      order_id: orderId.value,
-    })
-
-    if (!confirmResult.success) {
-      throw new Error(confirmResult.error || 'Payment confirmation failed')
-    }
-
-    // Update invoice ID if provided in confirmation response
-    const confirmData = confirmResult.data?.data || confirmResult.data
-    if (confirmData?.invoice_id) {
-      invoiceId.value = confirmData.invoice_id
-    }
-
-    toast.success('Payment successful!')
-      isBooked.value = true
-      emit('book')
-    
-      // Refresh calendar to update availability
-      await fetchCalendarAvailability()
-  } catch (error) {
-    console.error('Error completing payment:', error)
-    paymentError.value = error.message || 'Failed to complete payment'
-    toast.error(error.message || 'Failed to complete payment')
-  } finally {
-    isSubmitting.value = false
-  }
+  // This now just calls initializePayment which handles the redirect
+  await initializePayment()
 }
 
 // View order details
@@ -1273,7 +1113,7 @@ onMounted(async () => {
 
 // Watch for billing info to be complete and auto-initialize payment
 watch(billingInfoValid, async (isValid) => {
-  if (isValid && currentStep.value === 'payment' && !paymentIntent.value && !loadingPayment.value) {
+  if (isValid && currentStep.value === 'payment' && !loadingPayment.value) {
     // Auto-initialize payment when billing info is complete
     // Use flush: 'post' to ensure DOM is updated
     await nextTick()
@@ -1281,50 +1121,5 @@ watch(billingInfoValid, async (isValid) => {
   }
 }, { flush: 'post' })
 
-// Watch paymentIntent to mount Stripe after it's set and DOM is updated
-watch(paymentIntent, async (newIntent) => {
-  if (newIntent && stripe.value && !cardElement.value && currentStep.value === 'payment') {
-    // Payment intent is set, now mount Stripe element
-    await nextTick()
-    await new Promise(resolve => setTimeout(resolve, 300))
-    
-    const cardElementContainer = stripeCardElementRef.value || document.getElementById('stripe-card-element')
-    if (cardElementContainer && stripe.value) {
-      try {
-        const elements = stripe.value.elements()
-        cardElement.value = elements.create('card', {
-          style: {
-            base: {
-              fontSize: '16px',
-              color: '#1e293b',
-              '::placeholder': {
-                color: '#94a3b8',
-              },
-            },
-            invalid: {
-              color: '#ef4444',
-            },
-          },
-        })
-        cardElement.value.mount('#stripe-card-element')
-      } catch (error) {
-        console.error('Error mounting Stripe card element:', error)
-      }
-    }
-  }
-}, { flush: 'post' })
-
-onBeforeUnmount(() => {
-  // Cleanup Stripe Elements
-  if (cardElement.value) {
-    try {
-      cardElement.value.unmount()
-    } catch (error) {
-      console.warn('Error unmounting Stripe card element:', error)
-    }
-    cardElement.value = null
-  }
-  stripe.value = null
-})
 </script>
 
