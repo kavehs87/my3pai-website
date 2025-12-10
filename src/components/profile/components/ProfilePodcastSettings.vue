@@ -9,10 +9,28 @@
       />
       
       <div class="settings-intro">
-        <h1><i class="fas fa-podcast"></i> Podcast Episodes</h1>
-        <p>Create and manage your podcast episodes. Premium episodes require a subscription to listen.</p>
+        <h1><i class="fas fa-podcast"></i> Podcast</h1>
+        <p>Create and manage your podcast episodes and settings.</p>
       </div>
 
+      <!-- Tabs -->
+      <div class="podcast-tabs">
+        <button
+          :class="['tab-button', { active: activeSubTab === 'content' }]"
+          @click="activeSubTab = 'content'"
+        >
+          <i class="fas fa-list"></i> Episodes
+        </button>
+        <button
+          :class="['tab-button', { active: activeSubTab === 'settings' }]"
+          @click="activeSubTab = 'settings'"
+        >
+          <i class="fas fa-cog"></i> Settings
+        </button>
+      </div>
+
+      <!-- Settings Tab Content -->
+      <div v-if="activeSubTab === 'settings'" class="tab-content">
       <!-- Podcast Title Settings -->
       <div class="settings-section">
         <h3 class="section-title"><i class="fas fa-heading"></i> Podcast Title</h3>
@@ -60,7 +78,57 @@
         </div>
       </div>
 
+      <!-- Podcast URLs Settings -->
       <div class="settings-section">
+        <h3 class="section-title"><i class="fas fa-link"></i> Podcast Platform Links</h3>
+        <p class="section-description">Add links to your podcast on Apple Podcasts and Spotify. These will appear as buttons on your public podcast page.</p>
+        
+        <div class="form-group">
+          <label for="spotifyUrl" class="form-label">
+            <i class="fab fa-spotify" style="color: #1DB954;"></i> Spotify URL
+          </label>
+          <input 
+            id="spotifyUrl"
+            v-model="spotifyUrl" 
+            type="url" 
+            class="form-input" 
+            placeholder="https://open.spotify.com/show/..."
+            maxlength="500"
+            @blur="savePodcastSettings"
+          />
+          <span class="char-count">{{ (spotifyUrl || '').length }}/500</span>
+        </div>
+
+        <div class="form-group">
+          <label for="applePodcastUrl" class="form-label">
+            <i class="fab fa-apple"></i> Apple Podcasts URL
+          </label>
+          <input 
+            id="applePodcastUrl"
+            v-model="applePodcastUrl" 
+            type="url" 
+            class="form-input" 
+            placeholder="https://podcasts.apple.com/..."
+            maxlength="500"
+            @blur="savePodcastSettings"
+          />
+          <span class="char-count">{{ (applePodcastUrl || '').length }}/500</span>
+        </div>
+
+        <div class="flex items-center gap-2 mt-2">
+          <p v-if="urlsSaving" class="saving-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Saving...
+          </p>
+          <p v-if="urlsSaved" class="saved-indicator">
+            <i class="fas fa-check"></i> Saved
+          </p>
+        </div>
+      </div>
+      </div>
+
+      <!-- Content Tab (Episodes) -->
+      <div v-if="activeSubTab === 'content'" class="tab-content">
+        <div class="settings-section">
         <div class="section-header">
           <div class="stats-row">
             <div class="stat-item">
@@ -138,6 +206,7 @@
               </button>
             </div>
           </article>
+        </div>
         </div>
       </div>
     </div>
@@ -319,9 +388,12 @@ export default {
   },
   data() {
     return {
+      activeSubTab: 'content', // 'content' or 'settings'
       podcastEpisodes: [],
       podcastTitle: null,
       podcastDescription: null,
+      applePodcastUrl: null,
+      spotifyUrl: null,
       loading: false,
       isEnabled: true,
       audioUploading: false,
@@ -330,6 +402,8 @@ export default {
       titleSaved: false,
       descriptionSaving: false,
       descriptionSaved: false,
+      urlsSaving: false,
+      urlsSaved: false,
       cropperEventListeners: null,
       modal: {
         visible: false,
@@ -466,6 +540,18 @@ export default {
             this.podcastDescription = responseData.data.podcastDescription
           } else if (responseData.podcastDescription !== undefined) {
             this.podcastDescription = responseData.podcastDescription
+          }
+          
+          if (responseData.data?.applePodcastUrl !== undefined) {
+            this.applePodcastUrl = responseData.data.applePodcastUrl
+          } else if (responseData.applePodcastUrl !== undefined) {
+            this.applePodcastUrl = responseData.applePodcastUrl
+          }
+          
+          if (responseData.data?.spotifyUrl !== undefined) {
+            this.spotifyUrl = responseData.data.spotifyUrl
+          } else if (responseData.spotifyUrl !== undefined) {
+            this.spotifyUrl = responseData.spotifyUrl
           }
           
           console.log('[PodcastSettings] Set podcastEpisodes to:', {
@@ -941,26 +1027,32 @@ export default {
     },
     async savePodcastSettings() {
       // Debounce: only save if not already saving
-      if (this.titleSaving || this.descriptionSaving) return
+      if (this.titleSaving || this.descriptionSaving || this.urlsSaving) return
       
       this.titleSaving = true
       this.descriptionSaving = true
+      this.urlsSaving = true
       this.titleSaved = false
       this.descriptionSaved = false
+      this.urlsSaved = false
       
       try {
         const result = await api.updatePodcastSettings({
           podcastTitle: this.podcastTitle || null,
-          podcastDescription: this.podcastDescription || null
+          podcastDescription: this.podcastDescription || null,
+          applePodcastUrl: this.applePodcastUrl || null,
+          spotifyUrl: this.spotifyUrl || null
         })
         if (result.success) {
           this.titleSaved = true
           this.descriptionSaved = true
+          this.urlsSaved = true
           toast.success('Podcast settings saved')
           // Hide saved indicators after 2 seconds
           setTimeout(() => {
             this.titleSaved = false
             this.descriptionSaved = false
+            this.urlsSaved = false
           }, 2000)
         } else {
           toast.error(result.error || 'Failed to save podcast settings')
@@ -971,6 +1063,7 @@ export default {
       } finally {
         this.titleSaving = false
         this.descriptionSaving = false
+        this.urlsSaving = false
       }
     }
   }
@@ -988,6 +1081,58 @@ export default {
   max-width: 1000px;
   margin: 0 auto;
   padding: 0 var(--spacing-md);
+}
+
+.podcast-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 2px solid var(--border-light);
+}
+
+.podcast-tabs .tab-button {
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.podcast-tabs .tab-button:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.podcast-tabs .tab-button.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.podcast-tabs .tab-button i {
+  font-size: var(--font-size-sm);
+}
+
+.tab-content {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .settings-intro {
