@@ -363,7 +363,7 @@ export default {
         { id: 'podcast', label: 'Podcast', icon: 'fas fa-podcast', count: null },
         { id: 'masterclass', label: 'Training', icon: 'fas fa-graduation-cap', count: null },
         { id: 'consultation', label: 'Consultations', icon: 'fas fa-video', count: null },
-        { id: 'contact-messages', label: 'Messages', icon: 'fas fa-envelope', count: null },
+        { id: 'contact-messages', label: 'Contact Messages', icon: 'fas fa-envelope', count: null },
         { id: 'media-assets', label: 'Digital Assets', icon: 'fas fa-photo-video', count: null },
         { id: 'social', label: 'Social Posts', icon: 'fas fa-share-alt', count: null },
         { id: 'social-links', label: 'Social Links', icon: 'fas fa-link', count: null },

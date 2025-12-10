@@ -6,6 +6,24 @@
         <p>View and manage messages sent to you through your public contact form.</p>
       </div>
 
+      <!-- Tabs -->
+      <div class="contact-tabs">
+        <button
+          :class="['tab-button', { active: activeSubTab === 'content' }]"
+          @click="activeSubTab = 'content'"
+        >
+          <i class="fas fa-inbox"></i> Messages
+        </button>
+        <button
+          :class="['tab-button', { active: activeSubTab === 'settings' }]"
+          @click="activeSubTab = 'settings'"
+        >
+          <i class="fas fa-cog"></i> Settings
+        </button>
+      </div>
+
+      <!-- Messages Tab Content -->
+      <div v-if="activeSubTab === 'content'" class="tab-content">
       <!-- Statistics -->
       <div class="settings-section">
         <div class="section-header">
@@ -194,6 +212,85 @@
           </button>
         </div>
       </div>
+      </div>
+
+      <!-- Settings Tab Content -->
+      <div v-if="activeSubTab === 'settings'" class="tab-content">
+        <div class="settings-section">
+          <div v-if="settingsLoading" class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i> Loading contact settings...
+          </div>
+
+          <form v-else class="contact-settings-form" @submit.prevent="saveSettings">
+            <div class="form-group">
+              <label>Contact Email</label>
+              <input
+                v-model="settingsForm.contact_email"
+                type="email"
+                class="form-input"
+                placeholder="hello@example.com"
+                maxlength="255"
+              />
+              <p class="helper-text">This email will be displayed on your public contact page. Leave empty to hide it.</p>
+            </div>
+
+            <div class="form-group">
+              <label>Contact Location</label>
+              <input
+                v-model="settingsForm.contact_location"
+                type="text"
+                class="form-input"
+                placeholder="Bali, Indonesia"
+                maxlength="255"
+              />
+              <p class="helper-text">Location to display on your contact page. Leave empty to hide it.</p>
+            </div>
+
+            <div class="form-group">
+              <label>Contact Phone</label>
+              <input
+                v-model="settingsForm.contact_phone"
+                type="text"
+                class="form-input"
+                placeholder="+1234567890"
+                maxlength="50"
+              />
+              <p class="helper-text">Optional phone number. Leave empty to hide it.</p>
+            </div>
+
+            <div class="form-group">
+              <label>Contact Message</label>
+              <textarea
+                v-model="settingsForm.contact_message"
+                class="form-input"
+                rows="4"
+                placeholder="Feel free to reach out with any questions!"
+                maxlength="1000"
+              ></textarea>
+              <span class="char-count">{{ (settingsForm.contact_message || '').length }}/1000</span>
+              <p class="helper-text">Optional welcome message to display above the contact form.</p>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="submit"
+                class="save-btn"
+                :disabled="settingsSaving"
+              >
+                <span v-if="settingsSaving">
+                  <i class="fas fa-spinner fa-spin"></i> Saving...
+                </span>
+                <span v-else>
+                  <i class="fas fa-save"></i> Save Settings
+                </span>
+              </button>
+              <span v-if="settingsSaved" class="save-indicator">
+                <i class="fas fa-check-circle"></i> Settings saved
+              </span>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -206,6 +303,7 @@ export default {
   name: 'ProfileContactMessages',
   data() {
     return {
+      activeSubTab: 'content',
       loading: false,
       messages: [],
       stats: {},
@@ -220,6 +318,15 @@ export default {
         per_page: 10,
         last_page: 1,
         total: 0
+      },
+      settingsLoading: false,
+      settingsSaving: false,
+      settingsSaved: false,
+      settingsForm: {
+        contact_email: '',
+        contact_location: '',
+        contact_phone: '',
+        contact_message: ''
       }
     }
   },
@@ -259,6 +366,7 @@ export default {
   mounted() {
     this.loadStats()
     this.loadMessages()
+    this.loadSettings()
   },
   methods: {
     async loadStats() {
@@ -408,6 +516,54 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+    async loadSettings() {
+      this.settingsLoading = true
+      try {
+        const result = await api.getContactSettings()
+        if (result.success) {
+          // Handle double-wrapped response
+          const data = result.data?.data || result.data || {}
+          this.settingsForm = {
+            contact_email: data.contact_email || '',
+            contact_location: data.contact_location || '',
+            contact_phone: data.contact_phone || '',
+            contact_message: data.contact_message || ''
+          }
+        } else {
+          toast.error(result.error || 'Failed to load contact settings')
+        }
+      } catch (error) {
+        console.error('Error loading contact settings:', error)
+        toast.error(error.message || 'Failed to load contact settings')
+      } finally {
+        this.settingsLoading = false
+      }
+    },
+    async saveSettings() {
+      if (this.settingsSaving) return
+      
+      this.settingsSaving = true
+      this.settingsSaved = false
+      
+      try {
+        const result = await api.updateContactSettings(this.settingsForm)
+        if (result.success) {
+          this.settingsSaved = true
+          toast.success(result.message || 'Contact settings updated successfully')
+          // Hide saved indicator after 3 seconds
+          setTimeout(() => {
+            this.settingsSaved = false
+          }, 3000)
+        } else {
+          toast.error(result.error || 'Failed to update contact settings')
+        }
+      } catch (error) {
+        console.error('Error saving contact settings:', error)
+        toast.error(error.message || 'Failed to update contact settings')
+      } finally {
+        this.settingsSaving = false
+      }
     }
   }
 }
@@ -438,6 +594,161 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.contact-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 2px solid var(--border-light);
+}
+
+.contact-tabs .tab-button {
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.contact-tabs .tab-button:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.contact-tabs .tab-button.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.contact-tabs .tab-button i {
+  font-size: var(--font-size-sm);
+}
+
+.tab-content {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Settings Form Styles */
+.contact-settings-form {
+  max-width: 800px;
+}
+
+.contact-settings-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.contact-settings-form .form-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.contact-settings-form .form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  transition: all 0.2s;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.contact-settings-form .form-input:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.contact-settings-form textarea.form-input {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.contact-settings-form .helper-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+.contact-settings-form .char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.contact-settings-form .form-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.contact-settings-form .save-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contact-settings-form .save-btn:hover:not(:disabled) {
+  background: var(--primary-color-dark, var(--primary-color));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.contact-settings-form .save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.contact-settings-form .save-indicator {
+  color: #10b981;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.contact-settings-form .save-indicator i {
+  font-size: 1rem;
 }
 
 .settings-intro h1 i {

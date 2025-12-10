@@ -1984,6 +1984,34 @@ class ApiService {
   async getContactMessagesStats() {
     return this.request('/influencer/contact-messages/stats')
   }
+
+  /**
+   * Get contact settings for authenticated influencer
+   */
+  async getContactSettings() {
+    return this.request('/influencer/contact-settings')
+  }
+
+  /**
+   * Update contact settings for authenticated influencer
+   * @param {Object} data - { contact_email, contact_location, contact_phone, contact_message }
+   */
+  async updateContactSettings(data) {
+    return this.request('/influencer/contact-settings', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    })
+  }
+
+  /**
+   * Get public contact info for an influencer
+   * @param {String} username - Influencer username
+   */
+  async getPublicContactInfo(username) {
+    return this.request(`/influencers/${encodeURIComponent(username)}/contact-info`, {
+      requireCsrf: false
+    })
+  }
 }
 
 // Create singleton instance

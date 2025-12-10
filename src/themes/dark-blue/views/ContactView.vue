@@ -28,30 +28,48 @@
         <!-- Left Column -->
         <div>
           <h1 class="text-4xl font-extrabold text-primary mb-4">Get in touch</h1>
-          <p class="text-lg text-text-muted mb-8 leading-relaxed">
+          <p v-if="contactInfo.contact_message" class="text-lg text-text-muted mb-8 leading-relaxed">
+            {{ contactInfo.contact_message }}
+          </p>
+          <p v-else class="text-lg text-text-muted mb-8 leading-relaxed">
             Have a question about a course, need a custom itinerary, or want to collaborate? Fill out the form or reach out directly via email.
           </p>
 
           <div class="space-y-6 mb-12">
             <!-- Email Contact -->
-            <div class="flex items-start gap-4">
+            <div v-if="contactInfo.contact_email" class="flex items-start gap-4">
               <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-envelope text-xl"></i>
               </div>
               <div>
                 <h3 class="font-bold text-primary">Email</h3>
-                <p class="text-text-muted">hello@alexwalker.com</p>
+                <a :href="`mailto:${contactInfo.contact_email}`" class="text-text-muted hover:text-primary transition-colors">
+                  {{ contactInfo.contact_email }}
+                </a>
               </div>
             </div>
 
             <!-- Location -->
-            <div class="flex items-start gap-4">
+            <div v-if="contactInfo.contact_location" class="flex items-start gap-4">
               <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-map-marker-alt text-xl"></i>
               </div>
               <div>
                 <h3 class="font-bold text-primary">Location</h3>
-                <p class="text-text-muted">Bali, Indonesia</p>
+                <p class="text-text-muted">{{ contactInfo.contact_location }}</p>
+              </div>
+            </div>
+
+            <!-- Phone -->
+            <div v-if="contactInfo.contact_phone" class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-phone text-xl"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-primary">Phone</h3>
+                <a :href="`tel:${contactInfo.contact_phone}`" class="text-text-muted hover:text-primary transition-colors">
+                  {{ contactInfo.contact_phone }}
+                </a>
               </div>
             </div>
           </div>
@@ -131,7 +149,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import api from '@/services/api'
@@ -142,6 +160,13 @@ const router = useRouter()
 
 const submitted = ref(false)
 const submitting = ref(false)
+const contactInfo = ref({
+  contact_email: null,
+  contact_location: null,
+  contact_phone: null,
+  contact_message: null
+})
+const loadingContactInfo = ref(false)
 
 const form = ref({
   name: '',
@@ -149,6 +174,30 @@ const form = ref({
   subject: 'general',
   message: ''
 })
+
+const loadContactInfo = async () => {
+  if (!route.params.username) return
+  
+  loadingContactInfo.value = true
+  try {
+    const result = await api.getPublicContactInfo(route.params.username)
+    if (result.success) {
+      // Handle double-wrapped response
+      const data = result.data?.data || result.data || {}
+      contactInfo.value = {
+        contact_email: data.contact_email || null,
+        contact_location: data.contact_location || null,
+        contact_phone: data.contact_phone || null,
+        contact_message: data.contact_message || null
+      }
+    }
+  } catch (error) {
+    console.error('Error loading contact info:', error)
+    // Silently fail - contact info is optional
+  } finally {
+    loadingContactInfo.value = false
+  }
+}
 
 const handleSubmit = async () => {
   if (submitting.value) return
@@ -176,6 +225,10 @@ const handleSubmit = async () => {
     submitting.value = false
   }
 }
+
+onMounted(() => {
+  loadContactInfo()
+})
 </script>
 
 <style scoped>
