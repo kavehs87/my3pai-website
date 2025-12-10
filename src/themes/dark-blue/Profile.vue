@@ -96,6 +96,9 @@
       @close="handleCloseOrderDetails"
       @view-invoice="handleViewInvoice"
     />
+
+    <!-- Cookie Consent -->
+    <CookieConsent />
   </div>
 </template>
 
@@ -119,6 +122,7 @@ import CheckoutView from './views/CheckoutView.vue'
 import LoginModal from '@/components/LoginModal.vue'
 import SignupModal from '@/components/SignupModal.vue'
 import OrderDetailsModal from './components/OrderDetailsModal.vue'
+import CookieConsent from './components/CookieConsent.vue'
 import { useInfluencer } from '@/shared/influencer/composables/useInfluencer'
 import apiService from '@/services/api.js'
 import toast from '@/utils/toast.js'

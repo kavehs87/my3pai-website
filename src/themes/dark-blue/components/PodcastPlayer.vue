@@ -3,19 +3,19 @@
     <!-- Header: Thumbnail and Title -->
     <div class="flex items-center gap-4 mb-4">
       <div class="relative w-20 h-20 flex-shrink-0">
-        <img
-          :src="podcast.image || podcast.coverImage"
-          alt="Podcast thumbnail"
-          class="w-full h-full object-cover rounded-xl"
-        />
+      <img
+        :src="podcast.image || podcast.coverImage"
+        alt="Podcast thumbnail"
+        class="w-full h-full object-cover rounded-xl"
+      />
         <Lock v-if="podcast.isPremium && (isLocked || (!audioUrl && !loading))" class="absolute top-1 right-1 w-4 h-4 text-yellow-500 bg-white rounded-full p-0.5" />
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs text-secondary font-semibold">{{ podcast.duration }}</span>
+        <span class="text-xs text-text-light">• {{ podcast.date }}</span>
       </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 mb-1">
-          <span class="text-xs text-secondary font-semibold">{{ podcast.duration }}</span>
-          <span class="text-xs text-text-light">• {{ podcast.date }}</span>
-        </div>
-        <h4 class="font-bold text-primary truncate pr-2">{{ podcast.title }}</h4>
+      <h4 class="font-bold text-primary truncate pr-2">{{ podcast.title }}</h4>
       </div>
     </div>
 
@@ -38,7 +38,7 @@
           <div 
             class="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-secondary rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
             :style="{ left: `calc(${progressPercent}% - 6px)` }"
-          ></div>
+        ></div>
         </div>
         <span class="text-xs text-text-muted font-mono tabular-nums min-w-[3rem]">
           {{ formatTime(displayDuration) }}
