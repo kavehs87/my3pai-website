@@ -13,11 +13,58 @@
         <p>Create and manage your podcast episodes. Premium episodes require a subscription to listen.</p>
       </div>
 
+      <!-- Podcast Title Settings -->
+      <div class="settings-section">
+        <h3 class="section-title"><i class="fas fa-heading"></i> Podcast Title</h3>
+        <p class="section-description">Custom title for your podcast section (e.g., "My Travel Podcast", "Adventure Stories", etc.)</p>
+        <div class="form-group">
+          <input 
+            v-model="podcastTitle" 
+            type="text" 
+            class="form-input" 
+            placeholder="Enter podcast title (optional)"
+            maxlength="255"
+            @blur="savePodcastSettings"
+            @keyup.enter="savePodcastSettings"
+          />
+          <span class="char-count">{{ (podcastTitle || '').length }}/255</span>
+          <p v-if="titleSaving" class="saving-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Saving...
+          </p>
+          <p v-if="titleSaved" class="saved-indicator">
+            <i class="fas fa-check"></i> Saved
+          </p>
+        </div>
+      </div>
+
+      <!-- Podcast Description Settings -->
+      <div class="settings-section">
+        <h3 class="section-title"><i class="fas fa-align-left"></i> Podcast Description</h3>
+        <p class="section-description">Description for your podcast section that appears on the public page (e.g., "Weekly episodes covering solo travel safety, budgeting, and creator tips.")</p>
+        <div class="form-group">
+          <textarea 
+            v-model="podcastDescription" 
+            class="form-input" 
+            placeholder="Enter podcast description (optional)"
+            maxlength="1000"
+            rows="3"
+            @blur="savePodcastSettings"
+          ></textarea>
+          <span class="char-count">{{ (podcastDescription || '').length }}/1000</span>
+          <p v-if="descriptionSaving" class="saving-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Saving...
+          </p>
+          <p v-if="descriptionSaved" class="saved-indicator">
+            <i class="fas fa-check"></i> Saved
+          </p>
+        </div>
+      </div>
+
       <div class="settings-section">
         <div class="section-header">
           <div class="stats-row">
             <div class="stat-item">
-              <span class="stat-value">{{ podcastEpisodes.length }}</span>
+              <span class="stat-value">{{ Array.isArray(podcastEpisodes) ? podcastEpisodes.length : 0 }}</span>
               <span class="stat-label">Total Episodes</span>
             </div>
             <div class="stat-item">
@@ -42,7 +89,7 @@
           <i class="fas fa-spinner fa-spin"></i> Loading...
         </div>
         
-        <div v-else-if="podcastEpisodes.length === 0" class="empty-state">
+        <div v-else-if="!Array.isArray(podcastEpisodes) || podcastEpisodes.length === 0" class="empty-state">
           <i class="fas fa-microphone"></i>
           <h3>No podcast episodes yet</h3>
           <p>Create your first episode to share with your listeners</p>
@@ -146,14 +193,20 @@
 
             <div v-if="modal.editId" class="upload-section">
               <h4><i class="fas fa-image"></i> Cover Image</h4>
-              <div class="file-upload-area">
-                <input type="file" accept="image/*" class="file-input" @change="handleCoverUpload" />
+              <div class="file-upload-area" :class="{ 'has-image': modal.form.coverImage }">
+                <input type="file" accept="image/*" class="file-input" @change="handleCoverFileSelect" />
                 <div class="file-upload-content">
-                  <i class="fas fa-cloud-upload-alt"></i>
-                  <span>Click or drag to upload cover image</span>
+                  <i :class="modal.form.coverImage ? 'fas fa-check-circle text-green' : 'fas fa-cloud-upload-alt'"></i>
+                  <span v-if="modal.form.coverImage">Cover uploaded • Click to replace</span>
+                  <span v-else>Click or drag to upload cover image</span>
                 </div>
               </div>
-              <img v-if="modal.form.coverImage" :src="modal.form.coverImage" alt="Cover" class="cover-preview" />
+              <div v-if="modal.form.coverImage" class="cover-preview-wrapper">
+                <img :src="modal.form.coverImage" alt="Cover" class="cover-preview" crossorigin="anonymous" />
+                <button type="button" class="crop-btn" @click="openCoverCropper" title="Crop image">
+                  <i class="fas fa-crop-alt"></i> Crop
+                </button>
+              </div>
             </div>
 
             <p v-if="!modal.editId" class="helper-text">
@@ -171,6 +224,85 @@
         </div>
       </div>
     </transition>
+
+    <!-- Image Cropper Modal -->
+    <Teleport to="body">
+      <div v-if="cropper.visible" class="cropper-overlay" @click.self="cancelCrop">
+        <div class="cropper-modal">
+          <div class="cropper-header">
+            <h3>Crop Cover Image</h3>
+            <p>Drag to pan, scroll or pinch to zoom</p>
+          </div>
+          
+          <div class="cropper-container" ref="cropperContainer">
+            <div 
+              class="cropper-image-wrapper"
+              ref="imageWrapper"
+              @mousedown="startDrag"
+              @mousemove="onDrag"
+              @mouseup="endDrag"
+              @mouseleave="endDrag"
+            >
+              <img 
+                ref="cropperImage"
+                :src="cropper.imageData"
+                :style="imageTransformStyle"
+                @load="onImageLoad"
+                crossorigin="anonymous"
+                draggable="false"
+              />
+            </div>
+            <div class="crop-overlay">
+              <div class="crop-area" :style="cropAreaStyle">
+                <div class="crop-corner top-left"></div>
+                <div class="crop-corner top-right"></div>
+                <div class="crop-corner bottom-left"></div>
+                <div class="crop-corner bottom-right"></div>
+                <div class="crop-grid">
+                  <div class="grid-line horizontal"></div>
+                  <div class="grid-line horizontal"></div>
+                  <div class="grid-line vertical"></div>
+                  <div class="grid-line vertical"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="cropper-controls">
+            <div class="zoom-controls">
+              <button class="zoom-btn" @click="zoomOut" :disabled="cropper.scale <= cropper.minScale">
+                <i class="fas fa-minus"></i>
+              </button>
+              <div class="zoom-slider-container">
+                <input 
+                  type="range" 
+                  class="zoom-slider"
+                  :min="cropper.minScale" 
+                  :max="cropper.maxScale" 
+                  :step="0.01"
+                  v-model.number="cropper.scale"
+                />
+              </div>
+              <button class="zoom-btn" @click="zoomIn" :disabled="cropper.scale >= cropper.maxScale">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <button class="reset-btn" @click="resetTransform">
+              <i class="fas fa-undo"></i>
+              Reset
+            </button>
+          </div>
+          
+          <div class="cropper-footer">
+            <button class="btn btn-secondary" @click="cancelCrop">Cancel</button>
+            <button class="btn btn-primary" @click="applyCrop">
+              <i class="fas fa-check"></i>
+              Apply Crop
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -188,9 +320,17 @@ export default {
   data() {
     return {
       podcastEpisodes: [],
+      podcastTitle: null,
+      podcastDescription: null,
       loading: false,
       isEnabled: true,
       audioUploading: false,
+      coverUploading: false,
+      titleSaving: false,
+      titleSaved: false,
+      descriptionSaving: false,
+      descriptionSaved: false,
+      cropperEventListeners: null,
       modal: {
         visible: false,
         editId: null,
@@ -204,18 +344,55 @@ export default {
           audioUrl: null,
           coverImage: null
         }
+      },
+      cropper: {
+        visible: false,
+        imageData: null,
+        originalFile: null,
+        scale: 1,
+        minScale: 0.5,
+        maxScale: 3,
+        translateX: 0,
+        translateY: 0,
+        isDraggingImage: false,
+        dragStartX: 0,
+        dragStartY: 0,
+        lastTranslateX: 0,
+        lastTranslateY: 0,
+        lastTouchDistance: 0,
+        imageWidth: 0,
+        imageHeight: 0,
+        containerWidth: 0,
+        containerHeight: 0,
+        cropAreaWidth: 0,
+        cropAreaHeight: 0
       }
     }
   },
   computed: {
     publishedCount() {
+      if (!Array.isArray(this.podcastEpisodes)) return 0
       return this.podcastEpisodes.filter(e => e.isPublished).length
     },
     premiumCount() {
+      if (!Array.isArray(this.podcastEpisodes)) return 0
       return this.podcastEpisodes.filter(e => e.isPremium).length
     },
     totalPlays() {
+      if (!Array.isArray(this.podcastEpisodes)) return 0
       return this.podcastEpisodes.reduce((sum, e) => sum + (e.playsCount || 0), 0)
+    },
+    imageTransformStyle() {
+      return {
+        transform: `translate(${this.cropper.translateX}px, ${this.cropper.translateY}px) scale(${this.cropper.scale})`,
+        transformOrigin: 'center center'
+      }
+    },
+    cropAreaStyle() {
+      return {
+        width: `${this.cropper.cropAreaWidth}px`,
+        height: `${this.cropper.cropAreaHeight}px`
+      }
     }
   },
   mounted() {
@@ -225,18 +402,90 @@ export default {
   },
   beforeUnmount() {
     eventBus.off('creator-tools-visibility-changed', this.handleVisibilityChange)
+    this.cleanupCropperEventListeners()
   },
   methods: {
     async loadPodcastEpisodes() {
       this.loading = true
       try {
         const result = await api.getMyPodcastEpisodes()
-        if (result.success) {
-          this.podcastEpisodes = result.data?.data || result.data || []
+        console.log('[PodcastSettings] Full API result:', JSON.stringify(result, null, 2))
+        
+        if (result.success && result.data) {
+          // Handle different response structures:
+          // - Double-wrapped: { data: { data: { episodes: [...] } } }
+          // - Single-wrapped: { data: { episodes: [...] } }
+          // - Old: { data: { data: [...] } } or { data: [...] }
+          const responseData = result.data
+          console.log('[PodcastSettings] Response data structure:', {
+            hasEpisodes: !!responseData.episodes,
+            episodesIsArray: Array.isArray(responseData.episodes),
+            hasData: !!responseData.data,
+            dataIsArray: Array.isArray(responseData.data),
+            hasNestedData: !!(responseData.data && responseData.data.data),
+            hasNestedEpisodes: !!(responseData.data && responseData.data.episodes),
+            isDirectArray: Array.isArray(responseData),
+            keys: Object.keys(responseData || {})
+          })
+          
+          let episodes = []
+          
+          // Check for episodes array in various locations (deepest first)
+          if (responseData.data?.episodes && Array.isArray(responseData.data.episodes)) {
+            // Double-wrapped: { data: { data: { episodes: [...] } } }
+            episodes = responseData.data.episodes
+            console.log('[PodcastSettings] ✓ Found episodes in data.data.episodes:', episodes.length)
+          } else if (responseData.episodes && Array.isArray(responseData.episodes)) {
+            // Single-wrapped: { data: { episodes: [...] } }
+            episodes = responseData.episodes
+            console.log('[PodcastSettings] ✓ Found episodes in data.episodes:', episodes.length)
+          } else if (responseData.data && Array.isArray(responseData.data)) {
+            // Old structure: { data: { data: [...] } }
+            episodes = responseData.data
+            console.log('[PodcastSettings] ✓ Found episodes in data.data:', episodes.length)
+          } else if (Array.isArray(responseData)) {
+            // Direct array: { data: [...] }
+            episodes = responseData
+            console.log('[PodcastSettings] ✓ Found episodes as direct array:', episodes.length)
+          } else {
+            console.warn('[PodcastSettings] ✗ No episodes found. Response structure:', responseData)
+            episodes = []
+          }
+          
+          // Ensure we always set an array (Vue 3 reactivity handles this automatically)
+          this.podcastEpisodes = episodes
+          
+          // Extract podcast title and description from response
+          if (responseData.data?.podcastTitle !== undefined) {
+            this.podcastTitle = responseData.data.podcastTitle
+          } else if (responseData.podcastTitle !== undefined) {
+            this.podcastTitle = responseData.podcastTitle
+          }
+          
+          if (responseData.data?.podcastDescription !== undefined) {
+            this.podcastDescription = responseData.data.podcastDescription
+          } else if (responseData.podcastDescription !== undefined) {
+            this.podcastDescription = responseData.podcastDescription
+          }
+          
+          console.log('[PodcastSettings] Set podcastEpisodes to:', {
+            length: this.podcastEpisodes.length,
+            isArray: Array.isArray(this.podcastEpisodes),
+            firstEpisode: this.podcastEpisodes[0],
+            podcastTitle: this.podcastTitle
+          })
+        } else {
+          console.error('[PodcastSettings] API call failed or no data:', {
+            success: result.success,
+            error: result.error,
+            data: result.data
+          })
+          this.podcastEpisodes = []
         }
       } catch (err) {
-        console.error('Failed to load podcast episodes:', err)
+        console.error('[PodcastSettings] Exception loading podcast episodes:', err)
         toast.error('Failed to load podcast episodes')
+        this.podcastEpisodes = []
       } finally {
         this.loading = false
       }
@@ -309,10 +558,22 @@ export default {
           this.closeModal()
           await this.loadPodcastEpisodes()
         } else {
-          toast.error(result.error || 'Failed to save')
+          // Check for slug conflict error
+          const errorMsg = result.error || 'Failed to save'
+          if (errorMsg.includes('UNIQUE constraint') || errorMsg.includes('slug')) {
+            toast.error('A podcast episode with this title already exists. Please use a different title.')
+          } else {
+            toast.error(errorMsg)
+          }
         }
       } catch (err) {
-        toast.error(err.message)
+        // Check for slug conflict error in exception
+        const errorMsg = err.message || 'Failed to save episode'
+        if (errorMsg.includes('UNIQUE constraint') || errorMsg.includes('slug') || (err.data && err.data.message && err.data.message.includes('slug'))) {
+          toast.error('A podcast episode with this title already exists. Please use a different title.')
+        } else {
+          toast.error(errorMsg)
+        }
       } finally {
         this.modal.saving = false
       }
@@ -357,20 +618,359 @@ export default {
         this.audioUploading = false
       }
     },
-    async handleCoverUpload(event) {
+    handleCoverFileSelect(event) {
       const file = event.target.files?.[0]
       if (!file || !this.modal.editId) return
+      this.loadImageForCropping(file)
+    },
+    loadImageForCropping(file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        this.cropper.imageData = e.target.result
+        this.cropper.originalFile = file
+        this.resetTransform()
+        this.cropper.visible = true
+        // Setup event listeners when cropper opens
+        this.$nextTick(() => {
+          this.setupCropperEventListeners()
+        })
+      }
+      reader.readAsDataURL(file)
+    },
+    setupCropperEventListeners() {
+      const wrapper = this.$refs.imageWrapper
+      if (!wrapper || this.cropperEventListeners) return
+      
+      // Use native addEventListener with explicit passive options to avoid warnings
+      const touchStartHandler = (e) => this.handleTouchStart(e)
+      const touchMoveHandler = (e) => {
+        if (e.touches.length === 1 && this.cropper.isDraggingImage) {
+          e.preventDefault()
+        } else if (e.touches.length === 2) {
+          e.preventDefault()
+        }
+        this.handleTouchMove(e)
+      }
+      const touchEndHandler = (e) => this.handleTouchEnd(e)
+      const wheelHandler = (e) => {
+        e.preventDefault()
+        this.handleWheel(e)
+      }
+      
+      wrapper.addEventListener('touchstart', touchStartHandler, { passive: true })
+      wrapper.addEventListener('touchmove', touchMoveHandler, { passive: false })
+      wrapper.addEventListener('touchend', touchEndHandler, { passive: true })
+      wrapper.addEventListener('wheel', wheelHandler, { passive: false })
+      
+      this.cropperEventListeners = {
+        touchstart: touchStartHandler,
+        touchmove: touchMoveHandler,
+        touchend: touchEndHandler,
+        wheel: wheelHandler,
+        element: wrapper
+      }
+    },
+    cleanupCropperEventListeners() {
+      if (this.cropperEventListeners) {
+        const { element, touchstart, touchmove, touchend, wheel } = this.cropperEventListeners
+        if (element) {
+          element.removeEventListener('touchstart', touchstart)
+          element.removeEventListener('touchmove', touchmove)
+          element.removeEventListener('touchend', touchend)
+          element.removeEventListener('wheel', wheel)
+        }
+        this.cropperEventListeners = null
+      }
+    },
+    openCoverCropper() {
+      if (this.modal.form.coverImage) {
+        // Load existing image for cropping
+        this.loadImageFromUrl(this.modal.form.coverImage)
+      }
+    },
+    async loadImageFromUrl(url) {
       try {
-        toast.info('Uploading cover image...')
+        const response = await fetch(url, { mode: 'cors' })
+        if (!response.ok) throw new Error('Failed to fetch image')
+        const blob = await response.blob()
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          this.cropper.imageData = e.target.result
+          this.cropper.originalFile = new File([blob], 'cover.jpg', { type: blob.type || 'image/jpeg' })
+          this.resetTransform()
+          this.cropper.visible = true
+        }
+        reader.readAsDataURL(blob)
+      } catch (err) {
+        console.error('Failed to load image:', err)
+        toast.error('Could not load image for cropping. Please upload a new image.')
+      }
+    },
+    cancelCrop() {
+      this.cropper.visible = false
+      this.cropper.imageData = null
+      this.cropper.originalFile = null
+      this.cleanupCropperEventListeners()
+    },
+    onImageLoad() {
+      this.$nextTick(() => {
+        const img = this.$refs.cropperImage
+        if (img) {
+          this.cropper.imageWidth = img.naturalWidth
+          this.cropper.imageHeight = img.naturalHeight
+          this.calculateCropArea()
+          this.fitImageToCropArea()
+        }
+      })
+    },
+    calculateCropArea() {
+      const container = this.$refs.cropperContainer
+      if (!container) return
+      
+      this.cropper.containerWidth = container.clientWidth
+      this.cropper.containerHeight = container.clientHeight
+      
+      // Podcast cover aspect ratio (typically square or 1:1 for podcast covers)
+      const targetAspect = 1
+      const padding = 40
+      const availableWidth = this.cropper.containerWidth - padding * 2
+      const availableHeight = this.cropper.containerHeight - padding * 2
+      
+      if (targetAspect > availableWidth / availableHeight) {
+        this.cropper.cropAreaWidth = availableWidth
+        this.cropper.cropAreaHeight = availableWidth / targetAspect
+      } else {
+        this.cropper.cropAreaHeight = availableHeight
+        this.cropper.cropAreaWidth = availableHeight * targetAspect
+      }
+    },
+    fitImageToCropArea() {
+      if (!this.cropper.imageWidth || !this.cropper.imageHeight || !this.cropper.cropAreaWidth || !this.cropper.cropAreaHeight) return
+      
+      const imageAspect = this.cropper.imageWidth / this.cropper.imageHeight
+      const cropAspect = this.cropper.cropAreaWidth / this.cropper.cropAreaHeight
+      
+      if (imageAspect > cropAspect) {
+        this.cropper.scale = this.cropper.cropAreaHeight / this.cropper.imageHeight
+      } else {
+        this.cropper.scale = this.cropper.cropAreaWidth / this.cropper.imageWidth
+      }
+      
+      this.cropper.minScale = this.cropper.scale * 0.5
+      this.cropper.scale = Math.max(this.cropper.scale, this.cropper.minScale)
+      this.cropper.translateX = 0
+      this.cropper.translateY = 0
+    },
+    resetTransform() {
+      this.cropper.scale = 1
+      this.cropper.translateX = 0
+      this.cropper.translateY = 0
+      this.$nextTick(() => {
+        this.fitImageToCropArea()
+      })
+    },
+    startDrag(event) {
+      event.preventDefault()
+      this.cropper.isDraggingImage = true
+      this.cropper.dragStartX = event.clientX
+      this.cropper.dragStartY = event.clientY
+      this.cropper.lastTranslateX = this.cropper.translateX
+      this.cropper.lastTranslateY = this.cropper.translateY
+    },
+    onDrag(event) {
+      if (!this.cropper.isDraggingImage) return
+      const deltaX = event.clientX - this.cropper.dragStartX
+      const deltaY = event.clientY - this.cropper.dragStartY
+      this.cropper.translateX = this.cropper.lastTranslateX + deltaX
+      this.cropper.translateY = this.cropper.lastTranslateY + deltaY
+      this.constrainPosition()
+    },
+    endDrag() {
+      this.cropper.isDraggingImage = false
+    },
+    handleTouchStart(event) {
+      if (event.touches.length === 1) {
+        this.cropper.isDraggingImage = true
+        this.cropper.dragStartX = event.touches[0].clientX
+        this.cropper.dragStartY = event.touches[0].clientY
+        this.cropper.lastTranslateX = this.cropper.translateX
+        this.cropper.lastTranslateY = this.cropper.translateY
+      } else if (event.touches.length === 2) {
+        this.cropper.lastTouchDistance = this.getTouchDistance(event.touches)
+      }
+    },
+    handleTouchMove(event) {
+      if (event.touches.length === 1 && this.cropper.isDraggingImage) {
+        event.preventDefault()
+        const deltaX = event.touches[0].clientX - this.cropper.dragStartX
+        const deltaY = event.touches[0].clientY - this.cropper.dragStartY
+        this.cropper.translateX = this.cropper.lastTranslateX + deltaX
+        this.cropper.translateY = this.cropper.lastTranslateY + deltaY
+        this.constrainPosition()
+      } else if (event.touches.length === 2) {
+        event.preventDefault()
+        const currentDistance = this.getTouchDistance(event.touches)
+        const scaleDelta = currentDistance / this.cropper.lastTouchDistance
+        const newScale = Math.min(Math.max(this.cropper.scale * scaleDelta, this.cropper.minScale), this.cropper.maxScale)
+        this.cropper.scale = newScale
+        this.cropper.lastTouchDistance = currentDistance
+        this.constrainPosition()
+      }
+    },
+    handleTouchEnd() {
+      this.cropper.isDraggingImage = false
+      this.cropper.lastTouchDistance = 0
+    },
+    getTouchDistance(touches) {
+      const dx = touches[0].clientX - touches[1].clientX
+      const dy = touches[0].clientY - touches[1].clientY
+      return Math.sqrt(dx * dx + dy * dy)
+    },
+    handleWheel(event) {
+      const delta = event.deltaY > 0 ? -0.1 : 0.1
+      const newScale = Math.min(Math.max(this.cropper.scale + delta, this.cropper.minScale), this.cropper.maxScale)
+      this.cropper.scale = newScale
+      this.constrainPosition()
+    },
+    zoomIn() {
+      this.cropper.scale = Math.min(this.cropper.scale + 0.1, this.cropper.maxScale)
+      this.constrainPosition()
+    },
+    zoomOut() {
+      this.cropper.scale = Math.max(this.cropper.scale - 0.1, this.cropper.minScale)
+      this.constrainPosition()
+    },
+    constrainPosition() {
+      const scaledWidth = this.cropper.imageWidth * this.cropper.scale
+      const scaledHeight = this.cropper.imageHeight * this.cropper.scale
+      const maxX = Math.max(0, (scaledWidth - this.cropper.cropAreaWidth) / 2)
+      const maxY = Math.max(0, (scaledHeight - this.cropper.cropAreaHeight) / 2)
+      this.cropper.translateX = Math.max(-maxX, Math.min(maxX, this.cropper.translateX))
+      this.cropper.translateY = Math.max(-maxY, Math.min(maxY, this.cropper.translateY))
+    },
+    async applyCrop() {
+      try {
+        const croppedFile = await this.generateCroppedImage()
+        if (croppedFile) {
+          await this.uploadCroppedCover(croppedFile)
+        }
+        this.cropper.visible = false
+        this.cleanupCropperEventListeners()
+      } catch (error) {
+        console.error('Error applying crop:', error)
+        toast.error('Failed to crop image. Please try again.')
+        this.cleanupCropperEventListeners()
+      }
+    },
+    async generateCroppedImage() {
+      return new Promise((resolve, reject) => {
+        const img = this.$refs.cropperImage
+        if (!img) {
+          reject(new Error('Image not loaded'))
+          return
+        }
+        
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        const outputWidth = 800
+        const outputHeight = 800
+        canvas.width = outputWidth
+        canvas.height = outputHeight
+        
+        const scaledWidth = this.cropper.imageWidth * this.cropper.scale
+        const scaledHeight = this.cropper.imageHeight * this.cropper.scale
+        const imageCenterX = this.cropper.containerWidth / 2 + this.cropper.translateX
+        const imageCenterY = this.cropper.containerHeight / 2 + this.cropper.translateY
+        const cropLeft = (this.cropper.containerWidth - this.cropper.cropAreaWidth) / 2
+        const cropTop = (this.cropper.containerHeight - this.cropper.cropAreaHeight) / 2
+        
+        const sourceX = ((cropLeft - imageCenterX + scaledWidth / 2) / this.cropper.scale)
+        const sourceY = ((cropTop - imageCenterY + scaledHeight / 2) / this.cropper.scale)
+        const sourceWidth = this.cropper.cropAreaWidth / this.cropper.scale
+        const sourceHeight = this.cropper.cropAreaHeight / this.cropper.scale
+        
+        try {
+          ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, outputWidth, outputHeight)
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const fileName = this.cropper.originalFile?.name || 'cover.jpg'
+              const file = new File([blob], fileName, { type: 'image/jpeg' })
+              resolve(file)
+            } else {
+              reject(new Error('Failed to create blob'))
+            }
+          }, 'image/jpeg', 0.9)
+        } catch (error) {
+          reject(error)
+        }
+      })
+    },
+    async uploadCroppedCover(file) {
+      if (!this.modal.editId) return
+      this.coverUploading = true
+      try {
+        toast.info('Uploading cropped cover image...')
         const result = await api.uploadPodcastCover(this.modal.editId, file)
         if (result.success) {
-          this.modal.form.coverImage = result.data?.data?.coverImage || result.data?.coverImage
+          const newCoverImage = result.data?.data?.coverImage || result.data?.coverImage
+          // Add cache-busting parameter to force image refresh
+          const imageUrl = newCoverImage ? `${newCoverImage}${newCoverImage.includes('?') ? '&' : '?'}t=${Date.now()}` : null
+          
+          this.modal.form.coverImage = imageUrl || newCoverImage
+          
+          // Update the episode in the list to refresh the image
+          const episodeIndex = this.podcastEpisodes.findIndex(e => e.id === this.modal.editId)
+          if (episodeIndex !== -1) {
+            // Use Vue 3 reactivity - create new array to trigger update
+            this.podcastEpisodes = this.podcastEpisodes.map((ep, idx) => 
+              idx === episodeIndex 
+                ? { ...ep, coverImage: imageUrl || newCoverImage }
+                : ep
+            )
+          }
+          
           toast.success('Cover image uploaded')
         } else {
           toast.error(result.error)
         }
       } catch (err) {
         toast.error(err.message)
+      } finally {
+        this.coverUploading = false
+      }
+    },
+    async savePodcastSettings() {
+      // Debounce: only save if not already saving
+      if (this.titleSaving || this.descriptionSaving) return
+      
+      this.titleSaving = true
+      this.descriptionSaving = true
+      this.titleSaved = false
+      this.descriptionSaved = false
+      
+      try {
+        const result = await api.updatePodcastSettings({
+          podcastTitle: this.podcastTitle || null,
+          podcastDescription: this.podcastDescription || null
+        })
+        if (result.success) {
+          this.titleSaved = true
+          this.descriptionSaved = true
+          toast.success('Podcast settings saved')
+          // Hide saved indicators after 2 seconds
+          setTimeout(() => {
+            this.titleSaved = false
+            this.descriptionSaved = false
+          }, 2000)
+        } else {
+          toast.error(result.error || 'Failed to save podcast settings')
+        }
+      } catch (err) {
+        console.error('Failed to save podcast settings:', err)
+        toast.error(err.message || 'Failed to save podcast settings')
+      } finally {
+        this.titleSaving = false
+        this.descriptionSaving = false
       }
     }
   }
@@ -413,11 +1013,32 @@ export default {
   margin: 0;
 }
 
+.section-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.section-title i {
+  color: var(--secondary-color);
+}
+
+.section-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
 .settings-section {
   background: var(--bg-primary);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: var(--spacing-sm);
 }
 
 .section-header {
@@ -760,6 +1381,23 @@ export default {
   text-align: right;
 }
 
+.saving-indicator,
+.saved-indicator {
+  font-size: var(--font-size-xs);
+  margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.saving-indicator {
+  color: var(--secondary-color);
+}
+
+.saved-indicator {
+  color: var(--success-color);
+}
+
 .form-row {
   display: flex;
   gap: var(--spacing-xl);
@@ -862,12 +1500,43 @@ export default {
   font-size: var(--font-size-sm);
 }
 
+.cover-preview-wrapper {
+  position: relative;
+  margin-top: var(--spacing-sm);
+  display: inline-block;
+}
+
 .cover-preview {
   max-width: 100%;
   max-height: 150px;
   border-radius: var(--radius-md);
-  margin-top: var(--spacing-sm);
   object-fit: cover;
+  display: block;
+}
+
+.crop-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: var(--secondary-color);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.crop-btn:hover {
+  background: var(--secondary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .helper-text {
@@ -952,6 +1621,303 @@ export default {
     flex-direction: row;
     width: 100%;
     justify-content: flex-end;
+  }
+}
+
+/* Cropper Modal Styles */
+.cropper-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: var(--spacing-md);
+}
+
+.cropper-modal {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  width: min(90vw, 800px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+}
+
+.cropper-header {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.cropper-header h3 {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+}
+
+.cropper-header p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.cropper-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  overflow: hidden;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cropper-image-wrapper {
+  position: relative;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.cropper-image-wrapper img {
+  max-width: none;
+  max-height: none;
+  display: block;
+}
+
+.crop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.crop-area {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid white;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.crop-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid white;
+  background: var(--secondary-color);
+}
+
+.crop-corner.top-left {
+  top: -10px;
+  left: -10px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.crop-corner.top-right {
+  top: -10px;
+  right: -10px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.crop-corner.bottom-left {
+  bottom: -10px;
+  left: -10px;
+  border-right: none;
+  border-top: none;
+}
+
+.crop-corner.bottom-right {
+  bottom: -10px;
+  right: -10px;
+  border-left: none;
+  border-top: none;
+}
+
+.crop-grid {
+  position: absolute;
+  inset: 0;
+}
+
+.grid-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.grid-line.horizontal {
+  width: 100%;
+  height: 1px;
+  top: 33.33%;
+}
+
+.grid-line.horizontal:last-of-type {
+  top: 66.66%;
+}
+
+.grid-line.vertical {
+  height: 100%;
+  width: 1px;
+  left: 33.33%;
+}
+
+.grid-line.vertical:last-of-type {
+  left: 66.66%;
+}
+
+.cropper-controls {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 200px;
+}
+
+.zoom-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+}
+
+.zoom-btn:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--secondary-color);
+}
+
+.zoom-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zoom-slider-container {
+  flex: 1;
+  min-width: 100px;
+}
+
+.zoom-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-secondary);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--secondary-color);
+  cursor: pointer;
+}
+
+.zoom-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--secondary-color);
+  cursor: pointer;
+  border: none;
+}
+
+.reset-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  transition: all var(--transition-normal);
+}
+
+.reset-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--text-secondary);
+}
+
+.cropper-footer {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+}
+
+.btn {
+  padding: var(--spacing-sm) var(--spacing-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-primary);
+}
+
+.btn-primary {
+  background: var(--secondary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--secondary-hover);
+}
+
+@media (max-width: 768px) {
+  .cropper-modal {
+    width: 95vw;
+    max-height: 95vh;
+  }
+
+  .cropper-container {
+    height: 300px;
+  }
+
+  .cropper-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .zoom-controls {
+    width: 100%;
   }
 }
 </style>

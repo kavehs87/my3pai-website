@@ -34,7 +34,9 @@
     :error="error"
     :use-mock-data="useMockData"
     :bio-paragraphs="bioParagraphs"
-  />
+  >
+    <router-view />
+  </component>
 </template>
 
 <script setup>

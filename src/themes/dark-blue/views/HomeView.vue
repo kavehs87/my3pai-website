@@ -33,7 +33,7 @@
       </div>
       <div class="text-center">
         <button
-          @click="$emit('view-classes')"
+          @click="router.push({ name: 'influencer-classes', params: { username: currentUsername } })"
           class="bg-white text-primary border border-slate-200 px-8 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all shadow-sm"
         >
           Browse All Classes
@@ -69,7 +69,7 @@
         </div>
         <div class="text-center">
           <button
-            @click="$emit('view-maps')"
+            @click="router.push({ name: 'influencer-maps', params: { username: currentUsername } })"
             class="bg-white text-primary border border-slate-200 px-8 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all shadow-sm"
           >
             Browse All Maps
@@ -91,12 +91,12 @@
               v-for="post in displayedPosts"
               :key="post.id"
               :post="post"
-              @click="$emit('view-post', post)"
+              @click="router.push({ name: 'influencer-blog-post', params: { username: currentUsername, slug: post.slug } })"
             />
           </div>
           <div class="text-center">
             <button
-              @click="$emit('view-blog')"
+              @click="router.push({ name: 'influencer-blog', params: { username: currentUsername } })"
               class="bg-white text-primary border border-slate-200 px-8 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all shadow-sm"
             >
               Browse All Articles
@@ -117,7 +117,7 @@
             <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center">
               <Mic class="w-5 h-5" />
             </div>
-            <h2 class="text-2xl font-bold text-primary">Travel Unfiltered Podcast</h2>
+            <h2 class="text-2xl font-bold text-primary">{{ podcastTitle || 'Travel Unfiltered Podcast' }}</h2>
           </div>
           <div class="space-y-4 mb-8">
             <PodcastPlayer
@@ -128,7 +128,7 @@
           </div>
           <div class="text-center md:text-left">
             <button
-              @click="$emit('view-podcasts')"
+              @click="router.push({ name: 'influencer-podcasts', params: { username: currentUsername } })"
               class="text-secondary font-semibold hover:text-primary transition-colors inline-flex items-center gap-2"
             >
               View All Episodes <ArrowRight class="w-4 h-4" />
@@ -184,7 +184,7 @@
           </div>
           <div class="text-center md:text-left">
             <button
-              @click="$emit('view-socials')"
+              @click="router.push({ name: 'influencer-socials', params: { username: currentUsername } })"
               class="text-secondary font-semibold hover:text-primary transition-colors inline-flex items-center gap-2"
             >
               Browse All Videos <ArrowRight class="w-4 h-4" />
@@ -227,7 +227,7 @@
 
         <div class="mt-12 text-center">
           <button
-            @click="$emit('view-assets')"
+            @click="router.push({ name: 'influencer-assets', params: { username: currentUsername } })"
             class="bg-white/10 text-white border border-white/20 px-8 py-3 rounded-xl font-semibold hover:bg-white hover:text-primary transition-all"
           >
             View All Assets
@@ -241,6 +241,7 @@
 
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Video, Map, Mic, Youtube, ArrowRight, Play, FileText } from 'lucide-vue-next'
 import Hero from '../components/Hero.vue'
 import SectionHeader from '../components/SectionHeader.vue'
@@ -278,16 +279,19 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['book-click', 'view-assets', 'view-classes', 'view-maps', 'view-blog', 'view-post', 'view-podcasts', 'view-socials', 'add-to-cart'])
+const emit = defineEmits(['book-click', 'add-to-cart'])
 
+const route = useRoute()
+const router = useRouter()
 const username = inject('influencerUsername', null)
-const currentUsername = computed(() => props.profile?.username || username?.value)
+const currentUsername = computed(() => props.profile?.username || username?.value || route.params.username)
 
 // Data
 const courses = ref([])
 const maps = ref([])
 const blogPosts = ref([])
 const podcasts = ref([])
+const podcastTitle = ref(null)
 const socialPosts = ref([])
 const mediaAssets = ref([])
 const loading = ref({
@@ -507,10 +511,41 @@ const fetchPodcasts = async () => {
     if (result.success) {
       let data = result.data
       if (data?.data) data = data.data
-      podcasts.value = Array.isArray(data) ? data : data?.data || []
+      
+      // Extract podcast title and episodes from response
+      if (data?.podcastTitle !== undefined) {
+        podcastTitle.value = data.podcastTitle
+      }
+      
+      // Handle episodes array - check for nested structure
+      let episodes = []
+      if (data?.episodes && Array.isArray(data.episodes)) {
+        episodes = data.episodes
+      } else if (Array.isArray(data)) {
+        episodes = data
+      } else if (data?.data && Array.isArray(data.data)) {
+        episodes = data.data
+      }
+      
+      // Map API response fields to component expectations
+      podcasts.value = episodes.map(episode => ({
+        ...episode,
+        image: episode.coverImage || '/media-placeholder.jpg',
+        coverImage: episode.coverImage || episode.image,
+        date: episode.publishedAt ? new Date(episode.publishedAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }) : episode.date,
+        publishedAt: episode.publishedAt || episode.date
+      }))
+    } else {
+      console.error('Error fetching podcasts:', result.error)
+      podcasts.value = []
     }
   } catch (err) {
     console.error('Error fetching podcasts:', err)
+    podcasts.value = []
   } finally {
     loading.value.podcasts = false
   }

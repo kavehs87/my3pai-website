@@ -3,7 +3,7 @@
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Back Button -->
       <button
-        @click="$emit('back')"
+        @click="router.push({ name: 'influencer-home', params: { username: currentUsername } })"
         class="flex items-center gap-2 text-text-muted hover:text-primary mb-8 transition-colors"
       >
         <ArrowLeft class="w-5 h-5" /> Back to Cart
@@ -462,13 +462,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ShoppingCart, Lock, Shield, Trash2, Plus, Minus } from 'lucide-vue-next'
 import PriceDisplay from '../components/PriceDisplay.vue'
 import apiService from '@/services/api.js'
 import toast from '@/utils/toast.js'
 
-const emit = defineEmits(['back', 'order-complete'])
+const emit = defineEmits(['order-complete'])
+
+const route = useRoute()
+const router = useRouter()
+const username = inject('influencerUsername', null)
+const currentUsername = computed(() => username?.value || route.params.username)
 
 // Steps - will be filtered based on free order
 const allSteps = [

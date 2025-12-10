@@ -3,7 +3,7 @@
     <!-- Hero Section -->
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
       <button
-        @click="$emit('back')"
+        @click="router.push({ name: 'influencer-blog', params: { username: route.params.username } })"
         class="flex items-center gap-2 text-text-muted hover:text-primary mb-8 transition-colors font-medium"
       >
         <ArrowLeft class="w-5 h-5" /> Back to Articles
@@ -41,9 +41,22 @@
     </div>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
-      <div v-if="post" class="relative">
+      <div v-if="loading" class="text-center py-12 text-text-muted">
+        <div class="w-12 h-12 border-4 border-slate-200 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+        <p>Loading article...</p>
+      </div>
+
+      <div v-else-if="error && !post" class="text-center py-12 text-text-muted">
+        <p class="text-lg mb-4">{{ error }}</p>
+        <button @click="$emit('back')" class="text-secondary hover:underline">
+          Back to Articles
+        </button>
+      </div>
+
+      <div v-else-if="post" class="relative">
         <!-- Content -->
         <div
+          v-if="post.content || post.body"
           class="text-slate-700 rich-text"
           :class="[
             'prose prose-lg prose-slate max-w-none',
@@ -53,18 +66,23 @@
             'prose-strong:text-slate-900 prose-strong:font-bold',
             'prose-ul:text-slate-700 prose-li:marker:text-secondary',
             'prose-img:rounded-2xl prose-img:shadow-lg',
-            post.isPremium ? 'mask-image-gradient pb-8' : ''
+            (post.isPremium && post.isLocked) ? 'mask-image-gradient pb-8' : ''
           ]"
           :style="{
-            maskImage: post.isPremium ? 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)' : 'none',
-            WebkitMaskImage: post.isPremium ? 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)' : 'none'
+            maskImage: (post.isPremium && post.isLocked) ? 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)' : 'none',
+            WebkitMaskImage: (post.isPremium && post.isLocked) ? 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)' : 'none'
           }"
           v-html="post.content || post.body || ''"
         />
+        
+        <div v-else class="text-center py-12 text-text-muted">
+          <p class="text-lg mb-4">Content not available.</p>
+          <p v-if="post.isPremium && post.isLocked" class="text-sm">This is premium content that requires purchase.</p>
+        </div>
 
         <!-- Premium Lock Overlay -->
         <div
-          v-if="post.isPremium"
+          v-if="post.isPremium && (post.isLocked || !post.content)"
           class="absolute inset-x-0 bottom-0 top-1/3 flex flex-col items-center justify-end pb-12 bg-gradient-to-t from-surface via-surface/90 to-transparent pointer-events-none"
         >
           <div class="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 text-center max-w-sm mx-4 pointer-events-auto transform transition-transform hover:scale-105 duration-300">
@@ -106,6 +124,7 @@ import { ArrowLeft, Clock3, Star, Lock, Unlock, Tag } from 'lucide-vue-next'
 import PriceDisplay from '../components/PriceDisplay.vue'
 import api from '@/services/api'
 import { ref, computed, onMounted, inject } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps({
   post: {
@@ -118,7 +137,8 @@ const props = defineProps({
   },
 })
 
-defineEmits(['back'])
+const route = useRoute()
+const router = useRouter()
 
 const username = inject('influencerUsername', null)
 const currentUsername = computed(() => props.post?.username || username?.value)
@@ -128,13 +148,17 @@ const loading = ref(false)
 const error = ref(null)
 
 const fetchPost = async () => {
-  if (props.post) return // Already have post data
-  if (!currentUsername.value || !props.slug) return
+  // Always fetch full post content using slug, even if we have partial post data
+  const slug = props.post?.slug || props.slug
+  if (!currentUsername.value || !slug) {
+    error.value = 'Missing username or post slug.'
+    return
+  }
 
   loading.value = true
   error.value = null
   try {
-    const result = await api.getInfluencerBlogPost(currentUsername.value, props.slug)
+    const result = await api.getInfluencerBlogPost(currentUsername.value, slug)
     if (result.success) {
       let data = result.data
       if (data?.data) data = data.data
@@ -152,20 +176,41 @@ const fetchPost = async () => {
         content: data.content || data.body || '',
         body: data.body || data.content || ''
       }
+      
+      // Log for debugging
+      console.log('Blog post loaded:', {
+        hasContent: !!post.value.content,
+        contentLength: post.value.content?.length || 0,
+        isPremium: post.value.isPremium,
+        isLocked: post.value.isLocked
+      })
     } else {
       error.value = result.error || 'Failed to load blog post.'
+      // If it's a premium content error, still show the post data if available
+      if (result.requiresPurchase && props.post) {
+        post.value = {
+          ...props.post,
+          image: props.post.coverImage || props.post.image || '/media-placeholder.jpg',
+          isLocked: true
+        }
+      }
     }
   } catch (err) {
     error.value = err.message || 'An unexpected error occurred.'
+    // Fallback to props.post if available
+    if (props.post) {
+      post.value = {
+        ...props.post,
+        image: props.post.coverImage || props.post.image || '/media-placeholder.jpg'
+      }
+    }
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  if (!props.post && props.slug) {
-    fetchPost()
-  }
+  fetchPost()
 })
 </script>
 

@@ -1,7 +1,7 @@
 <template>
   <div class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen bg-surface">
     <button
-      @click="$emit('back')"
+      @click="router.push({ name: 'influencer-home', params: { username: currentUsername } })"
       class="flex items-center gap-2 text-text-muted hover:text-primary mb-8 transition-colors"
     >
       <ArrowLeft class="w-5 h-5" /> Back to Profile
@@ -79,14 +79,15 @@
 
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Share2, Play, Youtube, Instagram } from 'lucide-vue-next'
 import SectionHeader from '../components/SectionHeader.vue'
 import api from '@/services/api'
 
-defineEmits(['back'])
-
+const route = useRoute()
+const router = useRouter()
 const username = inject('influencerUsername', null)
-const currentUsername = computed(() => username?.value)
+const currentUsername = computed(() => username?.value || route.params.username)
 
 const socialPosts = ref([])
 const loading = ref(false)

@@ -6,9 +6,9 @@
     ]"
   >
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-      <div
+      <router-link
+        :to="{ name: 'influencer-home', params: { username: currentUsername } }"
         class="flex items-center gap-2 cursor-pointer"
-        @click="$emit('navigate', 'home')"
       >
         <div v-if="logo" class="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-lg">
           <img :src="logo" alt="Logo" class="w-full h-full object-contain" />
@@ -29,21 +29,21 @@
           my<span class="text-secondary">3pai</span>
         </span>
         </div>
-      </div>
+      </router-link>
 
       <div class="hidden md:flex items-center gap-8">
-        <a
+        <router-link
           v-for="item in navItems"
           :key="item"
-          :href="`#${item.toLowerCase()}`"
-          @click.prevent="handleNavClick(item)"
+          :to="getNavRoute(item)"
           :class="[
             'text-sm font-medium hover:text-secondary transition-colors',
-            isNavScrolled ? 'text-slate-200' : 'text-primary'
+            isNavScrolled ? 'text-slate-200' : 'text-primary',
+            isActiveRoute(item) ? 'text-secondary font-semibold' : ''
           ]"
         >
           {{ item }}
-        </a>
+        </router-link>
       </div>
 
       <div class="flex items-center gap-4">
@@ -142,7 +142,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Menu, ShoppingCart } from 'lucide-vue-next'
 import CurrencySelector from './CurrencySelector.vue'
 import apiService from '@/services/api.js'
@@ -172,6 +173,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['menu-click', 'navigate', 'cart-click', 'show-login', 'show-signup'])
+
+const route = useRoute()
+const router = useRouter()
+const username = inject('influencerUsername', null)
+const currentUsername = computed(() => username?.value || route.params.username)
 
 // Auth state
 const isLoggedIn = ref(false)
@@ -254,8 +260,34 @@ const handleClickOutside = (event) => {
 const scrolled = ref(false)
 const navItems = ['Profile', 'Courses', 'Maps', 'Blog', 'Assets']
 
-const isHome = computed(() => props.currentView === 'home')
+const isHome = computed(() => route.name === 'influencer-home')
 const isNavScrolled = computed(() => scrolled.value || !isHome.value)
+
+const getNavRoute = (item) => {
+  if (!currentUsername.value) return '#'
+  
+  const routeMap = {
+    'Profile': { name: 'influencer-home', params: { username: currentUsername.value } },
+    'Courses': { name: 'influencer-classes', params: { username: currentUsername.value } },
+    'Maps': { name: 'influencer-maps', params: { username: currentUsername.value } },
+    'Blog': { name: 'influencer-blog', params: { username: currentUsername.value } },
+    'Assets': { name: 'influencer-assets', params: { username: currentUsername.value } },
+  }
+  
+  return routeMap[item] || '#'
+}
+
+const isActiveRoute = (item) => {
+  const routeMap = {
+    'Profile': 'influencer-home',
+    'Courses': 'influencer-classes',
+    'Maps': 'influencer-maps',
+    'Blog': 'influencer-blog',
+    'Assets': 'influencer-assets',
+  }
+  
+  return route.name === routeMap[item]
+}
 
 const influencerName = computed(() => {
   if (props.firstName || props.lastName) {
@@ -280,17 +312,18 @@ const handleScroll = () => {
 }
 
 const handleNavClick = (item) => {
-  const id = item.toLowerCase()
-  
-  if (!isHome.value) {
-    emit('navigate', 'home')
-    setTimeout(() => {
-      const element = document.getElementById(id)
-      if (element) element.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
-  } else {
-    const element = document.getElementById(id)
-    if (element) element.scrollIntoView({ behavior: 'smooth' })
+  // This is now handled by router-link, but keep for backward compatibility
+  const route = getNavRoute(item)
+  if (route && route.name) {
+    router.push(route).then(() => {
+      // If on home page, scroll to section
+      if (route.name === 'influencer-home') {
+        setTimeout(() => {
+          const element = document.getElementById(item.toLowerCase())
+          if (element) element.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+      }
+    })
   }
 }
 

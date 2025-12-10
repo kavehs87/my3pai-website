@@ -26,7 +26,7 @@
       >
         Download Invoice
       </button>
-    <button @click="$emit('back')" class="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors">
+    <button @click="router.push({ name: 'influencer-home', params: { username: currentUsername } })" class="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors">
       Return to Profile
     </button>
     </div>
@@ -38,7 +38,7 @@
     :style="{ paddingTop: '5rem', paddingBottom: '3rem' }"
   >
     <button
-      @click="$emit('back')"
+      @click="router.push({ name: 'influencer-home', params: { username: currentUsername } })"
       class="flex items-center gap-2 text-text-muted hover:text-primary mb-8 transition-colors"
     >
       <ArrowLeft class="w-5 h-5" /> Back to Profile

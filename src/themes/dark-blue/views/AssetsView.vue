@@ -5,7 +5,7 @@
     <div class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen bg-surface">
       <div class="flex justify-between items-center mb-8">
         <button
-          @click="$emit('back')"
+          @click="router.push({ name: 'influencer-home', params: { username: currentUsername } })"
           class="flex items-center gap-2 text-text-muted hover:text-primary transition-colors"
         >
           <ArrowLeft class="w-5 h-5" /> Back to Profile
@@ -71,16 +71,19 @@
 
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Download, FileText, Filter } from 'lucide-vue-next'
 import SectionHeader from '../components/SectionHeader.vue'
 import AssetCard from '../components/AssetCard.vue'
 import LicensingModal from '../components/LicensingModal.vue'
 import api from '@/services/api'
 
-defineEmits(['back', 'add-to-cart'])
+const emit = defineEmits(['add-to-cart'])
 
+const route = useRoute()
+const router = useRouter()
 const username = inject('influencerUsername', null)
-const currentUsername = computed(() => username?.value)
+const currentUsername = computed(() => username?.value || route.params.username)
 
 const filter = ref('All')
 const filters = ['All', 'LUT', 'RAW Photo', 'Drone Footage', 'Preset']

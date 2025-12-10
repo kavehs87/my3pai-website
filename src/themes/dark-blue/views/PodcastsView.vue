@@ -1,15 +1,15 @@
 <template>
   <div class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen bg-surface">
     <button
-      @click="$emit('back')"
+      @click="router.push({ name: 'influencer-home', params: { username: route.params.username } })"
       class="flex items-center gap-2 text-text-muted hover:text-primary mb-8 transition-colors"
     >
       <ArrowLeft class="w-5 h-5" /> Back to Profile
     </button>
 
     <SectionHeader
-      title="Travel Unfiltered Podcast"
-      subtitle="Weekly episodes covering solo travel safety, budgeting, and creator tips."
+      :title="podcastTitle || 'Travel Unfiltered Podcast'"
+      :subtitle="podcastDescription || 'Weekly episodes covering solo travel safety, budgeting, and creator tips.'"
       :icon="Mic"
     />
 
@@ -53,17 +53,21 @@
 
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Mic, Headphones } from 'lucide-vue-next'
 import SectionHeader from '../components/SectionHeader.vue'
 import PodcastPlayer from '../components/PodcastPlayer.vue'
 import api from '@/services/api'
 
-defineEmits(['back'])
+const route = useRoute()
+const router = useRouter()
 
 const username = inject('influencerUsername', null)
 const currentUsername = computed(() => username?.value)
 
 const podcasts = ref([])
+const podcastTitle = ref(null)
+const podcastDescription = ref(null)
 const loading = ref(false)
 const error = ref(null)
 
@@ -76,12 +80,45 @@ const fetchPodcasts = async () => {
     if (result.success) {
       let data = result.data
       if (data?.data) data = data.data
-      podcasts.value = Array.isArray(data) ? data : data?.data || []
+      
+      // Extract podcast title, description, and episodes from response
+      if (data?.podcastTitle !== undefined) {
+        podcastTitle.value = data.podcastTitle
+      }
+      
+      if (data?.podcastDescription !== undefined) {
+        podcastDescription.value = data.podcastDescription
+      }
+      
+      // Handle episodes array - check for nested structure
+      let episodes = []
+      if (data?.episodes && Array.isArray(data.episodes)) {
+        episodes = data.episodes
+      } else if (Array.isArray(data)) {
+        episodes = data
+      } else if (data?.data && Array.isArray(data.data)) {
+        episodes = data.data
+      }
+      
+      // Map API response fields to component expectations
+      podcasts.value = episodes.map(episode => ({
+        ...episode,
+        image: episode.coverImage || '/media-placeholder.jpg',
+        coverImage: episode.coverImage || episode.image,
+        date: episode.publishedAt ? new Date(episode.publishedAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }) : episode.date,
+        publishedAt: episode.publishedAt || episode.date
+      }))
     } else {
       error.value = result.error || 'Failed to load podcasts.'
+      podcasts.value = []
     }
   } catch (err) {
     error.value = err.message || 'An unexpected error occurred.'
+    podcasts.value = []
   } finally {
     loading.value = false
   }

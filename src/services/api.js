@@ -914,6 +914,16 @@ class ApiService {
     })
   }
 
+  /**
+   * Update podcast settings (title and description)
+   */
+  async updatePodcastSettings(data) {
+    return this.request('/influencer/podcast/settings', {
+      method: 'PUT',
+      body: data
+    })
+  }
+
   // ========================================
   // Intro Video API Methods
   // ========================================

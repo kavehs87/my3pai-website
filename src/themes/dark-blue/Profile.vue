@@ -3,7 +3,7 @@
     <!-- Navigation -->
     <Navigation
       :cart-count="cartCount"
-      :current-view="currentView"
+      :current-view="route.name || 'influencer-home'"
       :logo="finalProfile?.logo"
       :first-name="finalProfile?.firstName"
       :last-name="finalProfile?.lastName"
@@ -59,78 +59,18 @@
 
     <!-- Main Content -->
     <main class="flex-1">
-      <HomeView
-        v-if="currentView === 'home'"
+      <router-view
         :profile="finalProfile"
         :bio-paragraphs="finalBioParagraphs"
         :visibility-settings="visibilitySettings"
         @add-to-cart="addToCart"
         @book-click="handleBookClick"
-        @view-assets="currentView = 'assets'"
-        @view-classes="currentView = 'classes'"
-        @view-maps="currentView = 'maps'"
-        @view-blog="currentView = 'blog'"
-        @view-post="handleViewPost"
-        @view-podcasts="currentView = 'podcasts'"
-        @view-socials="currentView = 'socials'"
-      />
-
-      <!-- Other Views -->
-      <ClassesView
-        v-else-if="currentView === 'classes'"
-        @back="currentView = 'home'"
-        @add-to-cart="addToCart"
-      />
-      <MapsView
-        v-else-if="currentView === 'maps'"
-        @back="currentView = 'home'"
-        @add-to-cart="addToCart"
-      />
-      <BlogView
-        v-else-if="currentView === 'blog'"
-        @back="currentView = 'home'"
-        @view-post="handleViewPost"
-      />
-      <BlogPostView
-        v-else-if="currentView === 'blog-post'"
-        :post="selectedPost"
-        @back="currentView = 'blog'"
-      />
-      <AssetsView
-        v-else-if="currentView === 'assets'"
-        @back="currentView = 'home'"
-        @add-to-cart="addToCart"
-      />
-      <PodcastsView
-        v-else-if="currentView === 'podcasts'"
-        @back="currentView = 'home'"
-      />
-      <SocialsView
-        v-else-if="currentView === 'socials'"
-        @back="currentView = 'home'"
-      />
-      <ConsultationView
-        v-else-if="currentView === 'consultation'"
-        @back="currentView = 'home'"
-        @book="handleBookSuccess"
-      />
-      <CheckoutView
-        v-else-if="currentView === 'checkout'"
-        @back="isCartOpen = true"
         @order-complete="handleOrderComplete"
       />
-      <div v-else-if="currentView !== 'home' && currentView !== 'checkout'" class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
-        <div class="text-center text-text-muted">
-          <p>{{ currentView }} view - Coming soon</p>
-          <button @click="currentView = 'home'" class="mt-4 text-secondary hover:underline">
-            Back to Home
-          </button>
-        </div>
-      </div>
     </main>
 
     <!-- Footer -->
-    <Footer v-if="currentView !== 'checkout' && currentView !== 'success'" :profile="finalProfile" />
+    <Footer v-if="$route.name !== 'influencer-checkout'" :profile="finalProfile" />
 
     <!-- Login Modal -->
     <LoginModal
@@ -161,6 +101,7 @@
 
 <script setup>
 import { ref, provide, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { X } from 'lucide-vue-next'
 import Navigation from './components/Navigation.vue'
 import CartDrawer from './components/CartDrawer.vue'
@@ -183,6 +124,9 @@ import apiService from '@/services/api.js'
 import toast from '@/utils/toast.js'
 import eventBus from '@/utils/eventBus.js'
 import './styles/theme.css'
+
+const route = useRoute()
+const router = useRouter()
 
 const props = defineProps({
   profile: {
@@ -227,7 +171,6 @@ const finalBioParagraphs = computed(() => props.bioParagraphs.length > 0 ? props
 const cartCount = ref(0)
 const isCartOpen = ref(false)
 const mobileMenuOpen = ref(false)
-const currentView = ref('home')
 const selectedPost = ref(null)
 const showLogin = ref(false)
 const showSignup = ref(false)
@@ -384,19 +327,40 @@ const fetchCartCount = async () => {
 }
 
 const handleNavigate = (view) => {
-  currentView.value = view
-  window.scrollTo(0, 0)
+  const username = currentUsername.value
+  if (!username) return
+  
+  const routeMap = {
+    'home': { name: 'influencer-home', params: { username } },
+    'classes': { name: 'influencer-classes', params: { username } },
+    'maps': { name: 'influencer-maps', params: { username } },
+    'blog': { name: 'influencer-blog', params: { username } },
+    'assets': { name: 'influencer-assets', params: { username } },
+    'podcasts': { name: 'influencer-podcasts', params: { username } },
+    'socials': { name: 'influencer-socials', params: { username } },
+    'consultation': { name: 'influencer-consultation', params: { username } },
+    'checkout': { name: 'influencer-checkout', params: { username } },
+  }
+  
+  const routeConfig = routeMap[view]
+  if (routeConfig) {
+    router.push(routeConfig)
+  }
 }
 
 const handleCheckout = () => {
   isCartOpen.value = false
-  currentView.value = 'checkout'
-  window.scrollTo(0, 0)
+  const username = currentUsername.value
+  if (username) {
+    router.push({ name: 'influencer-checkout', params: { username } })
+  }
 }
 
 const handleBookClick = () => {
-  currentView.value = 'consultation'
-  window.scrollTo(0, 0)
+  const username = currentUsername.value
+  if (username) {
+    router.push({ name: 'influencer-consultation', params: { username } })
+  }
 }
 
 const handleBookSuccess = () => {
@@ -421,7 +385,10 @@ const handleOrderComplete = (orderData) => {
   showOrderDetails.value = true
   
   // Navigate back to home
-  currentView.value = 'home'
+  const username = currentUsername.value
+  if (username) {
+    router.push({ name: 'influencer-home', params: { username } })
+  }
   
   // Refresh cart count
   fetchCartCount()
@@ -447,21 +414,36 @@ const handleViewInvoice = (invoiceId) => {
 
 const handleViewPost = (post) => {
   selectedPost.value = post
-  currentView.value = 'blog-post'
-  window.scrollTo(0, 0)
+  const username = currentUsername.value
+  if (username && post?.slug) {
+    router.push({ name: 'influencer-blog-post', params: { username, slug: post.slug } })
+  }
 }
 
 const handleMobileNav = (item) => {
   mobileMenuOpen.value = false
-  if (currentView.value !== 'home') {
-    currentView.value = 'home'
-    setTimeout(() => {
-      const element = document.getElementById(item.toLowerCase())
-      if (element) element.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
-  } else {
-    const element = document.getElementById(item.toLowerCase())
-    if (element) element.scrollIntoView({ behavior: 'smooth' })
+  const username = currentUsername.value
+  if (!username) return
+  
+  const routeMap = {
+    'Profile': { name: 'influencer-home', params: { username } },
+    'Courses': { name: 'influencer-classes', params: { username } },
+    'Maps': { name: 'influencer-maps', params: { username } },
+    'Blog': { name: 'influencer-blog', params: { username } },
+    'Assets': { name: 'influencer-assets', params: { username } },
+  }
+  
+  const routeConfig = routeMap[item]
+  if (routeConfig) {
+    router.push(routeConfig).then(() => {
+      // Scroll to section if on home page
+      if (routeConfig.name === 'influencer-home') {
+        setTimeout(() => {
+          const element = document.getElementById(item.toLowerCase())
+          if (element) element.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+      }
+    })
   }
 }
 
