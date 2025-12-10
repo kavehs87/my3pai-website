@@ -15,12 +15,19 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# macOS files
+.DS_Store
+**/.DS_Store
+
+# Mock/Test profile folders
+mock-dark-blue-creator-profile/
+wanderluxe---influencer-profile/
 
 # Environment files - never commit these
 .env
