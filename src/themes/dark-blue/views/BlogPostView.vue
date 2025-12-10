@@ -138,7 +138,20 @@ const fetchPost = async () => {
     if (result.success) {
       let data = result.data
       if (data?.data) data = data.data
-      post.value = data
+      // Map API response to component expectations
+      post.value = {
+        ...data,
+        image: data.coverImage || data.image || '/media-placeholder.jpg',
+        date: data.publishedAt ? new Date(data.publishedAt).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }) : data.date,
+        coverImage: data.coverImage || data.image,
+        publishedAt: data.publishedAt || data.date,
+        content: data.content || data.body || '',
+        body: data.body || data.content || ''
+      }
     } else {
       error.value = result.error || 'Failed to load blog post.'
     }

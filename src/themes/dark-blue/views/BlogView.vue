@@ -62,12 +62,26 @@ const fetchBlogPosts = async () => {
     if (result.success) {
       let data = result.data
       if (data?.data) data = data.data
-      blogPosts.value = Array.isArray(data) ? data : data?.data || []
+      const posts = Array.isArray(data) ? data : data?.data || []
+      // Map API response to component expectations
+      blogPosts.value = posts.map(post => ({
+        ...post,
+        image: post.coverImage || post.image || '/media-placeholder.jpg',
+        date: post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }) : post.date,
+        coverImage: post.coverImage || post.image,
+        publishedAt: post.publishedAt || post.date
+      }))
     } else {
       error.value = result.error || 'Failed to load blog posts.'
+      blogPosts.value = []
     }
   } catch (err) {
     error.value = err.message || 'An unexpected error occurred.'
+    blogPosts.value = []
   } finally {
     loading.value = false
   }
