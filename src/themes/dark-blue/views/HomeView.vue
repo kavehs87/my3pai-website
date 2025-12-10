@@ -236,13 +236,48 @@
       </div>
     </section>
     </template>
+
+    <!-- Let's Create Something Together Section -->
+    <section id="contact-preview" class="scroll-mt-28 py-20 bg-surface border-t border-slate-200">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-5xl mx-auto bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-slate-200/60 border border-slate-100 text-center relative overflow-hidden">
+          <!-- Decorative blobs -->
+          <div class="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3 pointer-events-none"></div>
+          <div class="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
+          
+          <div class="relative z-10 max-w-2xl mx-auto">
+            <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <Mail class="w-7 h-7" />
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold text-primary mb-4">Let's Create Something Together</h2>
+            <p class="text-lg text-text-muted mb-8 leading-relaxed">
+              Whether you're a brand looking for a partnership or a creator seeking mentorship, I'm ready to help you tell your story.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+              <button 
+                @click="router.push({ name: 'influencer-contact', params: { username: currentUsername } })"
+                class="bg-primary text-white px-8 py-4 rounded-xl font-bold hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2"
+              >
+                Get in Touch <ArrowRight class="w-5 h-5" />
+              </button>
+              <button 
+                @click="router.push({ name: 'influencer-consultation', params: { username: currentUsername } })"
+                class="bg-white text-primary border border-slate-200 px-8 py-4 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-2"
+              >
+                Book a Consultation
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Video, Map, Mic, Youtube, ArrowRight, Play, FileText } from 'lucide-vue-next'
+import { Video, Map, Mic, Youtube, ArrowRight, Play, FileText, Mail } from 'lucide-vue-next'
 import Hero from '../components/Hero.vue'
 import SectionHeader from '../components/SectionHeader.vue'
 import CourseCard from '../components/CourseCard.vue'
