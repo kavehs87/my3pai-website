@@ -1,126 +1,153 @@
 <template>
-  <div class="min-h-screen bg-surface pt-28 pb-20">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-      <!-- Back Button -->
+  <div class="pt-28 pb-20 container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen bg-surface">
+    <!-- Success State -->
+    <div v-if="submitted" class="min-h-screen flex flex-col items-center justify-center text-center">
+      <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
+        <i class="fas fa-check-circle text-4xl"></i>
+      </div>
+      <h2 class="text-3xl font-bold text-primary mb-4">Message Sent!</h2>
+      <p class="text-text-muted max-w-md mb-8">Thanks for reaching out. I'll get back to you as soon as possible.</p>
+      <button
+        @click="router.push({ name: 'influencer-home', params: { username: route.params.username } })"
+        class="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors"
+      >
+        Return to Home
+      </button>
+    </div>
+
+    <!-- Contact Form -->
+    <div v-else>
       <button
         @click="router.push({ name: 'influencer-home', params: { username: route.params.username } })"
         class="flex items-center gap-2 text-text-muted hover:text-primary mb-8 transition-colors"
       >
-        <ArrowLeft class="w-5 h-5" /> Back
+        <ArrowLeft class="w-5 h-5" /> Back to Home
       </button>
 
-      <!-- Header -->
-      <div class="text-center mb-12">
-        <h1 class="text-4xl font-bold text-primary mb-4">Contact Us</h1>
-        <p class="text-text-muted text-lg">
-          Have a question or need support? We're here to help.
-        </p>
-      </div>
+      <div class="grid lg:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
+        <!-- Left Column -->
+        <div>
+          <h1 class="text-4xl font-extrabold text-primary mb-4">Get in touch</h1>
+          <p class="text-lg text-text-muted mb-8 leading-relaxed">
+            Have a question about a course, need a custom itinerary, or want to collaborate? Fill out the form or reach out directly via email.
+          </p>
 
-      <!-- Contact Information -->
-      <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
-        <div class="grid md:grid-cols-2 gap-8">
-          <!-- General Inquiries -->
-          <div>
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
-                <i class="fas fa-envelope text-secondary text-xl"></i>
+          <div class="space-y-6 mb-12">
+            <!-- Email Contact -->
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-envelope text-xl"></i>
               </div>
-              <h3 class="text-xl font-semibold text-primary">General Inquiries</h3>
+              <div>
+                <h3 class="font-bold text-primary">Email</h3>
+                <p class="text-text-muted">hello@alexwalker.com</p>
+              </div>
             </div>
-            <p class="text-text-muted mb-2">
-              For general questions about My3Pai, our platform, or services:
-            </p>
-            <a href="mailto:support@my3pai.com" class="text-secondary hover:text-secondary/80 font-medium">
-              support@my3pai.com
-            </a>
-          </div>
 
-          <!-- Creator Support -->
-          <div>
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
-                <i class="fas fa-user-tie text-secondary text-xl"></i>
+            <!-- Location -->
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-map-marker-alt text-xl"></i>
               </div>
-              <h3 class="text-xl font-semibold text-primary">Creator Support</h3>
-            </div>
-            <p class="text-text-muted mb-2">
-              For creators needing help with their profiles, content, or payments:
-            </p>
-            <a href="mailto:creators@my3pai.com" class="text-secondary hover:text-secondary/80 font-medium">
-              creators@my3pai.com
-            </a>
-          </div>
-
-          <!-- Technical Support -->
-          <div>
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
-                <i class="fas fa-tools text-secondary text-xl"></i>
+              <div>
+                <h3 class="font-bold text-primary">Location</h3>
+                <p class="text-text-muted">Bali, Indonesia</p>
               </div>
-              <h3 class="text-xl font-semibold text-primary">Technical Support</h3>
             </div>
-            <p class="text-text-muted mb-2">
-              Experiencing technical issues? Our team is ready to assist:
-            </p>
-            <a href="mailto:tech@my3pai.com" class="text-secondary hover:text-secondary/80 font-medium">
-              tech@my3pai.com
-            </a>
-          </div>
-
-          <!-- Business Inquiries -->
-          <div>
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
-                <i class="fas fa-handshake text-secondary text-xl"></i>
-              </div>
-              <h3 class="text-xl font-semibold text-primary">Business Inquiries</h3>
-            </div>
-            <p class="text-text-muted mb-2">
-              For partnerships, collaborations, or business opportunities:
-            </p>
-            <a href="mailto:business@my3pai.com" class="text-secondary hover:text-secondary/80 font-medium">
-              business@my3pai.com
-            </a>
           </div>
         </div>
-      </div>
 
-      <!-- Response Time -->
-      <div class="bg-secondary/5 rounded-2xl p-6 mb-8">
-        <div class="flex items-start gap-4">
-          <i class="fas fa-clock text-secondary text-2xl mt-1"></i>
-          <div>
-            <h3 class="text-lg font-semibold text-primary mb-2">Response Time</h3>
-            <p class="text-text-muted">
-              We aim to respond to all inquiries within 24-48 hours during business days. 
-              For urgent matters, please mark your email as "Urgent" in the subject line.
-            </p>
-          </div>
+        <!-- Right Column - Form -->
+        <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
+          <form @submit.prevent="handleSubmit" class="space-y-6">
+            <!-- Name and Email Row -->
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-primary mb-2">Name</label>
+                <input
+                  v-model="form.name"
+                  required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 bg-slate-50 focus:bg-white transition-colors"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-primary mb-2">Email</label>
+                <input
+                  v-model="form.email"
+                  type="email"
+                  required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 bg-slate-50 focus:bg-white transition-colors"
+                  placeholder="email@example.com"
+                />
+              </div>
+            </div>
+
+            <!-- Subject Dropdown -->
+            <div>
+              <label class="block text-sm font-medium text-primary mb-2">Subject</label>
+              <select
+                v-model="form.subject"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 bg-slate-50 focus:bg-white transition-colors"
+              >
+                <option value="general">General Inquiry</option>
+                <option value="course">Course Support</option>
+                <option value="business">Business Collaboration</option>
+                <option value="press">Press / Media</option>
+              </select>
+            </div>
+
+            <!-- Message Textarea -->
+            <div>
+              <label class="block text-sm font-medium text-primary mb-2">Message</label>
+              <textarea
+                v-model="form.message"
+                required
+                rows="5"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 bg-slate-50 focus:bg-white transition-colors resize-none"
+                placeholder="How can I help you?"
+              ></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              class="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+            >
+              Send Message
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
         </div>
-      </div>
-
-      <!-- FAQ Link -->
-      <div class="text-center">
-        <p class="text-text-muted mb-4">
-          Before contacting us, you might find answers in our frequently asked questions.
-        </p>
-        <button
-          @click="router.push({ name: 'influencer-home', params: { username: route.params.username } })"
-          class="px-6 py-3 bg-secondary text-white rounded-lg font-semibold hover:bg-secondary/90 transition-colors"
-        >
-          Return to Home
-        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
+
+const submitted = ref(false)
+
+const form = ref({
+  name: '',
+  email: '',
+  subject: 'general',
+  message: ''
+})
+
+const handleSubmit = () => {
+  // TODO: Implement actual form submission to backend
+  console.log('Form submitted:', form.value)
+  submitted.value = true
+}
 </script>
 
+<style scoped>
+/* Additional styles if needed */
+</style>
