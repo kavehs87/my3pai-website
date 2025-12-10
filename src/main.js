@@ -25,6 +25,9 @@ import AssetsView from './themes/dark-blue/views/AssetsView.vue'
 import SocialsView from './themes/dark-blue/views/SocialsView.vue'
 import ConsultationView from './themes/dark-blue/views/ConsultationView.vue'
 import CheckoutView from './themes/dark-blue/views/CheckoutView.vue'
+import ContactView from './themes/dark-blue/views/ContactView.vue'
+import TermsView from './themes/dark-blue/views/TermsView.vue'
+import PrivacyView from './themes/dark-blue/views/PrivacyView.vue'
 import './style.css'
 
 const routes = [
@@ -96,6 +99,24 @@ const routes = [
         path: 'checkout',
         name: 'influencer-checkout',
         component: CheckoutView,
+        props: true,
+      },
+      {
+        path: 'contact',
+        name: 'influencer-contact',
+        component: ContactView,
+        props: true,
+      },
+      {
+        path: 'terms',
+        name: 'influencer-terms',
+        component: TermsView,
+        props: true,
+      },
+      {
+        path: 'privacy',
+        name: 'influencer-privacy',
+        component: PrivacyView,
         props: true,
       },
     ],

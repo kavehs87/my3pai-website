@@ -9,10 +9,28 @@
       />
       
       <div class="settings-intro">
-        <h1><i class="fas fa-video"></i> Consultation Settings</h1>
-        <p>Configure your 1-on-1 trip planning consultation service. Set your pricing, duration, and availability.</p>
+        <h1><i class="fas fa-video"></i> Consultation</h1>
+        <p>Configure your consultation service and manage bookings.</p>
       </div>
 
+      <!-- Tabs -->
+      <div class="consultation-tabs">
+        <button
+          :class="['tab-button', { active: activeSubTab === 'content' }]"
+          @click="activeSubTab = 'content'"
+        >
+          <i class="fas fa-calendar-check"></i> Bookings
+        </button>
+        <button
+          :class="['tab-button', { active: activeSubTab === 'settings' }]"
+          @click="activeSubTab = 'settings'"
+        >
+          <i class="fas fa-cog"></i> Settings
+        </button>
+      </div>
+
+      <!-- Settings Tab Content -->
+      <div v-if="activeSubTab === 'settings'" class="tab-content">
       <!-- Consultation Settings Form -->
       <div class="settings-section">
         <div v-if="loading" class="loading-state">
@@ -160,7 +178,10 @@
           </div>
         </form>
       </div>
+      </div>
 
+      <!-- Content Tab (Bookings) -->
+      <div v-if="activeSubTab === 'content'" class="tab-content">
       <!-- Bookings Section -->
       <div class="settings-section">
         <div class="section-header">
@@ -394,6 +415,7 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- Confirm Modal -->
@@ -445,6 +467,7 @@ export default {
   },
   data() {
     return {
+      activeSubTab: 'content', // 'content' or 'settings'
       loading: false,
       isEnabled: true,
       saving: false,
@@ -1028,6 +1051,58 @@ export default {
   max-width: 1000px;
   margin: 0 auto;
   padding: 0 var(--spacing-md);
+}
+
+.consultation-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 2px solid var(--border-light);
+}
+
+.consultation-tabs .tab-button {
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.consultation-tabs .tab-button:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.consultation-tabs .tab-button.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.consultation-tabs .tab-button i {
+  font-size: var(--font-size-sm);
+}
+
+.tab-content {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .settings-intro {

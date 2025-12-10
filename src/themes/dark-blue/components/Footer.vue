@@ -8,9 +8,24 @@
         </div>
         <div class="flex flex-col md:flex-row items-center gap-6">
           <div class="flex gap-6">
-            <a href="#" class="text-slate-400 hover:text-secondary transition-colors">Contact</a>
-            <a href="#" class="text-slate-400 hover:text-secondary transition-colors">Terms</a>
-            <a href="#" class="text-slate-400 hover:text-secondary transition-colors">Privacy</a>
+            <router-link 
+              :to="{ name: 'influencer-contact', params: { username: currentUsername } }" 
+              class="text-slate-400 hover:text-secondary transition-colors"
+            >
+              Contact
+            </router-link>
+            <router-link 
+              :to="{ name: 'influencer-terms', params: { username: currentUsername } }" 
+              class="text-slate-400 hover:text-secondary transition-colors"
+            >
+              Terms
+            </router-link>
+            <router-link 
+              :to="{ name: 'influencer-privacy', params: { username: currentUsername } }" 
+              class="text-slate-400 hover:text-secondary transition-colors"
+            >
+              Privacy
+            </router-link>
           </div>
           <div class="border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6 w-full md:w-auto flex justify-center">
             <CurrencySelector is-footer />
@@ -25,7 +40,10 @@
 </template>
 
 <script setup>
+import { useRoute } from 'vue-router'
 import CurrencySelector from './CurrencySelector.vue'
+
+const route = useRoute()
 
 defineProps({
   profile: {
@@ -33,5 +51,7 @@ defineProps({
     default: null,
   },
 })
+
+const currentUsername = route.params.username
 </script>
 
