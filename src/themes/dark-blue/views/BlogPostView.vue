@@ -48,7 +48,7 @@
 
       <div v-else-if="error && !post" class="text-center py-12 text-text-muted">
         <p class="text-lg mb-4">{{ error }}</p>
-        <button @click="$emit('back')" class="text-secondary hover:underline">
+        <button @click="router.push({ name: 'influencer-blog', params: { username: currentUsername } })" class="text-secondary hover:underline">
           Back to Articles
         </button>
       </div>
@@ -123,7 +123,7 @@
 import { ArrowLeft, Clock3, Star, Lock, Unlock, Tag } from 'lucide-vue-next'
 import PriceDisplay from '../components/PriceDisplay.vue'
 import api from '@/services/api'
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -141,15 +141,15 @@ const route = useRoute()
 const router = useRouter()
 
 const username = inject('influencerUsername', null)
-const currentUsername = computed(() => props.post?.username || username?.value)
+const currentUsername = computed(() => route.params.username || props.post?.username || username?.value)
 
-const post = ref(props.post)
+const post = ref(props.post || null)
 const loading = ref(false)
 const error = ref(null)
 
 const fetchPost = async () => {
-  // Always fetch full post content using slug, even if we have partial post data
-  const slug = props.post?.slug || props.slug
+  // Get slug from route params first, then props
+  const slug = route.params.slug || props.post?.slug || props.slug
   if (!currentUsername.value || !slug) {
     error.value = 'Missing username or post slug.'
     return
@@ -159,9 +159,21 @@ const fetchPost = async () => {
   error.value = null
   try {
     const result = await api.getInfluencerBlogPost(currentUsername.value, slug)
-    if (result.success) {
-      let data = result.data
+    
+    // Check if we have data (either from success or from 402 response with data)
+    let postData = null
+    if (result.success && result.data) {
+      postData = result.data
+    } else if (result.status === 402 && result.data) {
+      // 402 responses should still include post data according to API spec
+      postData = result.data
+    }
+    
+    if (postData) {
+      // Unwrap nested data structure
+      let data = postData
       if (data?.data) data = data.data
+      
       // Map API response to component expectations
       post.value = {
         ...data,
@@ -174,7 +186,10 @@ const fetchPost = async () => {
         coverImage: data.coverImage || data.image,
         publishedAt: data.publishedAt || data.date,
         content: data.content || data.body || '',
-        body: data.body || data.content || ''
+        body: data.body || data.content || '',
+        // Mark as locked if it's a 402 response or if isLocked is true
+        isLocked: result.status === 402 || data.isLocked || false,
+        isPremium: data.isPremium || result.status === 402 || false
       }
       
       // Log for debugging
@@ -182,12 +197,21 @@ const fetchPost = async () => {
         hasContent: !!post.value.content,
         contentLength: post.value.content?.length || 0,
         isPremium: post.value.isPremium,
-        isLocked: post.value.isLocked
+        isLocked: post.value.isLocked,
+        hasImage: !!post.value.image,
+        hasTitle: !!post.value.title
       })
+      
+      // Set error message for locked content but don't block rendering
+      if (result.status === 402 || post.value.isLocked) {
+        error.value = null // Don't show error, show the lock overlay instead
+      }
     } else {
+      // No data at all - this is a real error
       error.value = result.error || 'Failed to load blog post.'
-      // If it's a premium content error, still show the post data if available
-      if (result.requiresPurchase && props.post) {
+      
+      // Fallback to props.post if available
+      if (props.post) {
         post.value = {
           ...props.post,
           image: props.post.coverImage || props.post.image || '/media-placeholder.jpg',
@@ -209,7 +233,16 @@ const fetchPost = async () => {
   }
 }
 
+// Watch for route changes to refetch post when slug changes
+watch(() => route.params.slug, (newSlug) => {
+  if (newSlug) {
+    fetchPost()
+  }
+}, { immediate: false })
+
 onMounted(() => {
+  // Always fetch post on mount, even if we have props.post
+  // This ensures we have the latest data and handle premium content correctly
   fetchPost()
 })
 </script>

@@ -176,6 +176,18 @@ class ApiService {
       }
 
       if (!response.ok) {
+        // Special handling for 402 (Payment Required) - should still return data
+        if (response.status === 402) {
+          // For premium content, return the data even though status is 402
+          return { 
+            success: false, 
+            error: data.error || data.message || 'Premium content requires purchase',
+            status: 402,
+            requiresPurchase: true,
+            data: data // Include full response data (which should contain the post)
+          }
+        }
+        
         // Extract validation errors from Laravel response
         // Check for error, message, or errors fields
         let errorMessage = data.error || data.message || `HTTP ${response.status}: ${response.statusText}`
