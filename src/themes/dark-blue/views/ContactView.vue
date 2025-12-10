@@ -112,10 +112,16 @@
             <!-- Submit Button -->
             <button
               type="submit"
-              class="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+              :disabled="submitting"
+              class="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Send Message
-              <i class="fas fa-paper-plane"></i>
+              <span v-if="submitting">
+                <i class="fas fa-spinner fa-spin"></i> Sending...
+              </span>
+              <span v-else>
+                Send Message
+                <i class="fas fa-paper-plane"></i>
+              </span>
             </button>
           </form>
         </div>
@@ -128,11 +134,14 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
+import api from '@/services/api'
+import toast from '@/utils/toast'
 
 const route = useRoute()
 const router = useRouter()
 
 const submitted = ref(false)
+const submitting = ref(false)
 
 const form = ref({
   name: '',
@@ -141,10 +150,31 @@ const form = ref({
   message: ''
 })
 
-const handleSubmit = () => {
-  // TODO: Implement actual form submission to backend
-  console.log('Form submitted:', form.value)
-  submitted.value = true
+const handleSubmit = async () => {
+  if (submitting.value) return
+  
+  submitting.value = true
+  
+  try {
+    const result = await api.submitContactForm(route.params.username, {
+      name: form.value.name,
+      email: form.value.email,
+      subject: form.value.subject,
+      message: form.value.message
+    })
+    
+    if (result.success) {
+      submitted.value = true
+      toast.success(result.message || 'Your message has been sent successfully')
+    } else {
+      toast.error(result.error || 'Failed to send message. Please try again.')
+    }
+  } catch (error) {
+    console.error('Error submitting contact form:', error)
+    toast.error(error.message || 'Failed to send message. Please try again.')
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 

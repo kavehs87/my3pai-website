@@ -1914,6 +1914,76 @@ class ApiService {
   async getPayout(payoutId) {
     return this.request(`/influencer/payouts/${payoutId}`)
   }
+
+  /**
+   * Submit contact form to influencer (public endpoint)
+   * Note: Even though this is public, Laravel requires CSRF token for POST requests
+   * @param {String} username - Influencer username
+   * @param {Object} data - { name, email, subject, message }
+   */
+  async submitContactForm(username, data) {
+    // Ensure CSRF token is available (required for POST requests even on public routes)
+    await this.ensureCsrf()
+    return this.request(`/influencers/${encodeURIComponent(username)}/contact`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      requireCsrf: true // CSRF is required for POST requests
+    })
+  }
+
+  /**
+   * Get contact messages for authenticated influencer
+   * @param {Object} params - { page, per_page, subject, is_read, sort, order }
+   */
+  async getContactMessages(params = {}) {
+    const queryParams = new URLSearchParams()
+    if (params.page) queryParams.append('page', params.page)
+    if (params.per_page) queryParams.append('per_page', params.per_page)
+    if (params.subject) queryParams.append('subject', params.subject)
+    if (params.is_read !== undefined) queryParams.append('is_read', params.is_read)
+    if (params.sort) queryParams.append('sort', params.sort)
+    if (params.order) queryParams.append('order', params.order)
+    
+    const query = queryParams.toString()
+    return this.request(`/influencer/contact-messages${query ? `?${query}` : ''}`)
+  }
+
+  /**
+   * Get single contact message (auto-marks as read)
+   * @param {Number} id - Message ID
+   */
+  async getContactMessage(id) {
+    return this.request(`/influencer/contact-messages/${id}`)
+  }
+
+  /**
+   * Mark contact message as read/unread
+   * @param {Number} id - Message ID
+   * @param {Boolean} isRead - Read status
+   */
+  async markContactMessageRead(id, isRead) {
+    return this.request(`/influencer/contact-messages/${id}/read`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_read: isRead })
+    })
+  }
+
+  /**
+   * Delete contact message
+   * @param {Number} id - Message ID
+   */
+  async deleteContactMessage(id) {
+    return this.request(`/influencer/contact-messages/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  /**
+   * Get contact messages statistics
+   */
+  async getContactMessagesStats() {
+    return this.request('/influencer/contact-messages/stats')
+  }
 }
 
 // Create singleton instance

@@ -116,7 +116,7 @@ export default {
       return this.tabs.filter(t => ['overview', 'maps'].includes(t.id))
     },
     creatorTabs() {
-      return this.tabs.filter(t => ['blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'creator'].includes(t.id))
+      return this.tabs.filter(t => ['blog', 'podcast', 'masterclass', 'consultation', 'contact-messages', 'media-assets', 'social', 'social-links', 'creator'].includes(t.id))
     },
     billingTabs() {
       return this.tabs.filter(t => ['orders', 'invoices', 'earnings'].includes(t.id))

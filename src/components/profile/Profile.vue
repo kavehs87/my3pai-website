@@ -90,6 +90,10 @@
               v-if="activeTab === 'consultation'"
             />
             
+            <ProfileContactMessages
+              v-if="activeTab === 'contact-messages'"
+            />
+            
             <ProfileMediaAssetsSettings
               v-if="activeTab === 'media-assets'"
             />
@@ -301,6 +305,7 @@ import ProfileBlogSettings from './components/ProfileBlogSettings.vue'
 import ProfilePodcastSettings from './components/ProfilePodcastSettings.vue'
 import ProfileMasterclassSettings from './components/ProfileMasterclassSettings.vue'
 import ProfileConsultationSettings from './components/ProfileConsultationSettings.vue'
+import ProfileContactMessages from './components/ProfileContactMessages.vue'
 import ProfileMediaAssetsSettings from './components/ProfileMediaAssetsSettings.vue'
 import ProfileSocialSettings from './components/ProfileSocialSettings.vue'
 import ProfileSocialLinksSettings from './components/ProfileSocialLinksSettings.vue'
@@ -327,6 +332,7 @@ export default {
     ProfilePodcastSettings,
     ProfileMasterclassSettings,
     ProfileConsultationSettings,
+    ProfileContactMessages,
     ProfileMediaAssetsSettings,
     ProfileSocialSettings,
     ProfileSocialLinksSettings,
@@ -357,6 +363,7 @@ export default {
         { id: 'podcast', label: 'Podcast', icon: 'fas fa-podcast', count: null },
         { id: 'masterclass', label: 'Training', icon: 'fas fa-graduation-cap', count: null },
         { id: 'consultation', label: 'Consultations', icon: 'fas fa-video', count: null },
+        { id: 'contact-messages', label: 'Messages', icon: 'fas fa-envelope', count: null },
         { id: 'media-assets', label: 'Digital Assets', icon: 'fas fa-photo-video', count: null },
         { id: 'social', label: 'Social Posts', icon: 'fas fa-share-alt', count: null },
         { id: 'social-links', label: 'Social Links', icon: 'fas fa-link', count: null },
@@ -373,6 +380,7 @@ export default {
         'podcast': 'Manage your podcast episodes',
         'masterclass': 'Create and manage your training content',
         'consultation': 'Set up your consultation services',
+        'contact-messages': 'View and manage messages from your contact form',
         'media-assets': 'Manage your digital assets for sale',
         'social': 'Manage your social media posts',
         'social-links': 'Manage your social media profile links',
@@ -436,7 +444,7 @@ export default {
     '$route.query.tab': {
       immediate: true,
       handler(tab) {
-        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'orders', 'invoices', 'earnings', 'order-detail', 'invoice-detail', 'settings'].includes(tab)) {
+        if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'contact-messages', 'media-assets', 'social', 'social-links', 'orders', 'invoices', 'earnings', 'order-detail', 'invoice-detail', 'settings'].includes(tab)) {
           this.activeTab = tab
           // If viewing order detail, get order ID from query
           if (tab === 'order-detail' && this.$route.query.orderId) {
@@ -455,7 +463,7 @@ export default {
   mounted() {
     // Check if there's a tab query parameter
     const tab = this.$route.query.tab
-    if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'media-assets', 'social', 'social-links', 'orders', 'invoices', 'order-detail', 'invoice-detail', 'settings'].includes(tab)) {
+    if (tab && ['overview', 'maps', 'creator', 'blog', 'podcast', 'masterclass', 'consultation', 'contact-messages', 'media-assets', 'social', 'social-links', 'orders', 'invoices', 'order-detail', 'invoice-detail', 'settings'].includes(tab)) {
       this.activeTab = tab
       // If viewing order detail, get order ID from query
       if (tab === 'order-detail' && this.$route.query.orderId) {
