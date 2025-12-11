@@ -6,6 +6,41 @@
           <h2>Account Information</h2>
           <div class="settings-form">
             <div class="form-group">
+              <label>Profile Picture</label>
+              <div class="avatar-upload-section">
+                <div class="avatar-preview">
+                  <img 
+                    :src="user.avatar || '/default-avatar.png'" 
+                    :alt="user.firstName || 'Profile picture'"
+                    class="avatar-preview-img"
+                    @error="handleAvatarError"
+                  />
+                  <div v-if="avatarUploading" class="avatar-upload-overlay">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </div>
+                </div>
+                <div class="avatar-upload-controls">
+                  <input
+                    ref="avatarInput"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    class="avatar-input"
+                    @change="handleAvatarFileSelect"
+                  />
+                  <button
+                    type="button"
+                    class="avatar-upload-btn"
+                    @click="triggerAvatarUpload"
+                    :disabled="avatarUploading"
+                  >
+                    <i :class="avatarUploading ? 'fas fa-spinner fa-spin' : 'fas fa-camera'"></i>
+                    {{ avatarUploading ? 'Uploading...' : 'Change Avatar' }}
+                  </button>
+                  <p class="helper-text">JPG, PNG or WEBP. Max 5MB.</p>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
               <label>First Name</label>
               <input
                 v-model="form.firstName"
@@ -78,6 +113,14 @@
             </button>
           </div>
         </div>
+
+        <!-- Avatar Cropper Modal -->
+        <AvatarCropper
+          :visible="showCropper"
+          :image-src="cropperImageSrc"
+          @crop="handleCropComplete"
+          @cancel="handleCropperCancel"
+        />
 
         <div class="settings-section" id="preferences-section">
           <h2>Preferences & Notifications</h2>
@@ -338,9 +381,13 @@
 import api from '@/services/api'
 import toast from '@/utils/toast'
 import { TIMEZONES, getTimezonesByGroup, getUserTimezone, formatTimezoneLabel } from '@/utils/timezones'
+import AvatarCropper from './AvatarCropper.vue'
 
 export default {
   name: 'ProfileSettings',
+  components: {
+    AvatarCropper
+  },
   props: {
     user: {
       type: Object,
@@ -368,6 +415,10 @@ export default {
         }
       },
       detectedTimezone: getUserTimezone(),
+      avatarUploading: false,
+      showCropper: false,
+      cropperImageSrc: '',
+      selectedFile: null,
       stripe: {
         loading: true,
         connected: false,
@@ -631,6 +682,96 @@ export default {
         'individual.id_number': 'ID number'
       }
       return mappings[req] || req.replace(/_/g, ' ').replace(/\./g, ' - ')
+    },
+    triggerAvatarUpload() {
+      this.$refs.avatarInput?.click()
+    },
+    handleAvatarFileSelect(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+      
+      // Validate file size (5MB max)
+      const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+      if (file.size > maxSize) {
+        toast.error('File size must be less than 5MB')
+        event.target.value = '' // Reset input
+        return
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPG, PNG, or WEBP)')
+        event.target.value = '' // Reset input
+        return
+      }
+      
+      // Store file and show cropper
+      this.selectedFile = file
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        this.cropperImageSrc = e.target.result
+        this.showCropper = true
+      }
+      reader.onerror = () => {
+        toast.error('Failed to read image file')
+        event.target.value = ''
+      }
+      reader.readAsDataURL(file)
+    },
+    async handleCropComplete(croppedBlob) {
+      this.showCropper = false
+      this.avatarUploading = true
+      
+      try {
+        // Convert blob to File for upload
+        const croppedFile = new File([croppedBlob], 'avatar.jpg', {
+          type: 'image/jpeg',
+          lastModified: Date.now()
+        })
+        
+        const result = await api.uploadAvatar(croppedFile)
+        if (result.success) {
+          // Get the new avatar URL from response
+          const newAvatar = result.data?.avatar || result.data?.data?.avatar || result.data?.url
+          
+          // Emit event to parent to update user data
+          this.$emit('avatar-updated', newAvatar)
+          
+          toast.success('Avatar updated successfully!')
+          
+          // Update local user prop if possible (for immediate preview)
+          if (this.user && newAvatar) {
+            this.user.avatar = newAvatar
+          }
+        } else {
+          toast.error(result.error || 'Failed to upload avatar')
+        }
+      } catch (error) {
+        console.error('Avatar upload error:', error)
+        toast.error(error.message || 'Error uploading avatar')
+      } finally {
+        this.avatarUploading = false
+        this.cropperImageSrc = ''
+        this.selectedFile = null
+        // Reset input
+        if (this.$refs.avatarInput) {
+          this.$refs.avatarInput.value = ''
+        }
+      }
+    },
+    handleCropperCancel() {
+      this.showCropper = false
+      this.cropperImageSrc = ''
+      this.selectedFile = null
+      // Reset input
+      if (this.$refs.avatarInput) {
+        this.$refs.avatarInput.value = ''
+      }
+    },
+    handleAvatarError(event) {
+      // Fallback to default avatar if image fails to load
+      event.target.src = 'https://i.pravatar.cc/200?img=41'
     }
   }
 }
@@ -1388,9 +1529,102 @@ export default {
   opacity: 0;
 }
 
+/* Avatar Upload Styles */
+.avatar-upload-section {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+}
+
+.avatar-preview {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 3px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.avatar-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: var(--font-size-xl);
+}
+
+.avatar-upload-controls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.avatar-input {
+  display: none;
+}
+
+.avatar-upload-btn {
+  background: var(--secondary-color);
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  transition: all var(--transition-normal);
+  width: fit-content;
+}
+
+.avatar-upload-btn:hover:not(:disabled) {
+  background: var(--secondary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(72, 196, 200, 0.3);
+}
+
+.avatar-upload-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .settings-section {
     padding: var(--spacing-md);
+  }
+
+  .avatar-upload-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .avatar-upload-controls {
+    align-items: center;
+    width: 100%;
+  }
+
+  .avatar-upload-btn {
+    width: 100%;
   }
 
   .stripe-card {

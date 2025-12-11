@@ -145,6 +145,7 @@
               @save-preferences="handleSavePreferences"
               @change-password="handleChangePassword"
               @delete-account="handleDeleteAccount"
+              @avatar-updated="handleAvatarUpdated"
             />
           </div>
         </template>
@@ -657,6 +658,20 @@ export default {
         }
       }
       input.click()
+    },
+    async handleAvatarUpdated(newAvatar) {
+      // Update local profile data immediately
+      if (this.profileData.user && newAvatar) {
+        this.profileData.user.avatar = newAvatar
+      }
+      
+      // Emit event to update Header navbar
+      eventBus.emit('profile-updated', {
+        avatar: newAvatar
+      })
+      
+      // Reload profile to get latest data
+      await this.loadProfileData(true) // Preserve scroll position
     },
     async handleEditCover() {
       const input = document.createElement('input')
