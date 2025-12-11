@@ -10,7 +10,7 @@ export function getApiBaseUrl() {
     return 'http://localhost:8000';
   }
 
-  // Production: Prepend 'api.' and use HTTPS
+  // Production: Prepend 'api.' and use HTTPS, append /api path
   const apiHost = 'api.' + hostname;
-  return 'https://' + apiHost;
+  return 'https://' + apiHost + '/api';
 }
