@@ -7,12 +7,19 @@ const XSRF_HEADER_NAME = 'X-XSRF-TOKEN'
 // API Service Class
 class ApiService {
   constructor() {
-    // Use dynamic API base URL based on current hostname
-    this.baseURL = getApiBaseUrl().replace(/\/$/, '')
-    this.apiOrigin = this.getApiOrigin(this.baseURL)
     this.csrfInitialized = false
     this.csrfPromise = null
     this._isAuthenticated = null // Cache auth state (null = unknown)
+  }
+
+  // Dynamic getter for baseURL - computed each time to ensure correct hostname
+  get baseURL() {
+    return getApiBaseUrl().replace(/\/$/, '')
+  }
+
+  // Dynamic getter for apiOrigin - computed each time based on current baseURL
+  get apiOrigin() {
+    return this.getApiOrigin(this.baseURL)
   }
 
   getApiOrigin(url) {
