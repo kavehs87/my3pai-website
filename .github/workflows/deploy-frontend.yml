@@ -34,7 +34,12 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg VITE_API_BASE_URL=https://api.my3p.ai \
+            --build-arg VITE_GOOGLE_MAPS_API_KEY=${{ secrets.VITE_GOOGLE_MAPS_API_KEY }} \
+            --build-arg VITE_GOOGLE_MAP_ID=${{ secrets.VITE_GOOGLE_MAP_ID }} \
+            --build-arg VITE_USE_ADVANCED_MARKERS=${{ secrets.VITE_USE_ADVANCED_MARKERS }} \
+            --build-arg VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }} \
+            --build-arg VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }} \
+            --build-arg VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }} \
             -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$SERVICE_NAME:$GITHUB_SHA \
             -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$SERVICE_NAME:latest \
             .
