@@ -1,13 +1,14 @@
+import { getApiBaseUrl } from '../utils/api.js'
+
 // API Configuration
-const DEFAULT_API_BASE_URL = 'https://api.my3pai.com/api'
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '')
 const XSRF_COOKIE_NAME = 'XSRF-TOKEN'
 const XSRF_HEADER_NAME = 'X-XSRF-TOKEN'
 
 // API Service Class
 class ApiService {
   constructor() {
-    this.baseURL = API_BASE_URL
+    // Use dynamic API base URL based on current hostname
+    this.baseURL = getApiBaseUrl().replace(/\/$/, '')
     this.apiOrigin = this.getApiOrigin(this.baseURL)
     this.csrfInitialized = false
     this.csrfPromise = null
