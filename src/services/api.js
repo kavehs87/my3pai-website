@@ -162,7 +162,28 @@ class ApiService {
     }
 
     try {
+      // Log request details for debugging (especially for OAuth callback)
+      if (endpoint === '/me' && url.includes('/api/me')) {
+        console.log('API Request to /me:', {
+          url,
+          method: config.method,
+          credentials: config.credentials,
+          headers: { ...config.headers },
+          cookies: document.cookie // Note: HttpOnly cookies won't show here
+        })
+      }
+      
       const response = await fetch(url, config)
+      
+      // Log response details for debugging
+      if (endpoint === '/me' && url.includes('/api/me')) {
+        console.log('API Response from /me:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          ok: response.ok
+        })
+      }
       
       // Handle non-JSON responses
       if (!response.headers.get('content-type')?.includes('application/json')) {
