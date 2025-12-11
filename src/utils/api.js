@@ -5,9 +5,9 @@
 export function getApiBaseUrl() {
   const hostname = window.location.hostname;
 
-  // Local Dev: Use HTTP and port 8000
+  // Local Dev: Use HTTP and port 8000, append /api path
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:8000';
+    return 'http://localhost:8000/api';
   }
 
   // Production: Prepend 'api.' and use HTTPS, append /api path
