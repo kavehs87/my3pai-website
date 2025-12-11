@@ -73,7 +73,21 @@ export default {
     }
 
     try {
+      // Log for debugging
+      console.log('OAuth callback: Checking session...', {
+        hostname: window.location.hostname,
+        apiBaseUrl: apiService.baseURL,
+        cookies: document.cookie
+      })
+
       const result = await apiService.getCurrentUser()
+
+      console.log('OAuth callback: getCurrentUser result:', {
+        success: result.success,
+        status: result.status,
+        error: result.error,
+        data: result.data
+      })
 
       if (result.success) {
         // Merge guest cart silently after successful OAuth login
@@ -89,12 +103,21 @@ export default {
       }
 
       if (result.status === 401) {
+        console.error('OAuth callback: 401 Unauthorized - Session cookie not recognized', {
+          apiBaseUrl: apiService.baseURL,
+          cookies: document.cookie,
+          response: result
+        })
         this.handleFailure('We could not verify your session. Please try signing in again.')
       } else {
+        console.error('OAuth callback: Unexpected error', result)
         this.handleFailure(result.error || 'Unexpected error while completing sign in.')
       }
     } catch (error) {
-      console.error('OAuth callback error:', error)
+      console.error('OAuth callback error:', error, {
+        apiBaseUrl: apiService.baseURL,
+        cookies: document.cookie
+      })
       this.handleFailure('Something went wrong while signing you in. Please try again.')
     }
   },
