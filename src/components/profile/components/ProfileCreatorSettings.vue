@@ -16,12 +16,8 @@
           Add a short video introduction (max 60 seconds) to make your profile stand out.
         </p>
         
-        <div v-if="introVideo.loading" class="loading-state">
-          <i class="fas fa-spinner fa-spin"></i> Loading...
-        </div>
-        
-        <!-- Processing Message (shown when processing, even without video URL) -->
-        <div v-else-if="introVideo.status === 'processing'" class="processing-message-standalone">
+        <!-- Processing Message (shown when processing, even during loading or without video URL) -->
+        <div v-if="introVideo.status === 'processing'" class="processing-message-standalone">
           <div class="processing-content">
             <i class="fas fa-spinner fa-spin"></i>
             <div class="processing-text">
@@ -29,6 +25,11 @@
               <p>Your video is being processed with watermark and optimization. This may take a few minutes. Please wait...</p>
             </div>
           </div>
+        </div>
+        
+        <!-- Loading state (only show if not processing) -->
+        <div v-else-if="introVideo.loading && introVideo.status !== 'processing'" class="loading-state">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
         </div>
         
         <div v-else-if="introVideo.url" class="video-preview">
@@ -738,6 +739,12 @@ export default {
               duration: data.introVideoDuration
             }
             console.log('Loaded video data from settings endpoint:', videoData)
+            
+            // Set status immediately if processing to avoid flicker
+            if (videoData.status === 'processing') {
+              this.introVideo.status = 'processing'
+              this.introVideo.loading = false // Stop loading immediately to show processing message
+            }
           }
         } catch {
           // Silently continue - endpoint may not exist yet
@@ -766,6 +773,12 @@ export default {
               duration: user.introVideoDuration || user.intro_video_duration
             }
             
+            // Set status immediately if processing to avoid flicker
+            if (videoData.status === 'processing') {
+              this.introVideo.status = 'processing'
+              this.introVideo.loading = false // Stop loading immediately to show processing message
+            }
+            
             // If still no video data and we have username, try public influencer profile
             if (!videoData.url && !videoData.status && user.username) {
               try {
@@ -777,6 +790,12 @@ export default {
                     thumbnail: influencer.introVideoThumbnail || influencer.intro_video_thumbnail,
                     status: influencer.introVideoStatus || influencer.intro_video_status || null,
                     duration: influencer.introVideoDuration || influencer.intro_video_duration
+                  }
+                  
+                  // Set status immediately if processing to avoid flicker
+                  if (videoData.status === 'processing') {
+                    this.introVideo.status = 'processing'
+                    this.introVideo.loading = false // Stop loading immediately to show processing message
                   }
                 }
               } catch (e) {
