@@ -20,6 +20,17 @@
           <i class="fas fa-spinner fa-spin"></i> Loading...
         </div>
         
+        <!-- Processing Message (shown when processing, even without video URL) -->
+        <div v-else-if="introVideo.status === 'processing'" class="processing-message-standalone">
+          <div class="processing-content">
+            <i class="fas fa-spinner fa-spin"></i>
+            <div class="processing-text">
+              <strong>Video Processing</strong>
+              <p>Your video is being processed with watermark and optimization. This may take a few minutes. Please wait...</p>
+            </div>
+          </div>
+        </div>
+        
         <div v-else-if="introVideo.url" class="video-preview">
           <div class="video-container">
             <video 
@@ -40,7 +51,7 @@
             </span>
           </div>
           
-          <!-- Processing Message -->
+          <!-- Processing Message (when video exists but still processing) -->
           <div v-if="introVideo.status === 'processing'" class="processing-message">
             <div class="processing-content">
               <i class="fas fa-spinner fa-spin"></i>
@@ -71,7 +82,7 @@
           @dragover.prevent="onDragOver" 
           @dragleave="onDragLeave" 
           @drop.prevent="onDrop" 
-          :class="{ 'drag-over': isDragging, 'disabled': introVideo.status === 'processing' || introVideo.uploading }">
+          :class="{ 'drag-over': isDragging }">
           <div class="upload-content">
             <div class="upload-icon">
               <i class="fas fa-cloud-upload-alt"></i>
@@ -726,13 +737,23 @@ export default {
               status: data.introVideoStatus,
               duration: data.introVideoDuration
             }
+            console.log('Loaded video data from settings endpoint:', videoData)
           }
         } catch {
           // Silently continue - endpoint may not exist yet
         }
         
-        // Fallback to profile endpoint if no video data yet
-        if (!videoData?.url) {
+        // Only fallback if we got NO data from settings endpoint
+        // IMPORTANT: If settings returns status: "processing" even with null URL, use that data!
+        // Don't fall back just because URL is null - status is what matters for processing state
+        const hasVideoData = videoData && (
+          videoData.url !== null || 
+          videoData.status !== null || 
+          videoData.thumbnail !== null || 
+          videoData.duration !== null
+        )
+        
+        if (!hasVideoData) {
           const profileResult = await api.getProfile()
           if (profileResult.success) {
             const user = profileResult.data?.data?.user || profileResult.data?.user || profileResult.data?.data || {}
@@ -746,7 +767,7 @@ export default {
             }
             
             // If still no video data and we have username, try public influencer profile
-            if (!videoData.url && user.username) {
+            if (!videoData.url && !videoData.status && user.username) {
               try {
                 const influencerResult = await api.getInfluencerProfile(user.username)
                 if (influencerResult.success) {
@@ -754,7 +775,7 @@ export default {
                   videoData = {
                     url: influencer.introVideoUrl || influencer.intro_video_url,
                     thumbnail: influencer.introVideoThumbnail || influencer.intro_video_thumbnail,
-                    status: influencer.introVideoStatus || influencer.intro_video_status || null, // Don't default to 'ready'
+                    status: influencer.introVideoStatus || influencer.intro_video_status || null,
                     duration: influencer.introVideoDuration || influencer.intro_video_duration
                   }
                 }
@@ -769,11 +790,16 @@ export default {
         if (videoData) {
           this.introVideo.url = videoData.url || null
           this.introVideo.thumbnail = videoData.thumbnail || null
-          // Only update status if it's actually present (don't overwrite 'processing' with null)
-          if (videoData.status !== null && videoData.status !== undefined) {
-            this.introVideo.status = videoData.status
-          }
+          // Always set status from videoData (including null to clear previous state)
+          // This ensures 'processing' status is preserved on page refresh
+          this.introVideo.status = videoData.status !== undefined ? videoData.status : null
           this.introVideo.duration = videoData.duration || null
+          
+          console.log('Applied video data:', {
+            url: this.introVideo.url,
+            status: this.introVideo.status,
+            thumbnail: this.introVideo.thumbnail
+          })
           
           // Initialize intro picture with existing thumbnail
           if (videoData.thumbnail) {
@@ -1944,6 +1970,23 @@ export default {
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   margin-top: var(--spacing-sm);
+}
+
+.processing-message-standalone {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  margin: var(--spacing-lg) 0;
+}
+
+.processing-message-standalone .processing-content {
+  justify-content: center;
+  text-align: center;
+}
+
+.processing-message-standalone .processing-text {
+  text-align: center;
 }
 
 .processing-content {
