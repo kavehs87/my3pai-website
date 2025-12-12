@@ -39,18 +39,39 @@
               {{ formatDuration(introVideo.duration) }}
             </span>
           </div>
+          
+          <!-- Processing Message -->
+          <div v-if="introVideo.status === 'processing'" class="processing-message">
+            <div class="processing-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <div class="processing-text">
+                <strong>Video Processing</strong>
+                <p>Your video is being processed with watermark and optimization. This may take a few minutes. Please wait...</p>
+              </div>
+            </div>
+          </div>
+          
           <div class="video-actions">
-            <button class="action-btn replace" @click="triggerVideoUpload">
+            <button 
+              class="action-btn replace" 
+              @click="triggerVideoUpload"
+              :disabled="introVideo.status === 'processing' || introVideo.uploading"
+            >
               <i class="fas fa-sync-alt"></i> Replace
             </button>
-            <button class="action-btn delete" @click="deleteIntroVideo" :disabled="introVideo.deleting">
+            <button class="action-btn delete" @click="deleteIntroVideo" :disabled="introVideo.deleting || introVideo.status === 'processing'">
               <i :class="introVideo.deleting ? 'fas fa-spinner fa-spin' : 'fas fa-trash'"></i>
               {{ introVideo.deleting ? 'Deleting...' : 'Remove' }}
             </button>
           </div>
         </div>
         
-        <div v-else class="upload-area" @click="triggerVideoUpload" @dragover.prevent="onDragOver" @dragleave="onDragLeave" @drop.prevent="onDrop" :class="{ 'drag-over': isDragging }">
+        <div v-else class="upload-area" 
+          @click="handleUploadAreaClick" 
+          @dragover.prevent="onDragOver" 
+          @dragleave="onDragLeave" 
+          @drop.prevent="onDrop" 
+          :class="{ 'drag-over': isDragging, 'disabled': introVideo.status === 'processing' || introVideo.uploading }">
           <div class="upload-content">
             <div class="upload-icon">
               <i class="fas fa-cloud-upload-alt"></i>
@@ -67,6 +88,7 @@
           type="file"
           accept="video/mp4,video/quicktime,video/webm"
           class="file-input-hidden"
+          :disabled="introVideo.status === 'processing' || introVideo.uploading"
           @change="handleVideoSelect"
         />
         
@@ -754,6 +776,11 @@ export default {
           if (videoData.thumbnail) {
             this.introPicture.file = videoData.thumbnail
           }
+          
+          // Start polling if video is processing
+          if (this.introVideo.status === 'processing') {
+            this.startVideoStatusPolling()
+          }
         }
       } catch (err) {
         console.error('Failed to load intro video:', err)
@@ -763,7 +790,21 @@ export default {
     },
     
     triggerVideoUpload() {
+      // Prevent upload if video is processing
+      if (this.introVideo.status === 'processing' || this.introVideo.uploading) {
+        toast.warning('Please wait for the current video to finish processing before uploading a new one.')
+        return
+      }
       this.$refs.videoInputRef?.click()
+    },
+    
+    handleUploadAreaClick() {
+      // Prevent upload if video is processing
+      if (this.introVideo.status === 'processing' || this.introVideo.uploading) {
+        toast.warning('Please wait for the current video to finish processing before uploading a new one.')
+        return
+      }
+      this.triggerVideoUpload()
     },
     
     async handleVideoSelect(event) {
@@ -1870,6 +1911,45 @@ export default {
   color: var(--text-secondary);
 }
 
+.processing-message {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.processing-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.processing-content i {
+  color: #f59e0b;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.processing-text {
+  flex: 1;
+}
+
+.processing-text strong {
+  display: block;
+  color: #92400e;
+  font-size: var(--font-size-base);
+  margin-bottom: var(--spacing-xs);
+}
+
+.processing-text p {
+  color: #78350f;
+  font-size: var(--font-size-sm);
+  margin: 0;
+  line-height: 1.5;
+}
+
 .video-actions {
   display: flex;
   gap: var(--spacing-sm);
@@ -1915,6 +1995,7 @@ export default {
 .video-actions .action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 .upload-area {
@@ -1935,6 +2016,17 @@ export default {
 .upload-area.drag-over {
   border-color: var(--secondary-color);
   background: rgba(99, 102, 241, 0.05);
+}
+
+.upload-area.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.upload-area.disabled:hover {
+  border-color: var(--border-light);
+  background: transparent;
 }
 
 .file-input-hidden {
