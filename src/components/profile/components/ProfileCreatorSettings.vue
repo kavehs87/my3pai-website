@@ -754,7 +754,7 @@ export default {
                   videoData = {
                     url: influencer.introVideoUrl || influencer.intro_video_url,
                     thumbnail: influencer.introVideoThumbnail || influencer.intro_video_thumbnail,
-                    status: influencer.introVideoStatus || influencer.intro_video_status || 'ready',
+                    status: influencer.introVideoStatus || influencer.intro_video_status || null, // Don't default to 'ready'
                     duration: influencer.introVideoDuration || influencer.intro_video_duration
                   }
                 }
@@ -769,7 +769,10 @@ export default {
         if (videoData) {
           this.introVideo.url = videoData.url || null
           this.introVideo.thumbnail = videoData.thumbnail || null
-          this.introVideo.status = videoData.status || null
+          // Only update status if it's actually present (don't overwrite 'processing' with null)
+          if (videoData.status !== null && videoData.status !== undefined) {
+            this.introVideo.status = videoData.status
+          }
           this.introVideo.duration = videoData.duration || null
           
           // Initialize intro picture with existing thumbnail
@@ -852,11 +855,21 @@ export default {
           this.introVideo.thumbnail = data.introVideoThumbnail
           this.introVideo.status = data.introVideoStatus
           this.introVideo.duration = data.introVideoDuration
+          
+          console.log('Video upload response:', {
+            status: data.introVideoStatus,
+            url: data.introVideoUrl,
+            thumbnail: data.introVideoThumbnail
+          })
+          
           toast.success('Video uploaded! Processing...')
           
           // Start polling if video is still processing
           if (this.introVideo.status === 'processing') {
+            console.log('Status is processing, starting polling...')
             this.startVideoStatusPolling()
+          } else {
+            console.warn('Status is not processing:', this.introVideo.status)
           }
         } else {
           toast.error(result.error || 'Failed to upload video')
@@ -873,13 +886,22 @@ export default {
       // Clear any existing polling
       this.stopVideoStatusPolling()
       
+      console.log('Starting video status polling, current status:', this.introVideo.status)
+      
       // Poll every 3 seconds
       this.introVideo.pollInterval = setInterval(async () => {
         try {
+          const previousStatus = this.introVideo.status
           await this.loadIntroVideo()
           
-          // Stop polling if status is no longer processing
-          if (this.introVideo.status !== 'processing') {
+          console.log('Polling video status:', {
+            previous: previousStatus,
+            current: this.introVideo.status
+          })
+          
+          // Stop polling if status is no longer processing (and is explicitly 'ready' or 'failed')
+          // Don't stop if status is null/undefined (might be missing from response)
+          if (this.introVideo.status === 'ready' || this.introVideo.status === 'failed') {
             this.stopVideoStatusPolling()
             
             if (this.introVideo.status === 'ready') {
@@ -887,7 +909,12 @@ export default {
             } else if (this.introVideo.status === 'failed') {
               toast.error('Video processing failed. Please try uploading again.')
             }
+          } else if (this.introVideo.status !== 'processing' && this.introVideo.status !== null && this.introVideo.status !== undefined) {
+            // If status changed to something unexpected, stop polling
+            console.warn('Unexpected video status:', this.introVideo.status)
+            this.stopVideoStatusPolling()
           }
+          // If status is null/undefined, continue polling (might be missing from response)
         } catch (err) {
           console.error('Error polling video status:', err)
         }
