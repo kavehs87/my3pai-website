@@ -1,0 +1,514 @@
+/**
+ * WanderLuxe Theme Styles
+ * Elegant sidebar-based layout with slate/indigo color scheme
+ */
+
+/* Import base styles first (must be at top) */
+@import url('../../../style.css');
+
+/* WanderLuxe Theme Custom Colors */
+.theme-wanderluxe {
+  /* Slate/Indigo color scheme */
+  --primary: #0f172a; /* slate-900 */
+  --secondary: #4f46e5; /* indigo-600 */
+  --surface: #f8fafc; /* slate-50 */
+  --text-main: #0f172a; /* slate-900 */
+  --text-muted: #64748b; /* slate-500 */
+  --text-light: #cbd5e1; /* slate-300 */
+  
+  /* Additional color variables */
+  --primary-hover: #1e293b; /* slate-800 */
+  --secondary-hover: #4338ca; /* indigo-700 */
+  --border-color: #e2e8f0; /* slate-200 */
+  --border-light: #f1f5f9; /* slate-100 */
+  --bg-overlay: rgba(15, 23, 42, 0.5); /* slate-900 with opacity */
+  --bg-overlay-light: rgba(15, 23, 42, 0.1);
+  
+  /* Spacing variables */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 3rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+}
+
+/* Ensure Inter font is used */
+.theme-wanderluxe {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animation utility classes */
+.theme-wanderluxe .animate-fade-in {
+  animation: fade-in var(--transition-base);
+}
+
+.theme-wanderluxe .animate-fade-out {
+  animation: fade-out var(--transition-base);
+}
+
+.theme-wanderluxe .animate-slide-in {
+  animation: slide-in var(--transition-base);
+}
+
+.theme-wanderluxe .animate-slide-out {
+  animation: slide-out var(--transition-base);
+}
+
+.theme-wanderluxe .animate-slide-up {
+  animation: slide-up var(--transition-base);
+}
+
+.theme-wanderluxe .animate-slide-down {
+  animation: slide-down var(--transition-base);
+}
+
+.theme-wanderluxe .animate-scale-in {
+  animation: scale-in var(--transition-base);
+}
+
+.theme-wanderluxe .animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom scrollbar styling */
+.theme-wanderluxe ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.theme-wanderluxe ::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+.theme-wanderluxe ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.theme-wanderluxe ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Rich text styling */
+.rich-text h1, .rich-text h2, .rich-text h3, .rich-text h4 {
+  color: var(--text-main);
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-text h1 {
+  font-size: 2.25rem;
+  line-height: 1.1;
+}
+
+.rich-text h2 {
+  font-size: 1.875rem;
+}
+
+.rich-text h3 {
+  font-size: 1.5rem;
+}
+
+.rich-text h4 {
+  font-size: 1.25rem;
+}
+
+.rich-text p {
+  color: #475569;
+  margin-bottom: 1em;
+  line-height: 1.75;
+}
+
+.rich-text ul, .rich-text ol {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+  color: #475569;
+}
+
+.rich-text ol {
+  list-style-type: decimal;
+}
+
+.rich-text li {
+  margin-bottom: 0.5em;
+  line-height: 1.75;
+}
+
+.rich-text strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.rich-text a {
+  color: var(--secondary);
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.rich-text a:hover {
+  color: var(--secondary-hover);
+}
+
+.rich-text img {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  margin: 1.5em 0;
+  max-width: 100%;
+  height: auto;
+}
+
+.rich-text blockquote {
+  border-left: 4px solid var(--secondary);
+  padding-left: 1em;
+  margin: 1.5em 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.rich-text code {
+  background: var(--surface);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875em;
+  color: var(--text-main);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.rich-text pre {
+  background: var(--surface);
+  padding: 1em;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+.rich-text pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Prose styling (Tailwind Typography plugin compatibility) */
+.theme-wanderluxe .prose {
+  color: var(--text-main);
+  max-width: 65ch;
+}
+
+.theme-wanderluxe .prose h1,
+.theme-wanderluxe .prose h2,
+.theme-wanderluxe .prose h3,
+.theme-wanderluxe .prose h4 {
+  color: var(--text-main);
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.theme-wanderluxe .prose p {
+  color: #475569;
+  margin-bottom: 1em;
+  line-height: 1.75;
+}
+
+.theme-wanderluxe .prose ul,
+.theme-wanderluxe .prose ol {
+  color: #475569;
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.theme-wanderluxe .prose li {
+  margin-bottom: 0.5em;
+  line-height: 1.75;
+}
+
+.theme-wanderluxe .prose strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.theme-wanderluxe .prose a {
+  color: var(--secondary);
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.theme-wanderluxe .prose a:hover {
+  color: var(--secondary-hover);
+}
+
+.theme-wanderluxe .prose img {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  margin: 1.5em 0;
+}
+
+.theme-wanderluxe .prose blockquote {
+  border-left: 4px solid var(--secondary);
+  padding-left: 1em;
+  margin: 1.5em 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.theme-wanderluxe .prose code {
+  background: var(--surface);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875em;
+  color: var(--text-main);
+}
+
+.theme-wanderluxe .prose pre {
+  background: var(--surface);
+  padding: 1em;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+.theme-wanderluxe .prose pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Utility classes */
+.theme-wanderluxe .text-primary {
+  color: var(--primary);
+}
+
+.theme-wanderluxe .text-secondary {
+  color: var(--secondary);
+}
+
+.theme-wanderluxe .text-muted {
+  color: var(--text-muted);
+}
+
+.theme-wanderluxe .text-light {
+  color: var(--text-light);
+}
+
+.theme-wanderluxe .bg-primary {
+  background-color: var(--primary);
+}
+
+.theme-wanderluxe .bg-secondary {
+  background-color: var(--secondary);
+}
+
+.theme-wanderluxe .bg-surface {
+  background-color: var(--surface);
+}
+
+.theme-wanderluxe .border-primary {
+  border-color: var(--primary);
+}
+
+.theme-wanderluxe .border-secondary {
+  border-color: var(--secondary);
+}
+
+.theme-wanderluxe .border-muted {
+  border-color: var(--border-color);
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .theme-wanderluxe .prose {
+    font-size: 0.875rem;
+  }
+  
+  .theme-wanderluxe .prose h1 {
+    font-size: 1.875rem;
+  }
+  
+  .theme-wanderluxe .prose h2 {
+    font-size: 1.5rem;
+  }
+  
+  .theme-wanderluxe .prose h3 {
+    font-size: 1.25rem;
+  }
+  
+  .rich-text h1 {
+    font-size: 1.875rem;
+  }
+  
+  .rich-text h2 {
+    font-size: 1.5rem;
+  }
+  
+  .rich-text h3 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .theme-wanderluxe .prose-lg {
+    font-size: 1.125rem;
+  }
+  
+  .theme-wanderluxe .prose-lg h1 {
+    font-size: 2.5rem;
+  }
+  
+  .theme-wanderluxe .prose-lg h2 {
+    font-size: 2rem;
+  }
+  
+  .theme-wanderluxe .prose-lg h3 {
+    font-size: 1.75rem;
+  }
+}
+
+/* Focus styles for accessibility */
+.theme-wanderluxe *:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Smooth transitions for interactive elements */
+.theme-wanderluxe button,
+.theme-wanderluxe a {
+  transition: all var(--transition-fast);
+}
+
+/* Backdrop blur utility */
+.theme-wanderluxe .backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.theme-wanderluxe .backdrop-blur {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.theme-wanderluxe .backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.theme-wanderluxe .backdrop-blur-lg {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+

@@ -72,7 +72,7 @@ export default {
   props: {
     currentTheme: {
       type: String,
-      default: 'modern'
+      default: 'dark-blue'
     },
     profileUsername: {
       type: String,
@@ -82,7 +82,7 @@ export default {
   data() {
     return {
       availableThemes: [],
-      selectedTheme: this.currentTheme || 'modern',
+      selectedTheme: this.currentTheme || 'dark-blue',
       loading: false,
       saving: null,
       error: null
@@ -90,11 +90,11 @@ export default {
   },
   mounted() {
     this.loadThemes()
-    this.selectedTheme = this.currentTheme || 'modern'
+    this.selectedTheme = this.currentTheme || 'dark-blue'
   },
   watch: {
     currentTheme(newTheme) {
-      this.selectedTheme = newTheme || 'modern'
+      this.selectedTheme = newTheme || 'dark-blue'
     }
   },
   methods: {

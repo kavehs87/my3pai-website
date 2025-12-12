@@ -68,11 +68,12 @@ const {
 // Computed username from props or route
 const currentUsername = computed(() => props.username || route.params.username || profile.value?.username || null)
 
-// Provide username to child components
-provide('influencerUsername', currentUsername)
+// Get theme ID from profile, fallback to 'dark-blue'
+const themeId = computed(() => profile.value?.theme || 'dark-blue')
 
-// Get theme ID from profile, fallback to 'modern'
-const themeId = computed(() => profile.value?.theme || 'modern')
+// Provide username and theme to child components
+provide('influencerUsername', currentUsername)
+provide('influencerTheme', themeId)
 
 // Get theme component
 const themeComponent = computed(() => {

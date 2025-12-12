@@ -195,12 +195,27 @@ class ApiService {
       }
 
       let data
+      // Read response as text first, then try to parse as JSON
+      // This prevents "body stream already read" errors
+      const text = await response.text()
       try {
-        data = await response.json()
+        // Strip any HTML/error messages that may appear before JSON
+        // Look for the first occurrence of '{' or '[' which should be the start of JSON
+        let jsonText = text.trim()
+        const jsonStart = Math.min(
+          jsonText.indexOf('{') !== -1 ? jsonText.indexOf('{') : Infinity,
+          jsonText.indexOf('[') !== -1 ? jsonText.indexOf('[') : Infinity
+        )
+        
+        if (jsonStart !== Infinity && jsonStart > 0) {
+          // Extract JSON portion (everything from first '{' or '[' onwards)
+          jsonText = jsonText.substring(jsonStart)
+        }
+        
+        data = JSON.parse(jsonText)
       } catch (jsonError) {
-        // If response is not valid JSON, read as text for error details
-        const text = await response.text()
-        console.error(`API Response is not valid JSON (${response.status}):`, text)
+        // If response is not valid JSON, use the text as error details
+        console.error(`API Response is not valid JSON (${response.status}):`, text.substring(0, 500))
         throw new Error(`Server returned invalid response: ${response.status} ${response.statusText}`)
       }
 

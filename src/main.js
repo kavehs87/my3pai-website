@@ -14,20 +14,8 @@ import MediaAssetsLibraryRoute from './shared/influencer/routes/MediaAssetsLibra
 import MasterclassesLibraryRoute from './shared/influencer/routes/MasterclassesLibraryRoute.vue'
 import CheckoutSuccess from './views/checkout/CheckoutSuccess.vue'
 import CheckoutCancel from './views/checkout/CheckoutCancel.vue'
-// Dark-blue theme views
-import HomeView from './themes/dark-blue/views/HomeView.vue'
-import PodcastsView from './themes/dark-blue/views/PodcastsView.vue'
-import BlogView from './themes/dark-blue/views/BlogView.vue'
-import BlogPostView from './themes/dark-blue/views/BlogPostView.vue'
-import MapsView from './themes/dark-blue/views/MapsView.vue'
-import ClassesView from './themes/dark-blue/views/ClassesView.vue'
-import AssetsView from './themes/dark-blue/views/AssetsView.vue'
-import SocialsView from './themes/dark-blue/views/SocialsView.vue'
-import ConsultationView from './themes/dark-blue/views/ConsultationView.vue'
-import CheckoutView from './themes/dark-blue/views/CheckoutView.vue'
-import ContactView from './themes/dark-blue/views/ContactView.vue'
-import TermsView from './themes/dark-blue/views/TermsView.vue'
-import PrivacyView from './themes/dark-blue/views/PrivacyView.vue'
+// Theme-aware view components
+import ThemeAwareView from './shared/influencer/routes/ThemeAwareView.vue'
 import './style.css'
 
 const routes = [
@@ -44,80 +32,80 @@ const routes = [
       {
         path: '',
         name: 'influencer-home',
-        component: HomeView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'HomeView', ...route.params }),
       },
       {
         path: 'podcasts',
         name: 'influencer-podcasts',
-        component: PodcastsView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'PodcastsView', ...route.params }),
       },
       {
         path: 'blog',
         name: 'influencer-blog',
-        component: BlogView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'BlogView', ...route.params }),
       },
       {
         path: 'blog/:slug',
         name: 'influencer-blog-post',
-        component: BlogPostView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'BlogPostView', ...route.params }),
       },
       {
         path: 'maps',
         name: 'influencer-maps',
-        component: MapsView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'MapsView', ...route.params }),
       },
       {
         path: 'classes',
         name: 'influencer-classes',
-        component: ClassesView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'ClassesView', ...route.params }),
       },
       {
         path: 'assets',
         name: 'influencer-assets',
-        component: AssetsView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'AssetsView', ...route.params }),
       },
       {
         path: 'socials',
         name: 'influencer-socials',
-        component: SocialsView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'SocialsView', ...route.params }),
       },
       {
         path: 'consultation',
         name: 'influencer-consultation',
-        component: ConsultationView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'ConsultationView', ...route.params }),
       },
       {
         path: 'checkout',
         name: 'influencer-checkout',
-        component: CheckoutView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'CheckoutView', ...route.params }),
       },
       {
         path: 'contact',
         name: 'influencer-contact',
-        component: ContactView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'ContactView', ...route.params }),
       },
       {
         path: 'terms',
         name: 'influencer-terms',
-        component: TermsView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'TermsView', ...route.params }),
       },
       {
         path: 'privacy',
         name: 'influencer-privacy',
-        component: PrivacyView,
-        props: true,
+        component: ThemeAwareView,
+        props: (route) => ({ viewName: 'PrivacyView', ...route.params }),
       },
     ],
   },

@@ -126,7 +126,7 @@ export function useInfluencer() {
       introVideoThumbnail: data.introVideoThumbnail || null,
       introVideoDuration: data.introVideoDuration || null,
       // Theme
-      theme: data.theme || 'modern',
+      theme: data.theme || 'dark-blue',
       // Creator tools visibility settings
       creatorToolsVisibility: data.creatorToolsVisibility || null,
     }

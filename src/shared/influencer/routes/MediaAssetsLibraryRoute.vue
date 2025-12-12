@@ -21,7 +21,7 @@ onMounted(async () => {
   const username = route.params.username
   
   if (!username) {
-    const pageModule = await getThemePage('modern', 'mediaAssets')
+    const pageModule = await getThemePage('basic', 'mediaAssets')
     libraryComponent.value = pageModule?.default || pageModule
     return
   }
@@ -30,18 +30,18 @@ onMounted(async () => {
   try {
     const result = await api.getInfluencerProfile(username)
     if (result.success && result.data?.data) {
-      const theme = result.data.data.theme || 'modern'
+      const theme = result.data.data.theme || 'dark-blue'
       const pageModule = await getThemePage(theme, 'mediaAssets')
       libraryComponent.value = pageModule?.default || pageModule
     } else {
-      // Fallback to modern theme
-      const pageModule = await getThemePage('modern', 'mediaAssets')
+      // Fallback to basic theme for library pages
+      const pageModule = await getThemePage('basic', 'mediaAssets')
       libraryComponent.value = pageModule?.default || pageModule
     }
   } catch (error) {
     console.error('Error loading theme page:', error)
-    // Fallback to modern theme
-    const pageModule = await getThemePage('modern', 'mediaAssets')
+    // Fallback to basic theme for library pages
+    const pageModule = await getThemePage('basic', 'mediaAssets')
     libraryComponent.value = pageModule?.default || pageModule
   }
 })

@@ -677,7 +677,7 @@ export default {
         { code: 'ms', name: 'Malay', flag: '🇲🇾' },
         { code: 'uk', name: 'Ukrainian', flag: '🇺🇦' }
       ],
-      profileTheme: 'modern',
+      profileTheme: 'dark-blue',
       profileUsername: null
     }
   },
@@ -695,7 +695,7 @@ export default {
         const result = await api.getProfile()
         if (result.success) {
           const user = result.data?.data?.user || result.data?.user || {}
-          this.profileTheme = user.theme || 'modern'
+          this.profileTheme = user.theme || 'dark-blue'
           this.profileUsername = user.username || null
         }
       } catch (err) {
